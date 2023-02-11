@@ -2,6 +2,15 @@
 const {DecoratorResult} = require('./decoratorResult.js');
 //const {httpContext} = require('./requestDispatcher.js');
 
+const decoratorContext = {}
+
+function annotation(_theConstructor) {
+    console.log('annotation', _theConstructor)
+    decoratorContext.currentClass = _theConstructor;
+
+    return _theConstructor;
+}
+
 class BaseController  {
 
     static httpContext;
@@ -98,4 +107,4 @@ class BaseController  {
     }
 };
 
-module.exports = BaseController;
+module.exports = {BaseController, annotation, decoratorContext};

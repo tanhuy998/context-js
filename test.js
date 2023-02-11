@@ -1,5 +1,7 @@
-const BaseController = require('./baseController.js');
+const {BaseController, annotation, decoratorContext} = require('./baseController.js');
+const { Route, Router } = require('./http/httpRouting.js');
 const {dispatchRequest, requestParam , httpContext, initContext} = require('./requestDispatcher.js');
+//const {Router} = require('./http/httpRouting.js');
 
 function foo(arg) {
 
@@ -13,16 +15,50 @@ function foo(arg) {
     }
 }
 
-function bar(_class, _name, descriptor) {
-    console.log(this)
-    console.log('foo handle', descriptor)
+function bar(_class, context) {
+    console.log(context)
+    console.log('foo handle')
     //descriptor.value = () => {}
     //console.log(descriptor)
     return descriptor;
 }
 
-@httpContext
-@initContext(123124)
+const express = {
+    Router: () => {
+        
+        return {
+            routeList: {},
+            newRequest: function(req, res) {
+
+                const path = req.path ? req.path : '/';
+
+                const actionList = this.routeList[path];
+
+                for (const callback of actionList) {
+
+                    callback(req, res, () => {});
+                }
+            },
+            get: function(path, _callback) {
+
+                if (!this.routeList[path]) this.routeList[path] = [];
+
+                this.routeList[path].push( _callback);
+            }
+        }
+    },
+    get: function(path) {
+
+        console.log(path, this.prop);
+
+        return function(target, prop, descriptor) {
+
+            return descriptor;
+        }
+    }
+}
+
+@annotation
 class Controller extends BaseController {
 
     // we must type this line to made the derived class works properly
@@ -53,11 +89,17 @@ class Controller extends BaseController {
 
         console.log(req_body, this.userId);
     }
+
+    @Router.get('/path')
+    func() {
+        console.log('entering "/path" route');
+    }
 }
 
 
 const req = {
     method: 'post',
+    path: '/path',
     params: {
         userId: 2,
         name: 'foo'
@@ -73,12 +115,19 @@ const req = {
 const res = {};
 const next = () => {};
 
+Route.init(express);
+
+const router = Route.resolve();
+
+console.log(router)
+//router.newRequest(req, res);
+
 //const args = [req, res, next]
 
-const handler = dispatchRequest(...Controller.proxy.printUserId);
-const handler1 = dispatchRequest(...Controller.proxy.printBody);
-handler(req, res, next);   
-handler1(req, res, next);
+// const handler = dispatchRequest(...Controller.proxy.printUserId);
+// const handler1 = dispatchRequest(...Controller.proxy.printBody);
+// handler(req, res, next);   
+// handler1(req, res, next);
 
 //const controller = new Controller({request: req, response: res, nextMiddleware: next});
 
