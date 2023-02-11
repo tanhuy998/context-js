@@ -1,7 +1,10 @@
 //const { obj } = require("../model/chatroom/chatRoom.schema");
 const {DecoratorResult} = require('./decoratorResult.js');
+//const {httpContext} = require('./requestDispatcher.js');
 
 class BaseController  {
+
+    static httpContext;
 
     static proxyHandler = {
 
@@ -42,6 +45,7 @@ class BaseController  {
     };
     static proxy = new Proxy(BaseController, BaseController.proxyHandler);
 
+    //@httpContext
     #context;
     #decoratedList;
 
@@ -64,15 +68,27 @@ class BaseController  {
     }
 
     pushDecoratedProp(decoratedResult) {
-
+        
         this.#decoratedList.push(decoratedResult);
     }
 
     resolveProperty() {
 
-        for (const prop of this.#decoratedList) {
+        // for (const prop of this.#decoratedList) {
 
-            prop.bind(this).resolve();
+        //     prop.bind(this).resolve();
+        // }
+
+        const props = Object.getOwnPropertyNames(this);
+
+        for (const propName of props) {
+
+            if (this[propName] == undefined) continue;
+
+            if (this[propName].constructor.name == 'PropertyDecorator') {
+
+                this[propName].bind(this).resolve();
+            }
         }
     }
 

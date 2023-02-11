@@ -5,85 +5,6 @@ const DecoratorType =  {
     PROPERTY_DECORATOR: 0x2,
 }
 
-class PropertyDecorator extends DecoratorResult {
-
-
-    constructor(target, propName) {
-
-        const obj = {
-            target, propName
-        }
-
-        super(DecoratorType.PROPERTY_DECORATOR, obj);
-    }
-
-    resolve() {
-
-        if (super.needContext && !super._context) throw new Error('PropertyDecorator error: property decorator need context to be resolved');
-
-        for (const meta of super._actionQueue) {
-
-            let {action, decoratorName} = meta;
-            
-            if (super.needContext) {
-
-                action = action.bind(super._context);
-            }
-
-            const {target, propName} = super._target;
- 
-            if (action instanceof PreInvokeFunction) {
-
-                action.passArgs(super._target, ...this.payload[decoratorName]).invoke();
-            }
-            else {
-
-                action(this._target, ...this.payload[decoratorName]);
-            }
-        }
-    }
-}
-
-class MethodDecorator extends DecoratorResult {
-
-    #hooks;
-
-    constructor(target, Prop) {
-
-        super(DecoratorType.PROPERTY_DECORATOR, Prop);
-
-        this.#hooks = [];
-        this.bind(target);
-    }
-
-    resolve() {
-
-        const resolved_value = super.resolve();
-
-        for (const hook of this.#hooks) {
-
-            const {callback, args} = hook;
-
-            callback(resolved_value, ...args);
-        }
-    }
-
-    whenFulfill(_callback,..._args) {
-
-        this.#hooks.push({
-            callback: _callback,
-            args: _args,
-        });
-    }
-}
-
-class ClassDecorator extends DecoratorResult {
-
-    constructor(targetCLass) {
-
-        super(DecoratorType.CLASS_DECORATOR, targetCLass);
-    }
-}
 class DecoratorResult {
     
     #type;
@@ -184,5 +105,87 @@ class DecoratorResult {
         // it's mean the target of the decoratorResult is an class property
     }
 }
+
+class PropertyDecorator extends DecoratorResult {
+
+
+    constructor(target, propName) {
+
+        const obj = {
+            target, propName
+        }
+
+        super(DecoratorType.PROPERTY_DECORATOR, obj);
+    }
+
+    resolve() {
+        //console.log('resolve property', '--------------------------------------')
+        //console.log(this._context)
+        if (this.needContext && !this._context) throw new Error('PropertyDecorator error: property decorator need context to be resolved');
+
+        for (const meta of this._actionQueue) {
+
+            let {action, decoratorName} = meta;
+            
+            if (this.needContext) {
+
+                action = action.bind(this._context);
+            }
+
+            //const {target, propName} = super._target;
+ 
+            if (action instanceof PreInvokeFunction) {
+
+                return action.passArgs(this._target, ...this.payload[decoratorName]).invoke();
+            }
+            else {
+
+                return action(this._target, ...this.payload[decoratorName]);
+            }
+        }
+    }
+}
+
+class MethodDecorator extends DecoratorResult {
+
+    #hooks;
+
+    constructor(target, Prop) {
+
+        super(DecoratorType.PROPERTY_DECORATOR, Prop);
+
+        this.#hooks = [];
+        this.bind(target);
+    }
+
+    resolve() {
+
+        const resolved_value = super.resolve();
+
+        for (const hook of this.#hooks) {
+
+            const {callback, args} = hook;
+
+            callback(resolved_value, ...args);
+        }
+    }
+
+    whenFulfill(_callback,..._args) {
+
+        this.#hooks.push({
+            callback: _callback,
+            args: _args,
+        });
+    }
+}
+
+class ClassDecorator extends DecoratorResult {
+
+    constructor(targetCLass) {
+
+        super(DecoratorType.CLASS_DECORATOR, targetCLass);
+    }
+}
+
 
 module.exports = {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, ClassDecorator};

@@ -1,6 +1,7 @@
 //const Controller = require('../controller/baseController.js').proxy;
 const PreInvokeFunction = require('./preInvokeFunction.js');
 const {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, ClassDecorator} = require('./decoratorResult.js');
+const BaseController = require('./baseController.js');
 
 
 const Decorator =  {
@@ -50,7 +51,7 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
                 
                 the_transformed_prop = the_target_prop;
 
-                return new PropertyDecorator(_targetObject, propName).bind(_targetObject);
+                return new PropertyDecorator(_targetObject, propName).bind(_targetObject);  
             }
             //decoratorResult = new DecoratorResult(DecoratorType.PROPERTY_DECORATOR, the_transformed_prop);
         }
@@ -61,12 +62,6 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
             return decoratorResult;
             //if (decoratorResult._target instanceof PreInvokeFunction) the_prop_is_function = true;
         }
-
-        // return {
-        //     decoratorResult: decoratorResult,
-        //     isFunction: the_prop_is_function,
-        //     target: the_transformed_prop
-        // }
     }
 }
 
@@ -92,15 +87,32 @@ function requestParam(...argsInfo) {
         _theMethod.passArgs(...args);
     };
 
-    const transformProperty = function(decoratorResultTarget, ...decoratedResultPayload) {
-
+    const transformProperty = function(decoratorResultTarget, ...decoratorResultPayload) {
+        //console.log('transform', decoratorResultTarget)
+        // this context of the function is the controller object
         const reqParams = this.httpContext.request.params || {};
 
         const {propName} = decoratorResultTarget;
         
         const new_value = {};
 
-        if (decoratedResultPayload.length())
+        const length = decoratorResultPayload.length;
+
+        if (length == 0) {
+
+            this[propName] = reqParams;
+
+            return;
+        }
+
+        if (length == 1) {
+
+            const param_name = decoratorResultPayload[0];
+
+            this[propName] = reqParams[param_name];
+
+            return;
+        }
 
         for (const param_name of decoratorResultPayload) {
 
@@ -111,7 +123,7 @@ function requestParam(...argsInfo) {
     };
 
     const resolveMethod = function(decoratorResult, _targetObject, propName, descriptor) {
-        console.log('resolve method');
+        //console.log('resolve method');
         // target instanceof PreInvokeFuncion
         //const target = decoratorResult._target;
         decoratorResult.payload['requestParam'] = argsInfo;
@@ -124,73 +136,15 @@ function requestParam(...argsInfo) {
     }
 
     const resolveProperty = function(decoratorResult, _targetObject, propName, descriptor) {
-        
+
         decoratorResult.payload['requestParam:prop'] = argsInfo;
         decoratorResult.transform(transformProperty, 'requestParam:prop');
         decoratorResult.bind(_targetObject);
-
+        //console.log(Object.getOwnPropertyNames(_targetObject))
         // _targetObject is instance of BaseController class
-        _targetObject.pushDecoratedProp(decoratorResult);
-
-        descriptor.value = decoratorResult;
-        //console.log(1);
-        //const reqParams = this.httpContext.request.params || {};
-        // console.log('resolve property', prop)
-        // if (!_targetObject.constructor.httpContext) {
-        //     return descriptor;
-        // }
-        // const reqParams = _targetObject.constructor.httpContext.request.params || {};
-
-        // const the_params_to_pass = argsInfo;
-
-        // if (!the_params_to_pass || the_params_to_pass.length == 0) {
-        //     descriptor.value = reqParams;
-
-        //     return descriptor;
-        // }
-
-        // const new_value = {};
-
-        // for (const name of _requestedParam) {
-
-        //     new_value[name] = reqParams[name];
-        // }
-
-        // descriptor.value = new_value;
-        // decoratorResult.transform(function(_theProperty, ..._requestedParam) {
-        //     console.log(2)
-        //     const reqParams = this.httpContext.request.params || {};
-
-        //     if (!_requestParam || _requestedParam.length == 0) {
-        //         descriptor.value = reqParams;
-
-        //         return;
-        //     }
-            
-        //     let new_value;
-
-        //     if (descriptor.enumerable) {
-        //         console.log(3)
-        //         new_value = _requestedParam.map((name) => {
-
-        //             return reqParams[name];
-        //         })
-        //     }
-        //     else {
-        //         console.log(4);
-        //         new_value = {};
-
-        //         for (const name of _requestedParam) {
-
-        //             new_value[name] = reqParams[name];
-        //         }
-        //     }
-
-        //     descriptor.value = new_value;
-        // }, 'requestParam:prop')
-
-        //decoratorResult.resolve();
-
+        //_targetObject.pushDecoratedProp(decoratorResult);
+        descriptor.initializer = () => decoratorResult;
+        
         return descriptor;
     }
 
@@ -201,42 +155,24 @@ function requestParam(...argsInfo) {
         
         //const {decoratorResult} = preprocessed_descriptor;
         // the param's context here the context when controller is seted-up http context
-
+    
         switch(decoratorResult.constructor.name) {
             
             case 'PropertyDecorator': 
-                return resolveProperty(decoratorResult, _targetObject, propName, descriptor);   
+                return resolveProperty(decoratorResult, _targetObject, propName, descriptor);
             case 'MethodDecorator': 
                 return resolveMethod(decoratorResult, _targetObject, propName, descriptor);
-            default: return;
+            default: 
+                return descriptor;
         }
-        // if (decoratorResult.constructor.name == 'PropertyDecorator') {
-
-        //     return resolveProperty(decoratorResult, _targetObject, propName, descriptor);
-        // }
-        // else {
-
-        //     return resolveMethod(decoratorResult, descriptor);
-        // }
-        
-        // const argPassed_method  = new PreInvokeFunction(the_function, ...argsInfo);
-
-        // const decoratorResult_action = new PreInvokeFunction(passRequestParam, argPassed_method);
-
-        // const decorator_result = new DecoratorResult(DecoratorType.PROPERTY_DECORATOR, argPassed_method, decoratorResult_action);
-
-        // descriptor.value = decorator_result;
-
-        // //descriptor.value = args().value;
-        // //console.log('end here');
-        // return descriptor;
     }
 }
 
-const HttpContextObject = {
+const HttpContextCatcher = {
     subcribers: [],
+    currentContext: {},
     newContext: function(_httpContext) {
-        httpContext.currentContext = _httpContext;
+        this.currentContext = _httpContext;
     
         for (const subcriber of this.subcribers) {
     
@@ -246,8 +182,8 @@ const HttpContextObject = {
 }
 
 function httpContext(_theConstructor) {
-    console.log('httpcontext decorator', _theConstructor)
-    HttpContextObject.subcribers.push(_theConstructor);
+    //console.log('httpcontext decorator', _theConstructor)
+    HttpContextCatcher.subcribers.push(_theConstructor);
 
     return _theConstructor;
 }
@@ -255,21 +191,12 @@ function httpContext(_theConstructor) {
 function initContext(arg) {
     //console.log(arg)
     return function (_theConstructor) {
-        console.log('initContext');
+        //console.log('initContext');
         return _theConstructor;
     }
 }
 
-// httpContext.subcribers = [];
-// httpContext.currentContext = undefined;
-// httpContext.newContext = function(_httpContext) {
-//     httpContext.currentContext = _httpContext;
 
-//     for (const subcriber of httpContext.subcribers) {
-
-//         subcriber.httpContext = _httpContext;
-//     }
-// }
 
 
 //function dispatchRequest(controllerObject, controllerAction, _controllerClass) {
@@ -286,12 +213,14 @@ function dispatchRequest(_controllerClass, _prop) {
             parentRoute: req.baseUrl,
             //routeContext: _router || undefined,
         }
-
-        HttpContextObject.newContext(context);
+        BaseController.httpContext = context;
+        HttpContextCatcher.newContext(context);
         //console.log(prop)
         controllerObject = new _controllerClass();
 
         controllerObject.setContext(context);
+        
+        controllerObject.resolveProperty();
 
         const controllerAction = controllerObject[_prop];
 
