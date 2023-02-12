@@ -4,8 +4,16 @@ const {DecoratorResult} = require('./decoratorResult.js');
 
 const decoratorContext = {}
 
+
 function annotation(_theConstructor) {
-    console.log('annotation', _theConstructor)
+
+    const reg_detemine_classname = /function\s\w+/;
+    
+    const className = _theConstructor.toString()
+                        .match(/function\s\w+/)[0]
+                        .replace('function ', '');
+
+    console.log('annotation', className)
     decoratorContext.currentClass = _theConstructor;
 
     return _theConstructor;

@@ -1,5 +1,5 @@
 const {BaseController, annotation, decoratorContext} = require('./baseController.js');
-const { Route, Router } = require('./http/httpRouting.js');
+const { Route, Endpoint, routingContext } = require('./http/httpRouting.js');
 const {dispatchRequest, requestParam , httpContext, initContext} = require('./requestDispatcher.js');
 //const {Router} = require('./http/httpRouting.js');
 
@@ -15,11 +15,8 @@ function foo(arg) {
     }
 }
 
-function bar(_class, context) {
-    console.log(context)
-    console.log('foo handle')
-    //descriptor.value = () => {}
-    //console.log(descriptor)
+function bar(_class, prop, descriptor) {
+    console.log('bar', _class, prop, descriptor); 
     return descriptor;
 }
 
@@ -58,7 +55,7 @@ const express = {
     }
 }
 
-@annotation
+@routingContext()
 class Controller extends BaseController {
 
     // we must type this line to made the derived class works properly
@@ -90,9 +87,11 @@ class Controller extends BaseController {
         console.log(req_body, this.userId);
     }
 
-    @Router.get('/path')
-    func() {
+    @requestParam('name')
+    @Endpoint.get('/path')
+    func(param) {
         console.log('entering "/path" route');
+        console.log('the value of request param "name" is:', param);
     }
 }
 
@@ -119,8 +118,8 @@ Route.init(express);
 
 const router = Route.resolve();
 
-console.log(router)
-//router.newRequest(req, res);
+//console.log(router)
+router.newRequest(req, res);
 
 //const args = [req, res, next]
 
