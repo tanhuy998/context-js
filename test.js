@@ -1,4 +1,4 @@
-const {BaseController, annotation, decoratorContext} = require('./baseController.js');
+const {BaseController, annotation, dispatchable} = require('./baseController.js');
 const { Route, Endpoint, routingContext } = require('./http/httpRouting.js');
 const {dispatchRequest, requestParam , httpContext, initContext} = require('./requestDispatcher.js');
 //const {Router} = require('./http/httpRouting.js');
@@ -27,20 +27,38 @@ const express = {
             routeList: {},
             newRequest: function(req, res) {
 
+                const method = req.method;
                 const path = req.path ? req.path : '/';
 
-                const actionList = this.routeList[path];
+                try {
 
-                for (const callback of actionList) {
+                    const actionList = this.routeList[method][path];
 
-                    callback(req, res, () => {});
+                    for (const callback of actionList) {
+
+                        callback(req, res, () => {});
+                    }
+                }
+                catch(e) {
+
+                    return;
                 }
             },
             get: function(path, _callback) {
 
-                if (!this.routeList[path]) this.routeList[path] = [];
+                if (!this.routeList['get']) this.routeList['get'] = {};
 
-                this.routeList[path].push( _callback);
+                if (!this.routeList['get'][path]) this.routeList['get'][path] = [];
+
+                this.routeList['get'][path].push( _callback);
+            },
+            post: function(path, _callback) {
+
+                if (!this.routeList['post']) this.routeList['post'] = {};
+
+                if (!this.routeList['post'][path]) this.routeList['post'][path] = [];
+
+                this.routeList['post'][path].push( _callback);
             }
         }
     },
@@ -56,10 +74,12 @@ const express = {
 }
 
 @routingContext()
+@dispatchable
 class Controller extends BaseController {
 
     // we must type this line to made the derived class works properly
-    static proxy = new Proxy(Controller, BaseController.proxyHandler);
+    // use @dispatchable instead
+    // static proxy = new Proxy(Controller, BaseController.proxyHandler);
 
     @requestParam('userId')
     //@bar
@@ -88,6 +108,7 @@ class Controller extends BaseController {
     }
 
     @requestParam('name')
+    @Endpoint.post('/user')
     @Endpoint.get('/path')
     func(param) {
         console.log('entering "/path" route');
@@ -98,7 +119,7 @@ class Controller extends BaseController {
 
 const req = {
     method: 'post',
-    path: '/path',
+    path: '/user',
     params: {
         userId: 2,
         name: 'foo'

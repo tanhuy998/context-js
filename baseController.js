@@ -19,6 +19,13 @@ function annotation(_theConstructor) {
     return _theConstructor;
 }
 
+function dispatchable(_class) {
+
+    _class.proxy = new Proxy(_class, BaseController.proxyHandler);
+
+    return _class;
+}
+
 class BaseController  {
 
     static httpContext;
@@ -115,4 +122,4 @@ class BaseController  {
     }
 };
 
-module.exports = {BaseController, annotation, decoratorContext};
+module.exports = {BaseController, annotation, dispatchable};

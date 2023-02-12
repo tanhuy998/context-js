@@ -33,7 +33,7 @@ class Route {
     }
 
     static dequeue() {
-        
+
         const callbackQueue = Route.#callbackQueue;
 
         const the_router = Route.router;
@@ -60,13 +60,13 @@ class Route {
 
             const controllerClass = Route.getControllerClassByRoutingContext(currentRoutingContext);
 
-            console.log(controllerClass)
+            //console.log(controllerClass, 1)
             Route.router[method](path, dispatchRequest(controllerClass, action));
         }
     }
 
-    static define(httpMethod, _path, _routingContext, _action) {
-        console.log('define route', httpMethod, _path, _routingContext, _action)
+    static define(method, _path, _routingContext, _action) {
+        console.log('define route', `[${method} ${_path}] in context`, [_routingContext.description], _action)
         //console.log(decoratorContext.currentContext);
         //if (!Route.router) throw new Error('Controller route decorator: router is not set, we must init the "Express" instance to the Route class');
         //const controllerClass = Route.#controllers[_routingContext];
@@ -75,7 +75,7 @@ class Route {
             
             const callback = new PreInvokeFuncion(Route.#dispatchRouter())
 
-            callback.passArgs(httpMethod, _path, _action);
+            callback.passArgs(method, _path, _action);
             
             Route.#queue(callback);
             
@@ -83,7 +83,7 @@ class Route {
         }
 
         
-        Route.router[httpMethod](_path, dispatchRequest(...controllerClass.proxy[_action]));
+        Route.router[method](_path, dispatchRequest(...controllerClass.proxy[_action]));
     }
 
     
@@ -109,11 +109,10 @@ class Route {
         return Route.router;
     }
 
-    static asignContext(symbol, _constructor) {
+    static assignContext(symbol, _constructor) {
 
         Route.#controllers[symbol] = _constructor;
 
-        console.log(Route.#controllers);
     }
 
     static defineContext(symbol) {
@@ -128,9 +127,9 @@ class Route {
     }
 }
 
-const Endpoint = new Proxy(Route, {
+const Router = new Proxy(Route, {
 
-    get: (RouteClass, httpMethod) => {
+    get: (RouteClass, _method) => {
 
         return function(path) {
 
@@ -143,7 +142,7 @@ const Endpoint = new Proxy(Route, {
 
                 if (decoratedResult.constructor.name == 'MethodDecorator') {
 
-                    RouteClass.define(httpMethod, path, routingContext, _actionName);
+                    RouteClass.define(_method, path, routingContext, _actionName);
 
                     return descriptor;
                 }
@@ -158,6 +157,48 @@ const Endpoint = new Proxy(Route, {
     }
 })
 
+const Endpoint = new Proxy(Route, {
+    httpMethods: {
+        get: 0,
+        head: 1,
+        post: 2,
+        put: 3,
+        'delete': 4,
+        connect: 5,
+        options: 6,
+        trace: 7,
+        patch: 8,
+    },
+    get: function(RouteClass, _method) {
+        
+        if (!this.httpMethods.hasOwnProperty(_method)) throw new Error(`Endpoint decorator error: using invalid http method "${_method}"`);
+
+        return function(path) {
+
+            const routingContext = Route.currentContext;
+            //console.log(routingContext);
+
+            return function(_controllerClass, _actionName, descriptor) {
+
+                const decoratedResult = preprocessDescriptor(_controllerClass, _actionName, descriptor);
+
+                if (decoratedResult.constructor.name == 'MethodDecorator') {
+
+                    RouteClass.define(_method, path, routingContext, _actionName);
+
+                    return descriptor;
+                }
+
+                return descriptor;
+            }
+        }
+    },
+    set: () => {
+
+        return false;
+    }
+});
+
 // routingContext annotates the specified controller class is defining route
 // if a controller class is not annotated with this annotation
 // router will not map the route properly and will throw controller mapping error 
@@ -166,7 +207,7 @@ function routingContext() {
     const contextKey = Date.now();
     const symbol = Symbol(contextKey);
 
-    console.log('define context', contextKey)
+    console.log([contextKey], 'context is defined')
 
     Route.defineContext(symbol);
 
@@ -177,8 +218,8 @@ function routingContext() {
         //                     .replace('function ', '');
         
 
-        Route.asignContext(symbol, _theConstructor);
-        console.log('asign', contextKey, 'to', _theConstructor);
+        Route.assignContext(symbol, _theConstructor);
+        console.log([contextKey], 'was assigned with', _theConstructor);
     
         //decoratorContext.currentClass = _theConstructor;
     
@@ -186,4 +227,4 @@ function routingContext() {
     }
 }
 
-module.exports = {Route, Endpoint, routingContext}
+module.exports = {Route, Endpoint, routingContext, Router};
