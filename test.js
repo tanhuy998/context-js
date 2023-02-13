@@ -1,6 +1,8 @@
+//require('@babel/register')({ignore: []});
 const {BaseController, annotation, dispatchable} = require('./baseController.js');
 const { Route, Endpoint, routingContext } = require('./http/httpRouting.js');
 const {dispatchRequest, requestParam , httpContext, initContext} = require('./requestDispatcher.js');
+const { responseBody } = require('./response/responseResult.js');
 //const {Router} = require('./http/httpRouting.js');
 
 function foo(arg) {
@@ -99,17 +101,20 @@ class Controller extends BaseController {
         console.log(this.userId);
     }
 
+    @Endpoint.get('/value')
     @requestParam('name')
+    @responseBody
     printBody(name) {
 
         const req_body = this.httpContext.request.body;
 
         console.log(req_body, this.userId);
+
+        return name;
     }
 
     @requestParam('name')
     @Endpoint.post('/user')
-    @Endpoint.get('/path')
     func(param) {
         console.log('entering "/path" route');
         console.log('the value of request param "name" is:', param);
@@ -118,8 +123,8 @@ class Controller extends BaseController {
 
 
 const req = {
-    method: 'post',
-    path: '/user',
+    method: 'get',
+    path: '/value',
     params: {
         userId: 2,
         name: 'foo'
@@ -132,7 +137,16 @@ const req = {
     }
 }
 
-const res = {};
+const res = {
+    content: '',
+    writeHead: function(_header) {
+        console.log('write header:', _header)
+    },
+    write: function(_context) {
+
+        this.content = _content;
+    }
+};
 const next = () => {};
 
 Route.init(express);
@@ -141,6 +155,8 @@ const router = Route.resolve();
 
 //console.log(router)
 router.newRequest(req, res);
+
+console.log('res content', res.content);
 
 //const args = [req, res, next]
 

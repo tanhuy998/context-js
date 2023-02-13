@@ -1,4 +1,4 @@
-const PreInvokeFunction = require('./preInvokeFunction.js')
+const PreInvokeFunction = require('../callback/preInvokeFunction.js')
 
 const DecoratorType =  {
     CLASS_DECORATOR: 0x1,
@@ -64,6 +64,8 @@ class DecoratorResult {
             action: _action,
             decoratorName: decoratorName
         });
+
+        //console.log(this._actionQueue);
     }
 
     resolve() {
@@ -79,7 +81,11 @@ class DecoratorResult {
         for (const meta of this._actionQueue) {
 
             let {action, decoratorName} = meta;
-            
+
+            const payload = this.payload[decoratorName];
+
+            const args = (typeof payload == 'array') ? payload : [payload];
+
             if (this.needContext) {
 
                 action = action.bind(this._context);
@@ -87,11 +93,13 @@ class DecoratorResult {
 
             if (action instanceof PreInvokeFunction) {
 
-                action.passArgs(this._target, ...this.payload[decoratorName]).invoke();
+                //action.passArgs(this._target, ...this.payload[decoratorName]).invoke();
+                action.passArgs(this._target, ...args).invoke();
             }
             else {
 
-                action(this._target, ...this.payload[decoratorName]);
+                //action(this._target, ...this.payload[decoratorName]);
+                action(this._target, ...args);
             }
         }
 
@@ -122,7 +130,7 @@ class PropertyDecorator extends DecoratorResult {
         //console.log('resolve property', '--------------------------------------')
         //console.log(this._context)
         if (this.needContext && !this._context) throw new Error('PropertyDecorator error: property decorator need context to be resolved');
-
+        
         for (const meta of this._actionQueue) {
 
             let {action, decoratorName} = meta;
@@ -135,11 +143,11 @@ class PropertyDecorator extends DecoratorResult {
             //const {target, propName} = super._target;
  
             if (action instanceof PreInvokeFunction) {
-
+                console.log(1)
                 return action.passArgs(this._target, ...this.payload[decoratorName]).invoke();
             }
             else {
-
+                console.log(2, action)
                 return action(this._target, ...this.payload[decoratorName]);
             }
         }

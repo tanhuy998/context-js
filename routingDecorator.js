@@ -1,4 +1,4 @@
-const {preprocessDescriptor} = require('./utils.js')
+const {preprocessDescriptor} = require('./decorator/utils.js')
 
 function endpoint(_method, _path) {
 

@@ -1,8 +1,8 @@
 //const Controller = require('../controller/baseController.js').proxy;
-const PreInvokeFunction = require('./preInvokeFunction.js');
-const {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, ClassDecorator} = require('./decoratorResult.js');
+const PreInvokeFunction = require('./callback/preInvokeFunction.js');
+const {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, ClassDecorator} = require('./decorator/decoratorResult.js');
 const BaseController = require('./baseController.js');
-const {preprocessDescriptor} = require('./utils.js');
+const {preprocessDescriptor} = require('./decorator/utils.js');
 
 const Decorator =  {
     dispatchRequest,
@@ -11,7 +11,7 @@ const Decorator =  {
 }
 
 const ControllerContextFunctions = {
-    transformProperty
+    //transformProperty
 }
 
 function args(..._args) {
@@ -69,40 +69,7 @@ function args(..._args) {
 //     }
 // }
 
-function transformProperty(decoratorResultTarget, ...decoratorResultPayload) {
-    //console.log('transform', decoratorResultTarget)
-    // this context of the function is the controller object
-    const reqParams = this.httpContext.request.params || {};
 
-    const {propName} = decoratorResultTarget;
-    
-    const new_value = {};
-
-    const length = decoratorResultPayload.length;
-
-    if (length == 0) {
-
-        this[propName] = reqParams;
-
-        return;
-    }
-
-    if (length == 1) {
-
-        const param_name = decoratorResultPayload[0];
-
-        this[propName] = reqParams[param_name];
-
-        return;
-    }
-
-    for (const param_name of decoratorResultPayload) {
-
-        new_value[param_name] = reqParams[param_name]
-    }
-
-    this[propName] = new_value;
-};
 
 
 function requestParam(...argsInfo) {
@@ -125,6 +92,41 @@ function requestParam(...argsInfo) {
         })
 
         _theMethod.passArgs(...args);
+    };
+
+    const transformProperty = function(decoratorResultTarget, ...decoratorResultPayload) {
+        //console.log('transform', decoratorResultTarget)
+        // this context of the function is the controller object
+        const reqParams = this.httpContext.request.params || {};
+    
+        const {propName} = decoratorResultTarget;
+        
+        const new_value = {};
+    
+        const length = decoratorResultPayload.length;
+    
+        if (length == 0) {
+    
+            this[propName] = reqParams;
+    
+            return;
+        }
+    
+        if (length == 1) {
+    
+            const param_name = decoratorResultPayload[0];
+    
+            this[propName] = reqParams[param_name];
+    
+            return;
+        }
+    
+        for (const param_name of decoratorResultPayload) {
+    
+            new_value[param_name] = reqParams[param_name]
+        }
+    
+        this[propName] = new_value;
     };
 
     const resolveMethod = function(decoratorResult, _class, propName, descriptor) {

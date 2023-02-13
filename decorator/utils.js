@@ -1,5 +1,5 @@
 const {DecoratorType, DecoratorResult, MethodDecorator, PropertyDecorator, ClassDecorator} = require('./decoratorResult.js');
-const PreInvokeFunction = require('./preInvokeFunction.js')
+const PreInvokeFunction = require('../callback/preInvokeFunction.js')
       
 
 const ControllerContextFunctions = {

@@ -1,25 +1,38 @@
 const {dispatchRequest} = require('../requestDispatcher');
-const {preprocessDescriptor} = require('../utils.js');
+const {preprocessDescriptor} = require('../decorator/utils.js');
 //const {decoratorContext} = require('../baseController.js');
-const PreInvokeFuncion = require('../preInvokeFunction.js');
+const PreInvokeFuncion = require('../callback/preInvokeFunction.js');
+const extendsDecoratorContext = require('../decoratorContext.js');
 
+//@inheritDecoratorContextClass
 class Route {
 
     static #routerObject;
-    static #controllers = {};
+   
     static #callbackQueue = [];
 
-    static #currentRoutingContext;
+    static #context = {};///////////////////
+    static #currentRoutingContext;//////////////////
     
     static get router() {
 
         return Route.#routerObject;
     }
 
+    static get context() {
+
+        return this.#context;
+    }
+
+    constructor() {
+
+
+    }
+
     static get currentContext() {
 
         return Route.#currentRoutingContext;
-    }
+    } ///////////////
 
     static init(_express) {
 
@@ -48,7 +61,7 @@ class Route {
 
     static getControllerClassByRoutingContext(symbol) {
 
-        return Route.#controllers[symbol];
+        return Route.context[symbol];
     }
 
     // this method will be called when there is no express's router object is initialized
@@ -111,9 +124,9 @@ class Route {
 
     static assignContext(symbol, _constructor) {
 
-        Route.#controllers[symbol] = _constructor;
+        Route.#context[symbol] = _constructor;
 
-    }
+    }/////////////////////////
 
     static defineContext(symbol) {
 
@@ -121,10 +134,10 @@ class Route {
 
         Route.#currentRoutingContext = symbol;
 
-        Route.#controllers[symbol] = 1;
+        Route.context[symbol] = 1;
 
         //Route.currentContext
-    }
+    }////////////////////////
 }
 
 const Router = new Proxy(Route, {

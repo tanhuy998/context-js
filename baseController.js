@@ -1,5 +1,5 @@
 //const { obj } = require("../model/chatroom/chatRoom.schema");
-const {DecoratorResult} = require('./decoratorResult.js');
+const {DecoratorResult} = require('./decorator/decoratorResult.js');
 //const {httpContext} = require('./requestDispatcher.js');
 
 const decoratorContext = {}
