@@ -84,7 +84,7 @@ class DecoratorResult {
 
             const payload = this.payload[decoratorName];
 
-            const args = (typeof payload == 'array') ? payload : [payload];
+            const args = (payload.constructor.name == 'Array') ? payload : [payload];
 
             if (this.needContext) {
 

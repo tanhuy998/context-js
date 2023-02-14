@@ -4,14 +4,21 @@ const PreInvokeFuncion = require('../callback/preInvokeFunction.js');
 function catchControllerActionReturnValue(_controllerAction, ...payload) {
 
     const res = this.httpContext.response;
-    console.log('resolve response body', _controllerAction);
+    //console.log('resolve response body', _controllerAction);
 
-    _controllerAction.whenFulfill((_returnValue) => {
-        console.log('return value:', _returnValue)
+    // _controllerAction.whenFulfill((_returnValue) => {
+    //     console.log('return value:', _returnValue)
+    //     res.write(_returnValue);
+    // });
+
+    _controllerAction.on('fulfill', (_returnValue) => {
+        //console.log('return value:', _returnValue)
+        
         res.write(_returnValue);
-    });
+        //console.log(res.write);
+    })
 
-    console.log('resolve', _controllerAction);
+    //console.log('resolve', _controllerAction);
 }
 
 function responseBody(_controllerClass, _action, descriptor) {
@@ -24,19 +31,21 @@ function responseBody(_controllerClass, _action, descriptor) {
     decoratedResult.transform(catchControllerActionReturnValue, 'responseBody');
 
     descriptor.value = decoratedResult;
-    console.log('response body');
+    //console.log('response body');
     return descriptor;
 }
 
 
 const obj = {};
 
-function invokeResponse(_method, ...args) {
+function invokeResponse(_method, ...payload) {
 
     // context of this here is Controller object
-    const res = this.httpContext.response;
+    const [resAction, args] = payload;
 
-    res[_method](...args);
+    const res = this.httpContext.response;
+    //console.log('invoke response', payload) 
+    res[resAction](...args);
 }
 
 const Response = new Proxy(obj, {
@@ -45,10 +54,11 @@ const Response = new Proxy(obj, {
         return function(...args) {
 
             return function (_controllerClass, _action, descriptor) {
-
+                
                 const decoratedResult = preprocessDescriptor(_controllerClass, _action, descriptor);
 
                 //const callback = new PreInvokeFuncion(invokeResponse, ...args);
+                decoratedResult.payload['invokeResponse'] = [_methodName, args];
 
                 decoratedResult.transform(invokeResponse, 'invokeResponse');
 

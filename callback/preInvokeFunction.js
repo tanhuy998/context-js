@@ -60,7 +60,7 @@ class PreInvokeFunction extends EventEmitter{
         return result;
     }
 
-    whenfulfill(_callback) {
+    whenFulfill(_callback) {
 
         this.on('fulfill', _callback);
     }
