@@ -1,0 +1,21 @@
+{
+  "name": "express-controller",
+  "version": "1.0.0",
+  "description": "Controller class for Express.js and http module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "tanhuy998",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/cli": "^7.20.7",
+    "@babel/node": "^7.20.7",
+    "@babel/plugin-proposal-decorators": "^7.20.13",
+    "@babel/preset-env": "^7.20.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.12",
+    "@babel/register": "^7.18.9"
+  }
+}
