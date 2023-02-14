@@ -2,7 +2,7 @@
 const {BaseController, annotation, dispatchable} = require('./baseController.js');
 const { Route, Endpoint, routingContext } = require('./http/httpRouting.js');
 const {dispatchRequest, requestParam , httpContext, initContext} = require('./requestDispatcher.js');
-const { responseBody, Response } = require('./response/responseResult.js');
+const { responseBody, Response, contentType } = require('./response/responseResult.js');
 //const {Router} = require('./http/httpRouting.js');
 
 function foo(arg) {
@@ -104,6 +104,7 @@ class Controller extends BaseController {
 
     @Endpoint.get('/value')
     @requestParam('name')
+    @contentType('json')
     @responseBody
     printBody(name) {
 
@@ -125,8 +126,8 @@ class Controller extends BaseController {
 
 
 const req = {
-    method: 'post',
-    path: '/user',
+    method: 'get',
+    path: '/value',
     params: {
         userId: 2,
         name: 'foo'
@@ -148,6 +149,10 @@ const res = {
     write: function(_content) {
 
         this.content = _content;
+    },
+    setHeader: function(_name, value) {
+
+        console.log('setHeader', _name, value);
     }
 };
 const next = () => {};

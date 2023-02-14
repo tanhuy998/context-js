@@ -73,11 +73,8 @@ const Response = new Proxy(obj, {
 
 function contentType(_value) {
 
-    return function () {
-
-
-    }
+    return Response.setHeader('Content-Type', _value);
 }
 
 
-module.exports = {responseBody, Response}
+module.exports = {responseBody, Response, contentType}
