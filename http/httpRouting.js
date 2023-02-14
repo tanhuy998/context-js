@@ -3,9 +3,10 @@ const {preprocessDescriptor} = require('../decorator/utils.js');
 //const {decoratorContext} = require('../baseController.js');
 const PreInvokeFuncion = require('../callback/preInvokeFunction.js');
 const extendsDecoratorContext = require('../decoratorContext.js');
+const path = require('path');
 
 //@inheritDecoratorContextClass
-class Route {
+class RouteContext {
 
     static #routerObject;
    
@@ -14,9 +15,11 @@ class Route {
     static #context = {};///////////////////
     static #currentRoutingContext;//////////////////
     
+    static currentPrefix = '';
+
     static get router() {
 
-        return Route.#routerObject;
+        return RouteContext.#routerObject;
     }
 
     static get context() {
@@ -31,14 +34,14 @@ class Route {
 
     static get currentContext() {
 
-        return Route.#currentRoutingContext;
+        return RouteContext.#currentRoutingContext;
     } ///////////////
 
     static init(_express) {
 
-        if (!Route.router) {
+        if (!RouteContext.router) {
 
-            Route.#routerObject = _express.Router();
+            RouteContext.#routerObject = _express.Router();
 
             //Route.dequeue();
             return;
@@ -47,34 +50,34 @@ class Route {
 
     static dequeue() {
 
-        const callbackQueue = Route.#callbackQueue;
+        const callbackQueue = RouteContext.#callbackQueue;
 
-        const the_router = Route.router;
+        const the_router = RouteContext.router;
 
         for (const callback of callbackQueue) {
             console.log('dequeue');
             callback.bind(the_router).invoke();
         }
 
-        Route.#callbackQueue = [];
+        RouteContext.#callbackQueue = [];
     }
 
     static getControllerClassByRoutingContext(symbol) {
 
-        return Route.context[symbol];
+        return RouteContext.context[symbol];
     }
 
     // this method will be called when there is no express's router object is initialized
     static #dispatchRouter() {
 
-        const currentRoutingContext = Route.currentContext;
+        const currentRoutingContext = RouteContext.currentContext;
 
         return function(method, path, action) {
 
-            const controllerClass = Route.getControllerClassByRoutingContext(currentRoutingContext);
+            const controllerClass = RouteContext.getControllerClassByRoutingContext(currentRoutingContext);
 
             //console.log(controllerClass, 1)
-            Route.router[method](path, dispatchRequest(controllerClass, action));
+            RouteContext.router[method](path, dispatchRequest(controllerClass, action));
         }
     }
 
@@ -84,47 +87,47 @@ class Route {
         //if (!Route.router) throw new Error('Controller route decorator: router is not set, we must init the "Express" instance to the Route class');
         //const controllerClass = Route.#controllers[_routingContext];
 
-        if (!Route.router) {
+        if (!RouteContext.router) {
             
-            const callback = new PreInvokeFuncion(Route.#dispatchRouter())
+            const callback = new PreInvokeFuncion(RouteContext.#dispatchRouter())
 
             callback.passArgs(method, _path, _action);
             
-            Route.#queue(callback);
+            RouteContext.#queue(callback);
             
             return;
         }
 
         
-        Route.router[method](_path, dispatchRequest(...controllerClass.proxy[_action]));
+        RouteContext.router[method](_path, dispatchRequest(...controllerClass.proxy[_action]));
     }
 
     
     /**
      * Queue an action for future invocation 
-     * To invoke the actions, call Route.dequeue() method
+     * To invoke the actions, call RouteContext.dequeue() method
      * common use case:
      *      this method is used when there is no express object configured by init() method
-     *      because sometime some specific controller classes is imported before calling Route.init(express) 
+     *      because sometime some specific controller classes is imported before calling RouteContext.init(express) 
      *      so the routing operation will not function properly and throw 'calling property of undefined' Error
      * 
      * @param {*} callback 
      */
     static #queue(callback) {
 
-        Route.#callbackQueue.push(callback);
+        RouteContext.#callbackQueue.push(callback);
     }
 
     static resolve() {
         
-        Route.dequeue();
+        RouteContext.dequeue();
 
-        return Route.router;
+        return RouteContext.router;
     }
 
     static assignContext(symbol, _constructor) {
 
-        Route.#context[symbol] = _constructor;
+        RouteContext.#context[symbol] = _constructor;
 
     }/////////////////////////
 
@@ -132,30 +135,57 @@ class Route {
 
         //const symbol = Symbol(key);
 
-        Route.#currentRoutingContext = symbol;
+        RouteContext.#currentRoutingContext = symbol;
 
-        Route.context[symbol] = 1;
+        RouteContext.context[symbol] = 1;
 
         //Route.currentContext
     }////////////////////////
 }
 
-const Router = new Proxy(Route, {
+const Route = new Proxy(RouteContext, {
+    additionMethod: {
+        prop: {
+            currentRoutePrefix: '',
+        },
+        prefix: function(_path) {
+            //this.additionMethod.prop.currentRoutePrefix = _path;
+            RouteContext.currentPrefix = _path;
+            //const currentRoutingContext = RouteContext.currentContext;
+            //console.log('set prefix')
+            //RouteContext.assignContext(currentRoutingContext, );
+            //console.log('call prefix', this)
+            return (function(_targetContructor) {
+                //this.additionMethod.prop.currentRoutePrefix = '';
+                RouteContext.currentPrefix = '';
+                return _targetContructor;
+            });
+        }
+    },
+    get: function (routeContext, _method) {
 
-    get: (RouteClass, _method) => {
+        if (this.additionMethod[_method]) {
+            
+            return this.additionMethod[_method].bind(this);
+        }
 
         return function(path) {
+            
+            const routingContext = RouteContext.currentContext;
 
-            const routingContext = Route.currentContext;
+            const pathPrefix = RouteContext.currentPrefix;
             //console.log(routingContext);
-
+            path = pathPrefix + path;
+            
             return function(_controllerClass, _actionName, descriptor) {
 
                 const decoratedResult = preprocessDescriptor(_controllerClass, _actionName, descriptor);
 
+                descriptor.value = decoratedResult;
+
                 if (decoratedResult.constructor.name == 'MethodDecorator') {
 
-                    RouteClass.define(_method, path, routingContext, _actionName);
+                    routeContext.define(_method, path, routingContext, _actionName);
 
                     return descriptor;
                 }
@@ -170,7 +200,7 @@ const Router = new Proxy(Route, {
     }
 })
 
-const Endpoint = new Proxy(Route, {
+const Endpoint = new Proxy(RouteContext, {
     httpMethods: {
         get: 0,
         head: 1,
@@ -188,12 +218,18 @@ const Endpoint = new Proxy(Route, {
 
         return function(path) {
 
-            const routingContext = Route.currentContext;
+            const routingContext = RouteContext.currentContext;
             //console.log(routingContext);
+
+            const pathPrefix = RouteContext.currentPrefix;
+            //console.log(routingContext);
+            path = pathPrefix + path;
 
             return function(_controllerClass, _actionName, descriptor) {
 
                 const decoratedResult = preprocessDescriptor(_controllerClass, _actionName, descriptor);
+
+                descriptor.value = decoratedResult;
 
                 if (decoratedResult.constructor.name == 'MethodDecorator') {
 
@@ -222,7 +258,7 @@ function routingContext() {
 
     console.log([contextKey], 'context is defined')
 
-    Route.defineContext(symbol);
+    RouteContext.defineContext(symbol);
 
     return function(_theConstructor) {
     
@@ -231,7 +267,7 @@ function routingContext() {
         //                     .replace('function ', '');
         
 
-        Route.assignContext(symbol, _theConstructor);
+        RouteContext.assignContext(symbol, _theConstructor);
         console.log([contextKey], 'was assigned with', _theConstructor);
     
         //decoratorContext.currentClass = _theConstructor;
@@ -240,4 +276,4 @@ function routingContext() {
     }
 }
 
-module.exports = {Route, Endpoint, routingContext, Router};
+module.exports = {RouteContext, Endpoint, routingContext, Route};

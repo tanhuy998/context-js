@@ -1,6 +1,6 @@
 //require('@babel/register')({ignore: []});
 const {BaseController, annotation, dispatchable} = require('./baseController.js');
-const { Route, Endpoint, routingContext } = require('./http/httpRouting.js');
+const { RouteContext, Endpoint, routingContext, Route} = require('./http/httpRouting.js');
 const {dispatchRequest, requestParam , httpContext, initContext} = require('./requestDispatcher.js');
 const { responseBody, Response, contentType } = require('./response/responseResult.js');
 //const {Router} = require('./http/httpRouting.js');
@@ -43,6 +43,7 @@ const express = {
                 }
                 catch(e) {
 
+                    console.log(e)
                     return;
                 }
             },
@@ -75,7 +76,7 @@ const express = {
     }
 }
 
-//@Route.prefix('/admin')
+@Route.prefix('/admin')
 @routingContext()
 @dispatchable
 class Controller extends BaseController {
@@ -123,14 +124,35 @@ class Controller extends BaseController {
         console.log('the value of request param "name" is:', param);
     }
 }
+@Route.prefix('/user')
+@routingContext()
+@dispatchable
+class Another extends BaseController {
 
+    constructor() {
+
+        super();
+    }
+
+    @requestParam('qty')
+    @Endpoint.get('/value')
+    @contentType('josn')
+    @responseBody
+    print(qty) {
+
+        console.log('Another Controller class', qty)
+
+        return qty;
+    }
+}
 
 const req = {
     method: 'get',
-    path: '/value',
+    path: '/user/value',
     params: {
         userId: 2,
-        name: 'foo'
+        name: 'foo',
+        qty: 100
     },
     query: {
 
@@ -157,11 +179,11 @@ const res = {
 };
 const next = () => {};
 
-Route.init(express);
+RouteContext.init(express);
 
-const router = Route.resolve();
+const router = RouteContext.resolve();
 
-//console.log(router)
+console.log(router)
 router.newRequest(req, res);
 
 console.log('res content', res.content);
