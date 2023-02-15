@@ -5,16 +5,27 @@ const {Middleware} = require('./middleware.js');
 class Authentication {
 
     static #handler;
+    static #authorize;
 
     static setHandler(_func) {
 
         this.#handler = _func;
     }
 
+    static setAuthorize(_func) {
+
+        this.#authorize = _func;
+    }
+
     static get handler() {
 
         return this.#handler;
     } 
+
+    static get authoreizeFunction() {
+
+        return this.#authorize;
+    }
 }
 
 function authOnClass(_class) {
@@ -24,11 +35,11 @@ function authOnClass(_class) {
     return _class;
 }
 
-function authOnMethod(_class, _method, descriptor) {
+function initialize(_class, _method, descriptor) {
 
-    const decoratedResult = preprocessDescriptor(_class, _method, descriptor);
+    //const decoratedResult = preprocessDescriptor(_class, _method, descriptor);
 
-    const authenticateFunction =Authentication.handler;
+    const authenticateFunction = Authentication.handler;
 
     if (!authenticateFunction) throw new Error('Athenticate error: there\'s no handler function setted to "Authentication"');
 
@@ -37,19 +48,29 @@ function authOnMethod(_class, _method, descriptor) {
 
 function authenticate(...args) {
 
+    const authenticateFunction = Authentication.handler;
+
+    if (!authenticateFunction) throw new Error('Athenticate error: there\'s no handler function setted to "Authentication"');
+
+    const callback = Middleware.before(authenticateFunction);
 
     if (args.length == 0) {
 
+        const sessionSymbol = RouteContext.startSession();
 
-        return function() {
 
+        return function(_class) {
+
+            
+
+            return _class;
         }
     }
     else if (args.length == 3) {
 
         const [_class, _method, descriptor] = args;
 
-        return authOnMethod(_class, _method, descriptor);
+        return callback(_class, _method, descriptor);
     }
 }
 
