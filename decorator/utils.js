@@ -59,20 +59,27 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
             if (typeof the_target_prop == 'function') {
 
                 the_transformed_prop = new PreInvokeFunction(the_target_prop);
+                
+                const decorator = new MethodDecorator(_targetObject, the_transformed_prop).bind(_targetObject);
+                decorator._targetDescriptor = descriptor;
                 //the_prop_is_function = true;
-                return new MethodDecorator(_targetObject, the_transformed_prop).bind(_targetObject);
+                return decorator;
             }
             else {
                 
                 the_transformed_prop = the_target_prop;
 
-                return new PropertyDecorator(_targetObject, propName).bind(_targetObject);  
+                const decorator = new PropertyDecorator(_targetObject, propName).bind(_targetObject);
+                decorator._targetDescriptor = descriptor;  
+
+                return decorator;
             }
             //decoratorResult = new DecoratorResult(DecoratorType.PROPERTY_DECORATOR, the_transformed_prop);
         }
         else {
 
             decoratorResult = the_target_prop.bind(_targetObject);
+            decoratorResult._targetDescriptor = descriptor;
 
             return decoratorResult;
             //if (decoratorResult._target instanceof PreInvokeFunction) the_prop_is_function = true;

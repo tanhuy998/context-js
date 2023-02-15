@@ -3,6 +3,7 @@ const {BaseController, annotation, dispatchable} = require('./baseController.js'
 const { RouteContext, Endpoint, routingContext, Route} = require('./http/httpRouting.js');
 const {dispatchRequest, requestParam , httpContext, initContext} = require('./requestDispatcher.js');
 const { responseBody, Response, contentType } = require('./response/responseResult.js');
+const {Middleware} = require('./middleware/middleware.js');
 //const {Router} = require('./http/httpRouting.js');
 
 function foo(arg) {
@@ -20,6 +21,11 @@ function foo(arg) {
 function bar(_class, prop, descriptor) {
     console.log('bar', _class, prop, descriptor); 
     return descriptor;
+}
+
+function auth(req, res, next) {
+
+    console.log('auth middleware');
 }
 
 const express = {
@@ -144,11 +150,19 @@ class Another extends BaseController {
 
         return qty;
     }
+
+    @Endpoint.post('/middleware')
+    @Middleware.before(auth)
+    @Middleware.after(auth)
+    test() {
+
+        console.log('test for middleware');
+    }
 }
 
 const req = {
-    method: 'get',
-    path: '/user/value',
+    method: 'post',
+    path: '/user/middleware',
     params: {
         userId: 2,
         name: 'foo',
@@ -183,7 +197,8 @@ RouteContext.init(express);
 
 const router = RouteContext.resolve();
 
-console.log(router)
+console.log(router.routeList.post['/user/middleware'])
+router.newRequest(req, res);
 router.newRequest(req, res);
 
 console.log('res content', res.content);

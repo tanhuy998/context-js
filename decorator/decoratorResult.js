@@ -1,11 +1,12 @@
-const PreInvokeFunction = require('../callback/preInvokeFunction.js')
+const PreInvokeFunction = require('../callback/preInvokeFunction.js');
+const {EventEmitter} = require('node:events');
 
 const DecoratorType =  {
     CLASS_DECORATOR: 0x1,
     PROPERTY_DECORATOR: 0x2,
 }
 
-class DecoratorResult {
+class DecoratorResult extends EventEmitter{
     
     #type;
     kind;
@@ -14,10 +15,13 @@ class DecoratorResult {
     _context; // if target is the class's property, context is the object own the propety
     _actionQueue; // the addition thing we need to do before invoke resolving the DecoratorResult
     #_needContext;
+    _targetDescriptor;
     //decoratorArgs;
 
 
     constructor(type, targetProp, action = undefined) {
+
+        super();
 
         this._target = targetProp;
         this.#type = type;
@@ -32,10 +36,22 @@ class DecoratorResult {
         return this.#_needContext;
     }
 
+    get type() {
+
+        return this.#type;
+    }
+
     #Init() {
 
         if (this.#type == DecoratorType.PROPERTY_DECORATOR) this.#_needContext = true;
         else this.#_needContext = false;
+
+        this.#InitEvents();
+    }
+
+    #InitEvents() {
+        this.on('beforeResolve', (_theTarget, context, descriptor, type) => {});
+        this.on('afterResolve', (_theTarget, context, descriptor, type) => {});
     }
 
     payload(...args) {
@@ -73,6 +89,8 @@ class DecoratorResult {
         
         if (this.needContext && !this._context) throw new Error('DecoratorResult error: property decorator need context to be resolved');
 
+        this.emit('beforeResolve', this._target, this._context, this._targetDescriptor, this.type);
+
         if (this.needContext) {
             
             this._target.bind(this._context);
@@ -106,9 +124,13 @@ class DecoratorResult {
 
         if (this._target instanceof PreInvokeFunction) {
 
-            return this._target.invoke();
+            const result = this._target.invoke();
+            this.emit('afterResolve', this._target, this._context, this._targetDescriptor, this.type);
+            
+            return result;
         }
         
+        //this.emit('afterResolve', this._target, this._context, this._targetDescriptor, this.type);
         // if this._target is not instance of PreInvokeFunction 
         // it's mean the target of the decoratorResult is an class property
     }
@@ -156,13 +178,13 @@ class PropertyDecorator extends DecoratorResult {
 
 class MethodDecorator extends DecoratorResult {
 
-    #hooks;
+   // #hooks;
 
     constructor(target, Prop) {
 
         super(DecoratorType.PROPERTY_DECORATOR, Prop);
 
-        this.#hooks = [];
+        //this.#hooks = [];
         this.bind(target);
     }
 
@@ -170,21 +192,21 @@ class MethodDecorator extends DecoratorResult {
 
         const resolved_value = super.resolve();
 
-        for (const hook of this.#hooks) {
+        // for (const hook of this.#hooks) {
 
-            const {callback, args} = hook;
+        //     const {callback, args} = hook;
 
-            callback(resolved_value, ...args);
-        }
+        //     callback(resolved_value, ...args);
+        // }
     }
 
-    whenFulfill(_callback,..._args) {
+    // whenFulfill(_callback,..._args) {
 
-        this.#hooks.push({
-            callback: _callback,
-            args: _args,
-        });
-    }
+    //     this.#hooks.push({
+    //         callback: _callback,
+    //         args: _args,
+    //     });
+    // }
 }
 
 class ClassDecorator extends DecoratorResult {

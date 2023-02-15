@@ -1,36 +1,55 @@
 const {preprocessDescriptor} = require('../decorator/utils');
+const {RouteContext} = require('../http/httpRouting.js');
+const {Middleware} = require('./middleware.js');
 
+class Authentication {
 
-function authClass(_class) {
+    static #handler;
 
+    static setHandler(_func) {
+
+        this.#handler = _func;
+    }
+
+    static get handler() {
+
+        return this.#handler;
+    } 
+}
+
+function authOnClass(_class) {
+
+    const symbol = RouteContext.startSession();
 
     return _class;
 }
 
-function authMethod(_class, _method, descriptor) {
+function authOnMethod(_class, _method, descriptor) {
 
     const decoratedResult = preprocessDescriptor(_class, _method, descriptor);
 
-    descriptor.value = decoratedResult;
+    const authenticateFunction =Authentication.handler;
 
-    return descriptor;
+    if (!authenticateFunction) throw new Error('Athenticate error: there\'s no handler function setted to "Authentication"');
+
+    return Middleware.before(authenticateFunction);
 }
 
 function authenticate(...args) {
 
 
-    if (args.length = 1) {
-
-        const [_class] = args;
+    if (args.length == 0) {
 
 
-        return authClass(_class);
+        return function() {
+
+        }
     }
-    else if (args.length = 3) {
+    else if (args.length == 3) {
 
         const [_class, _method, descriptor] = args;
 
-        return authMethod(_class, _method, descriptor);
+        return authOnMethod(_class, _method, descriptor);
     }
 }
 
@@ -42,7 +61,7 @@ function Authorize(_role) {
 
         if (result.constructor.name == 'MethodDecorator') {
 
-            
+
         }
         else {
 
@@ -50,3 +69,5 @@ function Authorize(_role) {
         }
     }
 }
+
+module.exports = {Authentication, authenticate, Authorize};
