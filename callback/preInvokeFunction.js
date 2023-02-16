@@ -1,10 +1,14 @@
-class PreInvokeFunction {
+const {EventEmitter} = require('node:events');
+
+class PreInvokeFunction extends EventEmitter{
 
     #callback;
     #args;
     #context;
 
     constructor(_callback, ...args) {
+
+        super();
 
         if (_callback.constructor.name == 'Function') this.#callback = _callback;
 
@@ -24,6 +28,18 @@ class PreInvokeFunction {
         //         return target.invoke();
         //     }
         // })
+
+        this.#Init();
+    }
+
+    #Init() {
+
+        this.#InitEvents();
+    }
+
+    #InitEvents() {
+
+        this.on('fulfill', (_result, target, method) => {});
     }
 
     bind(object) {
@@ -37,7 +53,16 @@ class PreInvokeFunction {
 
         if (!this.#context) return this.#callback(...this.#args);
 
-        return this.#callback.call(this.#context, ...this.#args);
+        const result = this.#callback.call(this.#context, ...this.#args)
+
+        this.emit('fulfill', result, this.#callback ,this.#context);
+
+        return result;
+    }
+
+    whenFulfill(_callback) {
+
+        this.on('fulfill', _callback);
     }
 
     passArgs(..._args) {
