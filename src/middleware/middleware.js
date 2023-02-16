@@ -1,6 +1,6 @@
-const {preprocessDescriptor} = require('../decorator/utils.js');
+const {preprocessDescriptor} = require('../decorator/utils');
 //const {MethodDecorator, DecoratorResult} = require('../decorator/decoratorResult.js');
-const {Route, RouteContext} = require('../http/httpRouting.js');
+const {Route, RouteContext} = require('../http/httpRouting');
 
 
 const obj = {};

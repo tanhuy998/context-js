@@ -1,12 +1,13 @@
-const callback = require('./callback/preInvokeFunction.js');
-const decorator = require('./decorator/decoratorResult.js');
-const http = require('./http/httpRouting.js');
-const middleware = require('./middleware/middleware.js');
-const response = require('./response/responseResult.js');
-const baseController = require('./controller/baseController.js');
-const requestDispatcher = require('./requestDispatcher.js');
+const PreInvokeFunction = require('./src/callback/preInvokeFunction.js');
+const controller = require('./src/controller/baseController.js')
+const decorator = require('./src/decorator/decoratorResult.js');
+const http = require('./src/http/httpRouting.js');
+const middleware = require('./src/middleware/middleware.js');
+const response = require('./src/response/responseResult.js');
+const baseController = require('./src/controller/baseController.js');
+const requestDispatcher = require('./src/requestDispatcher.js');
 
 
 module.exports = {
-    ...callback, ...decorator, ...http, ...middleware, ...response, ...baseController, ...requestDispatcher
+    PreInvokeFunction , ...controller, ...decorator, ...http, ...middleware, ...response, ...baseController, ...requestDispatcher
 };

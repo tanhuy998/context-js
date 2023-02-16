@@ -1,11 +1,12 @@
 //require('@babel/register')({ignore: []});
-const {BaseController, annotation, dispatchable} = require('./controller/baseController.js');
-const { RouteContext, Endpoint, routingContext, Route} = require('./http/httpRouting.js');
-const {dispatchRequest, requestParam , httpContext, initContext} = require('./requestDispatcher.js');
-const { responseBody, Response, contentType } = require('./response/responseResult.js');
-const {Middleware} = require('./middleware/middleware.js');
+// const {BaseController, annotation, dispatchable} = require('../src/controller/baseController.js');
+// const { RouteContext, Endpoint, routingContext, Route} = require('../http/httpRouting.js');
+// const {dispatchRequest, requestParam , httpContext, initContext} = require('../requestDispatcher.js');
+// const { responseBody, Response, contentType } = require('../response/responseResult.js');
+// const {Middleware} = require('../middleware/middleware.js');
 //const {Router} = require('./http/httpRouting.js');
 
+const {BaseController, dispatchable, RouteContext, Endpoint, Route, routingContext, requestParam, responseBody, Response, contentType, Middleware} = require('../index.js');
 
 function auth(req, res, next) {
 

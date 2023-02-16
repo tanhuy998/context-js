@@ -11,23 +11,27 @@ A Controller class for handling things in Express inspired by coding style of AS
 - Binding http context (such as request, response and next objects).
 
 
+
 ## Usage
 
 
 
-This project use [@babel/plugin-decorator-proposal](https://babeljs.io/docs/en/babel-plugin-proposal-decorators) to transplile [decorator](https://github.com/tc39/proposal-decorators) syntax for javascript which will soon be available.
+This project use default version "2018-09" of [@babel/plugin-decorator-proposal](https://babeljs.io/docs/en/babel-plugin-proposal-decorators)  which is implementing [tc39/proposal-decorators](https://github.com/wycats/javascript-decorators/blob/e1bf8d41bfa2591d949dd3bbf013514c8904b913/README.md) stage 1.
+
+In the furture this project will update to [stage 3](https://github.com/tc39/proposal-decorators) synxtax.
 
 
+#### Simple usage
 
 
-Define the controller class
+Define a controller class
 
 
 
 ```js
 const {BaseController, dispatchable} = require('express-controller');
 
-@dispatchable
+@dispatchable // => (optional)
 class Controller extends BaseController {
 
     construct() {
@@ -56,26 +60,34 @@ const {dispatch} = require('express-controller');
 
 const Controller = require('the/Controller/dir');
 
-app.get('/path', dispatch(...Controller.proxy.sendSomething));
+app.get('/path', dispatch(...Controller.action.sendSomething));
 ```
 or 
 ```javascript
+// when not using decorator @dispatchable on Controller
 app.get('/path', dispatch(Controller, 'sendSonthing'));
 ```
 
 
 
 #### Routing in class definition context
-firstly do the code:
+
+
+
+firstly hit the codes:
+
+
+
 ```javascript
 const express = require('express');
 const {RouteContext} = require('express-controller');
 
 RouteContext.init(express);
 
-const Controller = require('the/Controller/dir');
+const Controller = require('the/Controller/directory');
 
 const app = express();
+
 app.use('/', RouteContext.resolve());
 ```
 
@@ -83,6 +95,8 @@ app.use('/', RouteContext.resolve());
 
 
 in class definition:
+
+use @routingContext to annotate that a specific class is defining route inside it's 
 
 
 
@@ -138,7 +152,7 @@ const {Route, BaseController, dispatchable, routingContext} = require('express-c
 * the last call of Route.prefix will affects fo
 */
 @Route.prefix('/admin')
-@routingContext()  // routingContext() is placed before Route.prefix()
+@routingContext()  // routingContext() must be placed before Route.prefix()
 @dispatchable
 class Controller extends BaseController {
 
@@ -192,10 +206,10 @@ syntax
 
 
 ```js
-// Invokes before the controller's action do the things.
+// Invokes before the controller's action.
 @Middleware.before(...theMiddlewareIntances)
 
-// invokes before the controller's action.
+// invokes after the controller's action done.
 @Middleware.after(...theMiddlewareIntances)
 
 ```
@@ -212,7 +226,7 @@ const bodyParser = require('body-parser');
 
 function log(req, res, next()) {
 
-  console.log(res);
+  console.log(req.method, req.baseUrl + req.path);
   next();
 }
 
@@ -256,6 +270,7 @@ syntax:
 @Response.method(...args)
 ```
 
+the "method" here is refers to the request object's method
 
 
 example
@@ -289,10 +304,12 @@ class Controller extends BaseController {
 
 
 
-## Controller that return response Content
+## Controller that send content as response's body
 
 
 We can annotate the return value of controller's action will be sent as the body of the response.
+
+
 
 syntax:
 
@@ -300,6 +317,10 @@ syntax:
 ```js
 @responseBody
 ```
+
+
+*note: using this decorator means that we will calling the res.end(_content), so the response session will end there and all middlewares after this action could not response anything anymore
+
 
 
 example 
