@@ -13,7 +13,6 @@ function annotation(_theConstructor) {
                         .match(/function\s\w+/)[0]
                         .replace('function ', '');
 
-    console.log('annotation', className)
     decoratorContext.currentClass = _theConstructor;
 
     return _theConstructor;
@@ -35,37 +34,14 @@ class BaseController  {
         get: (target, prop) => {
 
             if (prop == 'proxy') return target.proxy;
-            
-            // const object = new target();
-    
-            // const the_object_prop = object[prop];
     
             const result = [];
-    
-            // result.push(object);
-    
-            // if (!the_object_prop) {
-    
-            //     result.push((req, res, _next) => { _next()}); 
-            // } 
-            // else if (the_object_prop.constructor.name == 'Function') {
-    
-            //     result.push(the_object_prop.bind(object))
-            // }
-            // else {
-    
-            //     result.push(object[prop])
-            // }
     
             result.push(target);
             result.push(prop);
 
             return result;
-        },
-        
-        // construct: (target, args) => {
-        //     return new target(...args);
-        // }
+        }
     };
     static proxy = new Proxy(BaseController, BaseController.proxyHandler);
 
@@ -81,12 +57,6 @@ class BaseController  {
 
         if (!this.#context) {
 
-            // this.#context = {
-            //     request: req,
-            //     response: res,
-            //     nextMiddleware: _next
-            // }
-
             this.#context = _httpContext;
         }
     }
@@ -97,11 +67,6 @@ class BaseController  {
     }
 
     resolveProperty() {
-
-        // for (const prop of this.#decoratedList) {
-
-        //     prop.bind(this).resolve();
-        // }
 
         const props = Object.getOwnPropertyNames(this);
 

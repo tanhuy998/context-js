@@ -73,7 +73,6 @@ function args(..._args) {
 
 
 function requestParam(...argsInfo) {
-    console.log(argsInfo)
     /**
      * 
      * @param {PreInvokeFunction} _theMethod 
@@ -130,9 +129,8 @@ function requestParam(...argsInfo) {
     };
 
     const resolveMethod = function(decoratorResult, _class, propName, descriptor) {
-        //console.log('resolve method');
+        
         // target instanceof PreInvokeFuncion
-        //const target = decoratorResult._target;
         decoratorResult.payload['requestParam'] = argsInfo;
         decoratorResult.transform(passRequestParam, 'requestParam');
         //decoratorResult.bind(_targetObject);
@@ -146,10 +144,7 @@ function requestParam(...argsInfo) {
 
         decoratorResult.payload['requestParam:prop'] = argsInfo;
         decoratorResult.transform(transformProperty, 'requestParam:prop');
-        //decoratorResult.bind(_targetObject);
-        //console.log(Object.getOwnPropertyNames(_targetObject))
-        // _targetObject is instance of BaseController class
-        //_targetObject.pushDecoratedProp(decoratorResult);
+        
         descriptor.initializer = () => decoratorResult;
         
         return descriptor;
@@ -160,7 +155,6 @@ function requestParam(...argsInfo) {
         
         const decoratorResult = preprocessDescriptor(_class, propName, descriptor);
         
-        //const {decoratorResult} = preprocessed_descriptor;
         // the param's context here the context when controller is seted-up http context
     
         switch(decoratorResult.constructor.name) {
@@ -196,7 +190,7 @@ function httpContext(_theConstructor) {
 }
 
 function initContext(arg) {
-    //console.log(arg)
+    
     return function (_theConstructor) {
         //console.log('initContext');
         return _theConstructor;
@@ -205,7 +199,7 @@ function initContext(arg) {
 
 //function dispatchRequest(controllerObject, controllerAction, _controllerClass) {
 function dispatchRequest(_controllerClass, _prop) {
-    console.log(_controllerClass)
+    
     return function(req, res, next) {
 
         const context = {
@@ -217,10 +211,10 @@ function dispatchRequest(_controllerClass, _prop) {
             parentRoute: req.baseUrl,
             //routeContext: _router || undefined,
         }
-        console.log(_controllerClass)
+        
         BaseController.httpContext = context;
         HttpContextCatcher.newContext(context);
-        //console.log(prop)
+        
         controllerObject = new _controllerClass();
 
         controllerObject.setContext(context);
@@ -228,18 +222,6 @@ function dispatchRequest(_controllerClass, _prop) {
         controllerObject.resolveProperty();
 
         const controllerAction = controllerObject[_prop];
-
-        // const req_params = req.params;
-
-        // const param_arr = [];
-
-        // for (const key in req_params) {
-
-        //     param_arr.push(req_params[key]);
-        // }
-
-        //return controllerAction(...param_arr);
-
 
 
         if (controllerAction instanceof DecoratorResult) {

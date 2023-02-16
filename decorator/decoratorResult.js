@@ -80,8 +80,6 @@ class DecoratorResult extends EventEmitter{
             action: _action,
             decoratorName: decoratorName
         });
-
-        //console.log(this._actionQueue);
     }
 
     resolve() {
@@ -149,8 +147,7 @@ class PropertyDecorator extends DecoratorResult {
     }
 
     resolve() {
-        //console.log('resolve property', '--------------------------------------')
-        //console.log(this._context)
+        
         if (this.needContext && !this._context) throw new Error('PropertyDecorator error: property decorator need context to be resolved');
         
         for (const meta of this._actionQueue) {
@@ -165,11 +162,11 @@ class PropertyDecorator extends DecoratorResult {
             //const {target, propName} = super._target;
  
             if (action instanceof PreInvokeFunction) {
-                console.log(1)
+                
                 return action.passArgs(this._target, ...this.payload[decoratorName]).invoke();
             }
             else {
-                console.log(2, action)
+                
                 return action(this._target, ...this.payload[decoratorName]);
             }
         }

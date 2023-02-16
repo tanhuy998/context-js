@@ -49,9 +49,6 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
 
         let decoratorResult;
         let the_transformed_prop;
-        // let result;
-
-        // let the_prop_is_function = false;
         
 
         if (!(the_target_prop instanceof DecoratorResult)) {
@@ -74,7 +71,7 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
 
                 return decorator;
             }
-            //decoratorResult = new DecoratorResult(DecoratorType.PROPERTY_DECORATOR, the_transformed_prop);
+            
         }
         else {
 
@@ -82,7 +79,6 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
             decoratorResult._targetDescriptor = descriptor;
 
             return decoratorResult;
-            //if (decoratorResult._target instanceof PreInvokeFunction) the_prop_is_function = true;
         }
     }
 }

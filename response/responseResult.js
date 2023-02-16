@@ -13,14 +13,12 @@ function responseBody(_controllerClass, _action, descriptor) {
 
     const decoratorResult = preprocessDescriptor(_controllerClass, _action, descriptor);
 
-    //const callback = new PreInvokeFuncion(catchControllerActionReturnValue);
-
     decoratorResult.payload['responseBody'] = 1;
     decoratorResult.on('afterResolve', sendResponseBodyAndEndRequest);
     //decoratedResult.transform(catchControllerActionReturnValue, 'responseBody');
 
     descriptor.value = decoratorResult;
-    //console.log('response body');
+
     return descriptor;
 }
 
@@ -33,7 +31,7 @@ function invokeResponse(_method, ...payload) {
     const [resAction, args] = payload;
 
     const res = this.httpContext.response;
-    //console.log('invoke response', payload) 
+    
     res[resAction](...args);
 }
 

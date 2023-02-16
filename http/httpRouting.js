@@ -59,7 +59,7 @@ class RouteContext {
         const the_router = RouteContext.router;
 
         for (const callback of callbackQueue) {
-            console.log('dequeue');
+            
             callback.bind(the_router).invoke();
         }
 
@@ -98,7 +98,7 @@ class RouteContext {
             const controllerClass = RouteContext.getControllerClassByRoutingContext(currentRoutingContext);
 
             registerMiddleware(method, path, _session);
-            //console.log(controllerClass, 1)
+            
             RouteContext.router[method](path, dispatchRequest(controllerClass, action));
 
             registerMiddleware(method, path, _session, 'afterController');
@@ -106,8 +106,8 @@ class RouteContext {
     }
 
     static define(method, _path, _routingContext, _action, _sessionKey = undefined) {
-        console.log('define route', `[${method} ${_path}] in context`, [_routingContext.description], _action)
-        //console.log(decoratorContext.currentContext);
+        //console.log('define route', `[${method} ${_path}] in context`, [_routingContext.description], _action)
+
         //if (!Route.router) throw new Error('Controller route decorator: router is not set, we must init the "Express" instance to the Route class');
         //const controllerClass = Route.#controllers[_routingContext];
         const length = (this.#sessionStack.length != 0) ? this.#sessionStack.length : 1;
@@ -236,10 +236,7 @@ const Route = new Proxy(RouteContext, {
         prefix: function(_path) {
             //this.additionMethod.prop.currentRoutePrefix = _path;
             RouteContext.currentPrefix = _path;
-            //const currentRoutingContext = RouteContext.currentContext;
-            //console.log('set prefix')
-            //RouteContext.assignContext(currentRoutingContext, );
-            //console.log('call prefix', this)
+            
             return (function(_targetContructor) {
                 //this.additionMethod.prop.currentRoutePrefix = '';
                 RouteContext.currentPrefix = '';
@@ -259,7 +256,7 @@ const Route = new Proxy(RouteContext, {
             const routingContext = RouteContext.currentContext;
 
             const pathPrefix = RouteContext.currentPrefix;
-            //console.log(routingContext);
+            
             path = pathPrefix + path;
             
             return function(_controllerClass, _actionName, descriptor) {
@@ -304,10 +301,10 @@ const Endpoint = new Proxy(RouteContext, {
         return function(path) {
 
             const routingContext = RouteContext.currentContext;
-            //console.log(routingContext);
+            
 
             const pathPrefix = RouteContext.currentPrefix;
-            //console.log(routingContext);
+            
             path = pathPrefix + path;
 
             return function(_controllerClass, _actionName, descriptor) {
@@ -341,19 +338,14 @@ function routingContext() {
     const contextKey = Date.now();
     const symbol = Symbol(contextKey);
 
-    console.log([contextKey], 'context is defined')
+    //console.log([contextKey], 'context is defined')
 
     RouteContext.defineContext(symbol);
 
-    return function(_theConstructor) {
-    
-        // const className = _theConstructor.toString()
-        //                     .match(/function\s\w+/)[0]
-        //                     .replace('function ', '');
-        
+    return function(_theConstructor) {    
 
         RouteContext.assignContext(symbol, _theConstructor);
-        console.log([contextKey], 'was assigned with', _theConstructor);
+        //console.log([contextKey], 'was assigned with', _theConstructor);
     
         //decoratorContext.currentClass = _theConstructor;
     
