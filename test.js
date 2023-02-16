@@ -1,27 +1,11 @@
 //require('@babel/register')({ignore: []});
-const {BaseController, annotation, dispatchable} = require('./baseController.js');
+const {BaseController, annotation, dispatchable} = require('./controller/baseController.js');
 const { RouteContext, Endpoint, routingContext, Route} = require('./http/httpRouting.js');
 const {dispatchRequest, requestParam , httpContext, initContext} = require('./requestDispatcher.js');
 const { responseBody, Response, contentType } = require('./response/responseResult.js');
 const {Middleware} = require('./middleware/middleware.js');
 //const {Router} = require('./http/httpRouting.js');
 
-function foo(arg) {
-
-    console.log(arg);
-
-    return function (_class, _name, descriptor) {
-        console.log('foo handle', descriptor)
-        descriptor.value = () => {}
-        //console.log(descriptor)
-        return descriptor;
-    }
-}
-
-function bar(_class, prop, descriptor) {
-    console.log('bar', _class, prop, descriptor); 
-    return descriptor;
-}
 
 function auth(req, res, next) {
 
@@ -161,8 +145,8 @@ class Another extends BaseController {
 }
 
 const req = {
-    method: 'post',
-    path: '/user/middleware',
+    method: 'get',
+    path: '/user/value',
     params: {
         userId: 2,
         name: 'foo',
@@ -189,7 +173,15 @@ const res = {
     setHeader: function(_name, value) {
 
         console.log('setHeader', _name, value);
-    }
+    },
+    send: function(_content) {
+
+        this.write(_content);
+    },
+    end: function(_content) {
+
+        this.write(_content);
+    }    
 };
 const next = () => {};
 

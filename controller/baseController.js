@@ -1,5 +1,5 @@
 //const { obj } = require("../model/chatroom/chatRoom.schema");
-const {DecoratorResult} = require('./decorator/decoratorResult.js');
+const {DecoratorResult} = require('../decorator/decoratorResult.js');
 //const {httpContext} = require('./requestDispatcher.js');
 
 const decoratorContext = {}
@@ -21,7 +21,7 @@ function annotation(_theConstructor) {
 
 function dispatchable(_class) {
 
-    _class.proxy = new Proxy(_class, BaseController.proxyHandler);
+    _class.action = new Proxy(_class, BaseController.proxyHandler);
 
     return _class;
 }

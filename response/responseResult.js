@@ -1,36 +1,25 @@
 const {preprocessDescriptor} = require('../decorator/utils.js');
 const PreInvokeFuncion = require('../callback/preInvokeFunction.js');
+const { DecoratorResult } = require('../decorator/decoratorResult.js');
 
-function catchControllerActionReturnValue(_controllerAction, ...payload) {
+function sendResponseBodyAndEndRequest(returnValue, _controllerObject, _theControllerAction, descriptor, type) {
 
-    const res = this.httpContext.response;
-    //console.log('resolve response body', _controllerAction);
+    const res = _controllerObject.httpContext.response;
 
-    // _controllerAction.whenFulfill((_returnValue) => {
-    //     console.log('return value:', _returnValue)
-    //     res.write(_returnValue);
-    // });
-
-    _controllerAction.on('fulfill', (_returnValue) => {
-        //console.log('return value:', _returnValue)
-        
-        res.write(_returnValue);
-        //console.log(res.write);
-    })
-
-    //console.log('resolve', _controllerAction);
+    res.end(returnValue);
 }
 
 function responseBody(_controllerClass, _action, descriptor) {
 
-    const decoratedResult = preprocessDescriptor(_controllerClass, _action, descriptor);
+    const decoratorResult = preprocessDescriptor(_controllerClass, _action, descriptor);
 
     //const callback = new PreInvokeFuncion(catchControllerActionReturnValue);
 
-    decoratedResult.payload['responseBody'] = 1;
-    decoratedResult.transform(catchControllerActionReturnValue, 'responseBody');
+    decoratorResult.payload['responseBody'] = 1;
+    decoratorResult.on('afterResolve', sendResponseBodyAndEndRequest);
+    //decoratedResult.transform(catchControllerActionReturnValue, 'responseBody');
 
-    descriptor.value = decoratedResult;
+    descriptor.value = decoratorResult;
     //console.log('response body');
     return descriptor;
 }

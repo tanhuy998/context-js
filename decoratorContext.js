@@ -53,8 +53,26 @@ function extendsDecoratorContextClass(_extendClass) {
 
     Object.defineProperty(_extendClass, '#contextList', {
         value: {},
-
+        get: () => {
+            return contextList;
+        }
     })
+
+    Object.defineProperty(_extendClass, '#callbackQeue', {
+        value: {},
+        get: () => {
+            return contextList;
+        }
+    })
+
+    Object.defineProperty(_extendClass, '#contextList', {
+        value: {},
+        get: () => {
+            return contextList;
+        }
+    })
+
+
     // static #contextList = {};
     // static #callbackQueue = [];
 
@@ -63,4 +81,4 @@ function extendsDecoratorContextClass(_extendClass) {
     return _extendClass;
 }
 
-module.exports = D_Context;
+module.exports = extendsDecoratorContextClass;

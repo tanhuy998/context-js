@@ -1,7 +1,7 @@
 //const Controller = require('../controller/baseController.js').proxy;
 const PreInvokeFunction = require('./callback/preInvokeFunction.js');
 const {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, ClassDecorator} = require('./decorator/decoratorResult.js');
-const BaseController = require('./baseController.js');
+const BaseController = require('./controller/baseController.js');
 const {preprocessDescriptor} = require('./decorator/utils.js');
 
 const Decorator =  {

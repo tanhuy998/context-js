@@ -50,8 +50,8 @@ class DecoratorResult extends EventEmitter{
     }
 
     #InitEvents() {
-        this.on('beforeResolve', (_theTarget, context, descriptor, type) => {});
-        this.on('afterResolve', (_theTarget, context, descriptor, type) => {});
+        this.on('beforeResolve', (context, _theTarget, descriptor, type) => {});
+        this.on('afterResolve', (returnValue, context, _theTarget, descriptor, type) => {});
     }
 
     payload(...args) {
@@ -89,7 +89,7 @@ class DecoratorResult extends EventEmitter{
         
         if (this.needContext && !this._context) throw new Error('DecoratorResult error: property decorator need context to be resolved');
 
-        this.emit('beforeResolve', this._target, this._context, this._targetDescriptor, this.type);
+        this.emit('beforeResolve', this._context, this._target, this._targetDescriptor, this.type);
 
         if (this.needContext) {
             
@@ -125,7 +125,7 @@ class DecoratorResult extends EventEmitter{
         if (this._target instanceof PreInvokeFunction) {
 
             const result = this._target.invoke();
-            this.emit('afterResolve', this._target, this._context, this._targetDescriptor, this.type);
+            this.emit('afterResolve', result, this._context, this._target, this._targetDescriptor, this.type);
             
             return result;
         }
