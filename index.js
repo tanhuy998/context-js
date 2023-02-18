@@ -6,8 +6,9 @@ const middleware = require('./src/middleware/middleware.js');
 const response = require('./src/response/responseResult.js');
 const baseController = require('./src/controller/baseController.js');
 const requestDispatcher = require('./src/requestDispatcher.js');
+const responseDecorator = require('./src/response/decorator.js')
 
 
 module.exports = {
-    PreInvokeFunction , ...controller, ...decorator, ...http, ...middleware, ...response, ...baseController, ...requestDispatcher
+    PreInvokeFunction , ...controller, ...decorator, ...http, ...middleware, ...response, ...baseController, ...requestDispatcher, ...responseDecorator
 };

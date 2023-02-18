@@ -17,8 +17,23 @@ class RouteContext {
     static currentPrefix = '';
 
     static #session = {};
+    static #currentSession;
 
-    static #sessionStack = [];
+    static #sessionPool = [];
+
+    static controllerAction = {};
+
+    static #isResolved = false;
+
+    static get isResolved() {
+
+        return this.#isResolved;
+    }
+
+    // static #hooks = {
+    //     beforeDefine: [],
+    //     afterDefine: []
+    // };
 
     static get router() {
 
@@ -39,6 +54,11 @@ class RouteContext {
 
         return RouteContext.#currentRoutingContext;
     } ///////////////
+
+    static get currentSession() {
+
+        return RouteContext.#currentSession;
+    }
 
     static init(_express) {
 
@@ -74,7 +94,9 @@ class RouteContext {
     // this method will be called when there is no express's router object is initialized
     static #dispatchRouter() {
 
-        const currentRoutingContext = RouteContext.currentContext;
+        const routingContext = RouteContext.currentContext;
+
+        const currentSessionSymbol = RouteContext.currentSession;
 
         const registerMiddleware = function(_method, _path, _routeSession, _order = 'beforeController') {
 
@@ -83,52 +105,74 @@ class RouteContext {
             const middlewareList = _routeSession[_order];
             
             if (!middlewareList) return;
-
+            
             for (const middleware of middlewareList) {
     
                 RouteContext.router[_method](_path, middleware);
             }
         }
+        
 
-        //registerMiddleware.bind(RouteContext);
+        return function(method, path, _action) {
 
-        return function(method, path, action, _session) {
+            const session = RouteContext.session(currentSessionSymbol);
 
-            const controllerClass = RouteContext.getControllerClassByRoutingContext(currentRoutingContext);
+            const {context, action} = session.meta;
 
-            registerMiddleware(method, path, _session);
+            const matchContext = (routingContext == context);
+            const matchAction = (_action == action);
             
-            RouteContext.router[method](path, dispatchRequest(controllerClass, action));
+            const middleWare = (matchContext && matchAction) ? registerMiddleware : () => {};
 
-            registerMiddleware(method, path, _session, 'afterController');
+
+            const controllerClass = RouteContext.getControllerClassByRoutingContext(routingContext);
+
+            //registerMiddleware(method, path, _session);
+            middleWare(method, path, session);
+            
+            RouteContext.router[method](path, dispatchRequest(controllerClass, _action));
+
+            //registerMiddleware(method, path, _session, 'afterController');
+            middleWare(method, path, session, 'afterController');
         }
     }
 
+    // static beforeDefine(_callback) {
+
+    //     this.#hooks.beforeDefine.push(_callback);
+    // }
+
+    // static afterDefine(_callback) {
+
+    //     this.#hooks.afterDefine.push(_callback);
+    // }
+
+    // static callHooks(_name) {
+
+    //     const hooks = this.#hooks[_name];
+
+    //     if (!hooks) return;
+
+    //     for (const callback of hooks) {
+
+    //         callback();
+    //     }
+
+    //     this.#hooks[_name] = [];
+    // }
+
     static define(method, _path, _routingContext, _action, _sessionKey = undefined) {
-        //console.log('define route', `[${method} ${_path}] in context`, [_routingContext.description], _action)
 
-        //if (!Route.router) throw new Error('Controller route decorator: router is not set, we must init the "Express" instance to the Route class');
-        //const controllerClass = Route.#controllers[_routingContext];
-        const length = (this.#sessionStack.length != 0) ? this.#sessionStack.length : 1;
-
-        const currentSessionSymbol = this.#sessionStack[length - 1];
-        const currentSession = this.session(currentSessionSymbol);
-
-        if (!RouteContext.router) {
-            
-            const callback = new PreInvokeFuncion(RouteContext.#dispatchRouter());
+        const callback = new PreInvokeFuncion(RouteContext.#dispatchRouter());
 
             //const session = (_sessionKey) ? this.session(_sessionKey) : undefined;
-
-            callback.passArgs(method, _path, _action, currentSession);
             
-            RouteContext.#queue(callback);
+        callback.passArgs(method, _path, _action);
             
-            return;
-        }
+        RouteContext.#queue(callback);
+            
+        return;
 
-        
-        RouteContext.router[method](_path, dispatchRequest(...controllerClass.proxy[_action]));
     }
 
     
@@ -147,9 +191,21 @@ class RouteContext {
         RouteContext.#callbackQueue.push(callback);
     }
 
+    static freeup() {
+
+        if (!this.#isResolved) return;
+
+
+    }
+
     static resolve() {
-        
+        if (!this.#routerObject) throw new Error('Router not found: you must call Route.init(express) before resolving routes')
+
         RouteContext.dequeue();
+
+        this.#isResolved = true;
+
+        this.freeup();
 
         return RouteContext.router;
     }
@@ -171,23 +227,22 @@ class RouteContext {
         //Route.currentContext
     }////////////////////////
 
-    static startSession() {
+    static startSession(_context = undefined, _action = undefined) {
 
         const key = Date.now();
         const sessionSymbol = Symbol(key);
 
         this.#session[sessionSymbol] = {
-            expires: true,
+            expires: false,
             beforeController: [],
-            afterController: []
+            afterController: [],
+            meta: {
+                context: _context,
+                action: _action
+            }
         }
 
-        this.#sessionStack.push(sessionSymbol);
-
         return sessionSymbol;
-        // this.#session.expires = false;
-        // this.#session.beforeController = [];
-        // this.#session.afterController = [];
     }
 
     static session(_symbol) {
@@ -195,35 +250,69 @@ class RouteContext {
         return this.#session[_symbol];
     }
 
+    static assignSessionContext(_sessionSymbol, _contextSymbol) {
+
+        if (!this.session(_sessionSymbol)) return false;
+
+        if (!this.#context[_contextSymbol]) return false;
+
+        this.session(_sessionSymbol).meta.context = _contextSymbol;
+    }
+
+    static assignSessionAction(_sessionSymbol, _action) {
+
+        if (!_sessionSymbol) return false;
+
+        if (!_action) return false;
+
+        this.session(_sessionSymbol).meta.action = _action;
+    }
+
+    static switchSession (_symbol) {
+
+        if (!this.session(_symbol)) throw new Error('RouteContext session error: switch to undefined routing session');
+
+        const current = this.#currentSession;
+
+        this.#currentSession = _symbol;
+
+        //this.endSession(current);
+    }
+
     static endSession(_symbol) {
 
         if (this.#session[_symbol]) {
 
-            this.#session[_symbol] = undefined;
-            this.#sessionStack.pop();
+            this.#session[_symbol].expires = true;
+
+            return true;
         }
+
+        return false;
     }
 
-    static #middleware(_sessionSymbol, _order, ...args) {
+    static #registerMiddleware(_sessionSymbol, _order, ...args) {
         
         const session = this.#session[_sessionSymbol];
 
         if (!session) return;
+        
+        const currentMiddlewares = session[_order]; 
 
-        const current = session[_order]; 
-
+        this.#session[_sessionSymbol][_order] = undefined;
+        //this.#currentSession = _sessionSymbol;
         //this.#session[_order] = [...current, ...args];
-        this.#session[_sessionSymbol][_order] = [...current, ...args];
+        this.#session[_sessionSymbol][_order] = [...currentMiddlewares, ...args];
     }
 
-    static middlewareBeforeController(_sessionSymbol, ...args) {
+    static middlewareBeforeController(_sessionSymbol, _actionName, ...args) {
 
-        this.#middleware(_sessionSymbol, 'beforeController', ...args);
+        return this.#registerMiddleware(_sessionSymbol, 'beforeController', ...args);
     }
 
-    static middlewareAfterController(_sessionSymbol, ...args) {
+    static middlewareAfterController(_sessionSymbol, _actionName, ...args) {
 
-        this.#middleware(_sessionSymbol, 'afterController', ...args);
+        return this.#registerMiddleware(_sessionSymbol, 'afterController', ...args);
     }
 }
 
@@ -250,6 +339,7 @@ const Route = new Proxy(RouteContext, {
             return this.additionMethod[_method].bind(this);
         }
 
+        
         return function(path) {
             
             const routingContext = RouteContext.currentContext;
@@ -260,13 +350,15 @@ const Route = new Proxy(RouteContext, {
             
             return function(_controllerClass, _actionName, descriptor) {
 
+                const currentSessionSymbol = RouteContext.currentSession;
+
                 const decoratedResult = preprocessDescriptor(_controllerClass, _actionName, descriptor);
 
                 descriptor.value = decoratedResult;
 
                 if (decoratedResult.constructor.name == 'MethodDecorator') {
 
-                    routeContext.define(_method, path, routingContext, _actionName);
+                    routeContext.define(_method, path, routingContext, _actionName, currentSessionSymbol);
 
                     return descriptor;
                 }
@@ -283,45 +375,56 @@ const Route = new Proxy(RouteContext, {
 
 const Endpoint = new Proxy(RouteContext, {
     httpMethods: {
-        get: 0,
-        head: 1,
-        post: 2,
-        put: 3,
-        'delete': 4,
-        connect: 5,
-        options: 6,
-        trace: 7,
-        patch: 8,
+        GET: 'get',
+        HEAD: 'head',
+        POST: 'post',
+        PUT: 'put',
+        DELETE: 'delete',
+        CONNECT: 'connect',
+        OPTIONS: 'options',
+        TRACE: 'trace',
+        PATCH: 'patch',
     },
     get: function(RouteClass, _method) {
         
-        if (!this.httpMethods.hasOwnProperty(_method)) throw new Error(`Endpoint decorator error: using invalid http method "${_method}"`);
+        //if (!this.httpMethods.hasOwnProperty(_method)) throw new Error(`Endpoint decorator error: using invalid http method "${_method}"`);
+        if (!this.httpMethods[_method]) throw new Error(`Endpoint decorator error: using invalid http method "${_method}"`);
 
-        return function(path) {
+        const correctName = this.httpMethods[_method];
 
-            const routingContext = RouteContext.currentContext;
+        return Route[correctName];
+        // return function(path) {
+
+        //     const routingContext = RouteContext.currentContext;
             
 
-            const pathPrefix = RouteContext.currentPrefix;
+        //     const pathPrefix = RouteContext.currentPrefix;
             
-            path = pathPrefix + path;
+        //     path = pathPrefix + path;
 
-            return function(_controllerClass, _actionName, descriptor) {
+        //     return function(_controllerClass, _actionName, descriptor) {
 
-                const decoratedResult = preprocessDescriptor(_controllerClass, _actionName, descriptor);
+        //         const currentSessionSymbol = RouteContext.currentSession;
 
-                descriptor.value = decoratedResult;
+        //         // if (RouteContext.session(currentSessionSymbol).expires) {
 
-                if (decoratedResult.constructor.name == 'MethodDecorator') {
+        //         //     currentSessionSymbol  = undefined;
+        //         // }
 
-                    RouteClass.define(_method, path, routingContext, _actionName);
+        //         const decoratedResult = preprocessDescriptor(_controllerClass, _actionName, descriptor);
 
-                    return descriptor;
-                }
+        //         descriptor.value = decoratedResult;
 
-                return descriptor;
-            }
-        }
+        //         if (decoratedResult.constructor.name == 'MethodDecorator') {
+
+        //             RouteClass.define(_method, path, routingContext, _actionName, currentSessionSymbol);
+
+        //             return descriptor;
+        //         }
+
+        //         return descriptor;
+        //     }
+        // }
     },
     set: () => {
 
@@ -337,17 +440,12 @@ function routingContext() {
     const contextKey = Date.now();
     const symbol = Symbol(contextKey);
 
-    //console.log([contextKey], 'context is defined')
-
     RouteContext.defineContext(symbol);
 
     return function(_theConstructor) {    
 
         RouteContext.assignContext(symbol, _theConstructor);
-        //console.log([contextKey], 'was assigned with', _theConstructor);
-    
-        //decoratorContext.currentClass = _theConstructor;
-    
+        
         return _theConstructor;
     }
 }

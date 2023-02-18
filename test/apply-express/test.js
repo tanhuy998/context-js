@@ -26,7 +26,7 @@ const port = 3000;
 const app = express();
 
 app.use(body_parser.json());
-app.use(log);
+//app.use(log);
 app.use('/', RouteContext.resolve());
 
 

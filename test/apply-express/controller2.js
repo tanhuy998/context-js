@@ -1,4 +1,11 @@
-const {BaseController, routingContext, Route, Endpoint, responseBody} = require('../../index.js');
+const {BaseController, routingContext, Route, Endpoint, responseBody, Middleware} = require('../../index.js');
+
+function log(req, res, next) {
+
+    console.log('admin')
+
+    next();
+}
 
 @Route.prefix('/admin')
 @routingContext()
@@ -9,14 +16,15 @@ class Controller2 extends BaseController {
         super();
     }
 
-    @Endpoint.get('/')
+    @Endpoint.GET('/')
     @responseBody
     index() {
 
         return 'Hello on Admin section!';
     }
 
-    @Endpoint.get('/data')
+    @Middleware.before(log)
+    @Endpoint.GET('/data')
     @responseBody
     getData() {
 

@@ -2,25 +2,25 @@ const {preprocessDescriptor} = require('../decorator/utils.js');
 // const PreInvokeFuncion = require('../callback/preInvokeFunction.js');
 // const { DecoratorResult } = require('../decorator/decoratorResult.js');
 
-function sendResponseBodyAndEndRequest(returnValue, _controllerObject, _theControllerAction, descriptor, type) {
+// function sendResponseBodyAndEndRequest(returnValue, _controllerObject, _theControllerAction, descriptor, type) {
 
-    const res = _controllerObject.httpContext.response;
+//     const res = _controllerObject.httpContext.response;
 
-    res.end(returnValue);
-}
+//     res.end(returnValue);
+// }
 
-function responseBody(_controllerClass, _action, descriptor) {
+// function responseBody(_controllerClass, _action, descriptor) {
 
-    const decoratorResult = preprocessDescriptor(_controllerClass, _action, descriptor);
+//     const decoratorResult = preprocessDescriptor(_controllerClass, _action, descriptor);
 
-    decoratorResult.payload['responseBody'] = 1;
-    decoratorResult.on('afterResolve', sendResponseBodyAndEndRequest);
-    //decoratedResult.transform(catchControllerActionReturnValue, 'responseBody');
+//     decoratorResult.payload['responseBody'] = 1;
+//     decoratorResult.on('afterResolve', sendResponseBodyAndEndRequest);
+//     //decoratedResult.transform(catchControllerActionReturnValue, 'responseBody');
 
-    descriptor.value = decoratorResult;
+//     descriptor.value = decoratorResult;
 
-    return descriptor;
-}
+//     return descriptor;
+// }
 
 
 const obj = {};
@@ -58,10 +58,10 @@ const Response = new Proxy(obj, {
     set: () => false
 }) 
 
-function contentType(_value) {
+// function contentType(_value) {
 
-    return Response.setHeader('Content-Type', _value);
-}
+//     return Response.setHeader('Content-Type', _value);
+// }
 
 
-module.exports = {responseBody, Response, contentType}
+module.exports = Response;
