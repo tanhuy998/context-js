@@ -6,7 +6,8 @@ function sendResponseBodyAndEndRequest(returnValue, _controllerObject, _theContr
 
     const res = _controllerObject.httpContext.response;
 
-    res.end(returnValue);
+    res.send(returnValue)
+    res.end();
 }
 
 function header(...arg) {
