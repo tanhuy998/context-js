@@ -7,9 +7,21 @@
     "type": "git",
     "url": "https://github.com/tanhuy998/express-controller"
   },
+  "homepage": "https://github.com/tanhuy998/express-controller",
   "scripts": {
     "test": "node ./test/apply-express/test.js"
   },
+  "keywords": [
+    "expressjs",
+    "express",
+    "controller",
+    "routing",
+    "express controller routing",
+    "controller routing",
+    "js decorator",
+    "express controller",
+    "controller decorator"
+  ],
   "author": "tanhuy998",
   "license": "MIT",
   "dependencies": {
