@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Controller class for Express.js",
   "main": "index.js",
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/tanhuy998/express-controller"
