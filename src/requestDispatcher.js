@@ -4,15 +4,10 @@ const {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, Class
 //const BaseController = require('./controller/baseController.js');
 const {preprocessDescriptor} = require('./decorator/utils.js');
 
-const Decorator =  {
-    dispatchRequest,
-    requestParam,
-    httpContext: httpContext,
-}
 
-const ControllerContextFunctions = {
-    //transformProperty
-}
+// const ControllerContextFunctions = {
+//     //transformProperty
+// }
 
 function args(..._args) {
 
@@ -30,47 +25,6 @@ function args(..._args) {
     }
 }
 
-// function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType = DecoratorType.PROPERTY_DECORATOR) {
-
-//     if (decoratorType = DecoratorType.PROPERTY_DECORATOR) {
-
-//         const the_target_prop = descriptor.value;
-
-//         let decoratorResult;
-//         let the_transformed_prop;
-//         // let result;
-
-//         // let the_prop_is_function = false;
-        
-
-//         if (!(the_target_prop instanceof DecoratorResult)) {
-
-//             if (typeof the_target_prop == 'function') {
-
-//                 the_transformed_prop = new PreInvokeFunction(the_target_prop);
-//                 //the_prop_is_function = true;
-//                 return new MethodDecorator(_targetObject, the_transformed_prop).bind(_targetObject);
-//             }
-//             else {
-                
-//                 the_transformed_prop = the_target_prop;
-
-//                 return new PropertyDecorator(_targetObject, propName).bind(_targetObject);  
-//             }
-//             //decoratorResult = new DecoratorResult(DecoratorType.PROPERTY_DECORATOR, the_transformed_prop);
-//         }
-//         else {
-
-//             decoratorResult = the_target_prop.bind(_targetObject);
-
-//             return decoratorResult;
-//             //if (decoratorResult._target instanceof PreInvokeFunction) the_prop_is_function = true;
-//         }
-//     }
-// }
-
-
-
 
 function requestParam(...argsInfo) {
     /**
@@ -80,7 +34,6 @@ function requestParam(...argsInfo) {
     const passRequestParam = function (_theMethod, ...decoratorResultPayload) {
 
         // context of "this" here is the Controller's context
-        //console.log(this);
         const reqParams = this.httpContext.request.params || {};
 
         const method_params = decoratorResultPayload || [];
@@ -94,7 +47,7 @@ function requestParam(...argsInfo) {
     };
 
     const transformProperty = function(decoratorResultTarget, ...decoratorResultPayload) {
-        //console.log('transform', decoratorResultTarget)
+        
         // this context of the function is the controller object
         const reqParams = this.httpContext.request.params || {};
     
@@ -150,7 +103,6 @@ function requestParam(...argsInfo) {
         return descriptor;
     }
 
-    //console.log('requestParam Decorator')
     return function (_class, propName, descriptor) {
         
         const decoratorResult = preprocessDescriptor(_class, propName, descriptor);
@@ -241,5 +193,5 @@ module.exports = {
     requestParam,
     httpContext,
     initContext,
-    ControllerContextFunctions
+    //ControllerContextFunctions
 };

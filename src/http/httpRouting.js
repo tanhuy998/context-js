@@ -272,11 +272,7 @@ class RouteContext {
 
         if (!this.session(_symbol)) throw new Error('RouteContext session error: switch to undefined routing session');
 
-        const current = this.#currentSession;
-
         this.#currentSession = _symbol;
-
-        //this.endSession(current);
     }
 
     static endSession(_symbol) {
@@ -393,38 +389,6 @@ const Endpoint = new Proxy(RouteContext, {
         const correctName = this.httpMethods[_method];
 
         return Route[correctName];
-        // return function(path) {
-
-        //     const routingContext = RouteContext.currentContext;
-            
-
-        //     const pathPrefix = RouteContext.currentPrefix;
-            
-        //     path = pathPrefix + path;
-
-        //     return function(_controllerClass, _actionName, descriptor) {
-
-        //         const currentSessionSymbol = RouteContext.currentSession;
-
-        //         // if (RouteContext.session(currentSessionSymbol).expires) {
-
-        //         //     currentSessionSymbol  = undefined;
-        //         // }
-
-        //         const decoratedResult = preprocessDescriptor(_controllerClass, _actionName, descriptor);
-
-        //         descriptor.value = decoratedResult;
-
-        //         if (decoratedResult.constructor.name == 'MethodDecorator') {
-
-        //             RouteClass.define(_method, path, routingContext, _actionName, currentSessionSymbol);
-
-        //             return descriptor;
-        //         }
-
-        //         return descriptor;
-        //     }
-        // }
     },
     set: () => {
 
