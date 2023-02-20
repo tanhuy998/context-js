@@ -1,18 +1,14 @@
 {
   "name": "express-controller",
   "version": "1.0.0",
-  "description": "Controller class for Express.js and http module",
+  "description": "Controller class for Express.js",
   "main": "index.js",
-  "exports": {
-    "./annotations/class": "./export/classDecorators.js",
-    "./annotations/method": "./export/methodDecorators.js"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/tanhuy998/express-controller"
   },
   "scripts": {
-    "test": "node ../test/apply-express/test.js"
+    "test": "node ./test/apply-express/test.js"
   },
   "author": "tanhuy998",
   "license": "MIT",
