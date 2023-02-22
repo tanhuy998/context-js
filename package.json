@@ -1,9 +1,8 @@
 {
-  "name": "express-controller",
-  "version": "1.0.0",
+  "name": "controller-js",
+  "version": "0.0.1",
   "description": "Controller class for Express.js",
   "main": "index.js",
-  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/tanhuy998/express-controller"
@@ -16,23 +15,30 @@
     "expressjs",
     "express",
     "controller",
+    "controller-js",
     "routing",
     "express controller routing",
     "controller routing",
+    "decorators",
     "js decorator",
     "express controller",
     "controller decorator"
   ],
-  "author": "tanhuy998",
+  "author": "Huy Tran - tanhuy998",
   "license": "MIT",
-  "dependencies": {
+  "files": [
+    "index.js",
+    "README.md",
+    "src/"
+  ],
+  "devDependencies": {
+    "@babel/cli": "^7.21.0",
     "@babel/core": "^7.20.12",
     "@babel/node": "^7.20.7",
     "@babel/plugin-proposal-decorators": "^7.20.13",
+    "@babel/preset-env": "^7.20.2",
+    "@babel/preset-typescript": "^7.21.0",
     "@babel/register": "^7.18.9",
-    "@babel/preset-env": "^7.20.2"
-  },
-  "devDependencies": {
     "body-parser": "^1.20.1",
     "express": "^4.18.2"
   }
