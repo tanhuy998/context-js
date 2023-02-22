@@ -1,5 +1,5 @@
 
-# Controller-js
+# EXPRESS-CONTROLLER-JS
 
 A Controller class that can interact with [Express](https://expressjs.com/) features inspired by the coding style of ASP.NET and Java Spring.
 
@@ -27,13 +27,13 @@ In Typescript, you will face the type-checking issue with ES6 javascript's Proxy
 npm:
 
 ```bash
-npm install controller-js
+npm install express-controller-js
 ```
 
 yarn:
 
 ```bash
-yarn add controller-js
+yarn add express-controller-js
 ```
 
 #### Simple usage

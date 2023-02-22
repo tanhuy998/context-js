@@ -1,6 +1,6 @@
 {
-  "name": "controller-js",
-  "version": "0.0.1",
+  "name": "express-controller-js",
+  "version": "0.0.2",
   "description": "Controller class for Express.js",
   "main": "index.js",
   "repository": {
@@ -16,6 +16,7 @@
     "express",
     "controller",
     "controller-js",
+    "router",
     "routing",
     "express controller routing",
     "controller routing",
@@ -30,8 +31,16 @@
     "index.js",
     "LICENSE",
     "README.md",
+    ".babelrc",
     "src/"
   ],
+  "babel": {
+    "presets": [
+      "@babel/preset-env",
+      "@babel/preset-typescript"
+    ],
+    "plugins": [["@babel/plugin-proposal-decorators", { "legacy": true }]]
+  },
   "devDependencies": {
     "@babel/cli": "^7.21.0",
     "@babel/core": "^7.20.12",
