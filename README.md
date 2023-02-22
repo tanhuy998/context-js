@@ -662,7 +662,7 @@ The *@Endpoint* is a "http method" friendly to mapping route. *@Endpoint* just o
 
 ## Authors
 
-- [Huy Tran]](https://www.github.com/tanhuy998)
+- [Huy Tran](https://www.github.com/tanhuy998)
 
 
 ## License
