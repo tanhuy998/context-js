@@ -15,7 +15,8 @@ function afterContorller(req, res, next) {
     next();
 }
 
-@Route.prefix('/user')
+@Route.prefix('/user') // prefix will be skip when group is declared
+@Route.group('/test')
 @routingContext()
 class Controller1 extends BaseController {
 

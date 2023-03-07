@@ -18,7 +18,7 @@ class Controller2 extends BaseController {
 
     @Endpoint.GET('/')
     @responseBody
-    index() {
+    index(a, b) {
 
         return 'Hello on Admin section!';
     }

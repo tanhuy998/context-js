@@ -4,6 +4,99 @@ const {preprocessDescriptor} = require('../decorator/utils.js');
 const PreInvokeFuncion = require('../callback/preInvokeFunction.js');
 
 
+const routeDecoratorHandler = {
+    additionMethod: {
+        prop: {
+            currentRoutePrefix: '',
+            routeSet: {},
+        },
+        group: function(_path) {
+            //this.additionMethod.prop.currentRoutePrefix = _path;
+
+            //const groupId = Symbol(Date.now());
+
+            return (function(_targetContructor) {
+                //this.additionMethod.prop.currentRoutePrefix = '';
+                const currentContext = RouteContext.currentContext;
+
+                const routeSet = this.prop.routeSet;
+
+                if (!routeSet[currentContext]) {
+
+                    routeSet[currentContext] = {}
+                }
+
+                //const currentRouteSet = routeSet[currentContext] = (routeSet[currentContext]) ? routeSet[currentContext] : {};
+                const currentRouteSet = routeSet[currentContext];
+
+                currentRouteSet[_path] = {
+                    middlewareBefore: [],
+                    middlewareAfter: []
+                };
+
+                RouteContext.currentPrefix = '';
+                return _targetContructor;
+
+            }).bind(this);
+        },  
+        prefix: function(_path) {
+            //this.additionMethod.prop.currentRoutePrefix = _path;
+            RouteContext.currentPrefix = _path;
+            
+            return (function(_targetContructor) {
+                //this.additionMethod.prop.currentRoutePrefix = '';
+                RouteContext.currentPrefix = '';
+                return _targetContructor;
+            });
+        },
+        CRUD: function(_path) {
+
+        }
+    },
+    get: function (routeContext, _method) {
+
+        if (this.additionMethod[_method]) {
+            
+            //return this.additionMethod[_method].bind(this);
+            return this.additionMethod[_method].bind(this.additionMethod);
+        }
+        
+        return (function(path) {
+            
+            const routingContext = RouteContext.currentContext;
+            
+            // const pathPrefix = RouteContext.currentPrefix;
+            // path = pathPrefix + path;
+
+            return (function(_controllerClass, _actionName, descriptor) {
+
+
+                const currentSessionSymbol = RouteContext.currentSession;
+
+                const decoratedResult = preprocessDescriptor(_controllerClass, _actionName, descriptor);
+
+                descriptor.value = decoratedResult;
+
+                if (decoratedResult.constructor.name == 'MethodDecorator') {
+
+                    routeContext.define(_method, path, routingContext, _actionName, currentSessionSymbol);
+
+                    return descriptor;
+                }
+
+                return descriptor;
+
+            });
+
+        }).bind(this)
+    },
+    set: () => {
+
+        return false;
+    }
+}
+
+
 //@inheritDecoratorContextClass
 class RouteContext {
 
@@ -106,14 +199,56 @@ class RouteContext {
             
             if (!middlewareList) return;
             
+            /**
+             *  notice: loop will be removed in the next patch
+             */
             for (const middleware of middlewareList) {
     
                 RouteContext.router[_method](_path, middleware);
             }
         }
         
+        const combineMiddlewareChain = function (_routingContext, _controllerClass, _controllerAcion, _session) {
 
-        return function(method, path, _action) {
+            const controllerClass = RouteContext.getControllerClassByRoutingContext(routingContext);
+    
+            const before = (_session) ? _session['beforeController'] : [];
+    
+            const after = (_session) ? _session['afterController'] : [];
+    
+            const chain = [...before, dispatchRequest(_controllerClass, _controllerAcion), ...after];
+    
+            return chain;
+        };
+
+        const combineGroupsAndDefineRoute = function(_routingContext, _routeMethod, _routePrefix, _childPath, _controllerAcion,  _currentHandlersChain) {
+
+            const contextGroup = routeDecoratorHandler.additionMethod.prop.routeSet[_routingContext];
+
+            const groups = (contextGroup) ? Object.keys(contextGroup) : [];
+
+            if (groups.length > 0) {
+
+                for (const groupPrefix of groups) {
+
+                    const {middlewareBefore, middlewareAfter} = contextGroup[groupPrefix];
+
+                    const handlers = [...middlewareBefore, _currentHandlersChain, ...middlewareAfter];
+
+                    const fullPath = groupPrefix + _childPath;
+
+                    //console.log(fullPath, handlers);
+
+                    RouteContext.router[_routeMethod](fullPath, handlers);
+                }
+            }
+            else {
+                
+                RouteContext.router[_routeMethod](_routePrefix + _childPath, _currentHandlersChain);
+            }
+        }
+
+        return function(method, _routePrefix, path, _action) {
 
             const session = RouteContext.session(currentSessionSymbol);
 
@@ -122,18 +257,23 @@ class RouteContext {
             const matchContext = (routingContext == context);
             const matchAction = (_action == action);
             
-            const middleWare = (matchContext && matchAction) ? registerMiddleware : () => {};
-
+            //const middleWare = (matchContext && matchAction) ? registerMiddleware : () => {};
 
             const controllerClass = RouteContext.getControllerClassByRoutingContext(routingContext);
 
             //registerMiddleware(method, path, _session);
-            middleWare(method, path, session);
+            // middleWare(method, path, session);
             
-            RouteContext.router[method](path, dispatchRequest(controllerClass, _action));
+            // RouteContext.router[method](path, dispatchRequest(controllerClass, _action));
 
-            //registerMiddleware(method, path, _session, 'afterController');
-            middleWare(method, path, session, 'afterController');
+            // //registerMiddleware(method, path, _session, 'afterController');
+            // middleWare(method, path, session, 'afterController');
+
+            const validSession = (matchContext && matchAction) ? session: undefined;
+
+            const routeHandlers = combineMiddlewareChain(routingContext, controllerClass, _action, validSession);
+
+            return combineGroupsAndDefineRoute(routingContext, method, _routePrefix, path, _action, routeHandlers);
         }
     }
 
@@ -166,8 +306,10 @@ class RouteContext {
         const callback = new PreInvokeFuncion(RouteContext.#dispatchRouter());
 
             //const session = (_sessionKey) ? this.session(_sessionKey) : undefined;
+        
+        const routePrefix = this.currentPrefix;
             
-        callback.passArgs(method, _path, _action);
+        callback.passArgs(method, routePrefix, _path, _action);
             
         RouteContext.#queue(callback);
             
@@ -312,62 +454,7 @@ class RouteContext {
     }
 }
 
-const Route = new Proxy(RouteContext, {
-    additionMethod: {
-        prop: {
-            currentRoutePrefix: '',
-        },
-        prefix: function(_path) {
-            //this.additionMethod.prop.currentRoutePrefix = _path;
-            RouteContext.currentPrefix = _path;
-            
-            return (function(_targetContructor) {
-                //this.additionMethod.prop.currentRoutePrefix = '';
-                RouteContext.currentPrefix = '';
-                return _targetContructor;
-            });
-        }
-    },
-    get: function (routeContext, _method) {
-
-        if (this.additionMethod[_method]) {
-            
-            return this.additionMethod[_method].bind(this);
-        }
-
-        
-        return function(path) {
-            
-            const routingContext = RouteContext.currentContext;
-
-            const pathPrefix = RouteContext.currentPrefix;
-            
-            path = pathPrefix + path;
-            
-            return function(_controllerClass, _actionName, descriptor) {
-
-                const currentSessionSymbol = RouteContext.currentSession;
-
-                const decoratedResult = preprocessDescriptor(_controllerClass, _actionName, descriptor);
-
-                descriptor.value = decoratedResult;
-
-                if (decoratedResult.constructor.name == 'MethodDecorator') {
-
-                    routeContext.define(_method, path, routingContext, _actionName, currentSessionSymbol);
-
-                    return descriptor;
-                }
-
-                return descriptor;
-            }
-        }
-    },
-    set: () => {
-
-        return false;
-    }
-})
+const Route = new Proxy(RouteContext, routeDecoratorHandler);
 
 const Endpoint = new Proxy(RouteContext, {
     httpMethods: {
@@ -405,7 +492,7 @@ function routingContext() {
     const symbol = Symbol(contextKey);
 
     RouteContext.defineContext(symbol);
-
+    
     return function(_theConstructor) {    
 
         RouteContext.assignContext(symbol, _theConstructor);

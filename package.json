@@ -1,6 +1,6 @@
 {
   "name": "express-controller-js",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Controller class for Express.js",
   "main": "index.js",
   "repository": {
@@ -23,7 +23,8 @@
     "decorators",
     "js decorator",
     "express controller",
-    "controller decorator"
+    "controller decorator",
+    "meta programming"
   ],
   "author": "Huy Tran - tanhuy998",
   "license": "MIT",
@@ -34,13 +35,6 @@
     ".babelrc",
     "src/"
   ],
-  "babel": {
-    "presets": [
-      "@babel/preset-env",
-      "@babel/preset-typescript"
-    ],
-    "plugins": [["@babel/plugin-proposal-decorators", { "legacy": true }]]
-  },
   "devDependencies": {
     "@babel/cli": "^7.21.0",
     "@babel/core": "^7.20.12",
