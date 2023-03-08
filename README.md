@@ -351,8 +351,7 @@ class Controller extends BaseController {
       super();
     }
 
-    // the current route path will be 'get /multiple/send'
-    // the '/single' prefix is ovetwritten
+    // the path for of the route will be GET /user/send
     @Route.get('/send')
     sendSomthing() {
 
@@ -363,7 +362,7 @@ class Controller extends BaseController {
 
 #### @Route.group vs @Route.prefix differences
 
-`@Route.prefix` is just the concaternation of the prefix and route's path and each Controller class (a routing context) has just only one prefix for it's routes.
+`@Route.prefix` is just the concaternation of the prefix and route's path, each Controller class (a routing context) contains just only one prefix for it's routes.
 On another hand, a Controller Class (a routing context) can have more than one group of routes that each group has different constraints for specific purposes (such as testing).
 
 
@@ -405,6 +404,7 @@ class UserController extends BaseController {
 
 **Notice:** a group is bound with a Controller (a routing context), it's not identical when multiple classes has the same name and the local contraints would be different on different classes.
 
+
 ```js
 const {Route, BaseController, routingContext} = require('express-controller');
     
@@ -420,7 +420,7 @@ function adminLog() {
 }
 
 @Route.group('/v1')
-@Middleware.after()
+@Middleware.after(userLog)
 @routingContext()
 class UserController extends BaseController {
 
@@ -438,7 +438,7 @@ class UserController extends BaseController {
 }
 
 @Route.group('/v1')
-@Middleware.after()
+@Middleware.after(adminLog)
 @routingContext()
 class AdminController extends BaseController {
 
@@ -459,7 +459,7 @@ class AdminController extends BaseController {
 
 ### Group Global Contraints
 
-Global constraint will be applied to all a specific groups's name
+Global constraint will be applied to all a specific group name (no matter how groups are isolated in different routing context).
 
 ```js
 const {Route, BaseController, routingContext} = require('express-controller');
@@ -496,8 +496,6 @@ class UserController extends BaseController {
       super();
     }
 
-    // the current route path will be 'get /multiple/send'
-    // the '/single' prefix is ovetwritten
     @Route.get('/send')
     sendSomthing() {
 
@@ -516,8 +514,6 @@ class AdminController extends BaseController {
       super();
     }
 
-    // the current route path will be 'get /multiple/send'
-    // the '/single' prefix is ovetwritten
     @Route.get('/index')
     sendSomthing() {
 
