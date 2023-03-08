@@ -99,7 +99,6 @@ The `httpContext` object would looks like
 
 ```js
 {
-
     request: req,               // the request object dispatched from express
     response: res,              // the response object dispatched from express
     nextMiddleware: next,       // the function that point to the next handler of the current route
@@ -113,7 +112,7 @@ The `@dispatchable` decorator is optional to apply to controller. Use `@dispatch
 
 
 
-## Routing with Contorllers
+## Routing with Controllers
 
 
 
@@ -333,6 +332,202 @@ class Controller extends BaseController {
     }
 }
 ```
+
+## Grouping routes (since version 0.1.x)
+
+
+Routes grouping is a way to define routes in a specific group so that we can apply constraints to the group's routes.
+
+```js
+const {Route, BaseController, routingContext} = require('express-controller');
+
+
+@Route.group('/user')
+@routingContext()
+class Controller extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    // the current route path will be 'get /multiple/send'
+    // the '/single' prefix is ovetwritten
+    @Route.get('/send')
+    sendSomthing() {
+
+
+    }
+}
+```
+
+#### @Route.group vs @Route.prefix differences
+
+`@Route.prefix` is just the concaternation of the prefix and route's path and each Controller class (a routing context) has just only one prefix for it's routes.
+On another hand, a Controller Class (a routing context) can have more than one group of routes that each group has different constraints for specific purposes (such as testing).
+
+
+### Group Local Contraints
+
+Local constraint is middlewares that applied to all group's routes by using `@Middleware` on class definition.
+
+
+```js
+const {Route, BaseController, routingContext} = require('express-controller');
+    
+function log(req, res, next) {
+
+  console.log(req);
+  next()
+}
+
+
+@Route.group('/user')
+@Middleware.before(log)
+@routingContext()
+class UserController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    // the current route path will be 'get /multiple/send'
+    // the '/single' prefix is ovetwritten
+    @Route.get('/send')
+    sendSomthing() {
+
+
+    }
+}
+```
+
+
+**Notice:** a group is bound with a Controller (a routing context), it's not identical when multiple classes has the same name and the local contraints would be different on different classes.
+
+```js
+const {Route, BaseController, routingContext} = require('express-controller');
+    
+
+function userLog() {
+
+  console.log('user log')
+}
+
+function adminLog() {
+
+  console.log('admin log');
+}
+
+@Route.group('/v1')
+@Middleware.after()
+@routingContext()
+class UserController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+
+    @Route.get('/send')
+    sendSomthing() {
+
+
+    }
+}
+
+@Route.group('/v1')
+@Middleware.after()
+@routingContext()
+class AdminController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+
+    @Route.get('/index')
+    sendSomthing() {
+
+
+    }
+}
+
+```
+
+### Group Global Contraints
+
+Global constraint will be applied to all a specific groups's name
+
+```js
+const {Route, BaseController, routingContext} = require('express-controller');
+
+
+function start(req, res, next) {
+
+  req.startTime = Date.now();
+  next();
+}
+
+function end(req, res, next) {
+
+  const now = Date.now();
+  const start = req.startTime;
+
+  console.log('the time for this req is', now - start);
+}
+
+
+Route.constraint()
+      .group('/messure')
+      .before(start) // invoke before the handlers chain of it's route
+      .after(end) // invoke after the handlers chain of it's route
+    
+
+@Route.group('/user')
+@Route.group('/messure')
+@routingContext()
+class UserController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    // the current route path will be 'get /multiple/send'
+    // the '/single' prefix is ovetwritten
+    @Route.get('/send')
+    sendSomthing() {
+
+
+    }
+}
+
+
+@Route.group('/admin')
+@Route.group('/messure')
+@routingContext()
+class AdminController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    // the current route path will be 'get /multiple/send'
+    // the '/single' prefix is ovetwritten
+    @Route.get('/index')
+    sendSomthing() {
+
+
+    }
+}
+```
+
+
+
 
 ## Middleware for routes
 
