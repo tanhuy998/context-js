@@ -1,5 +1,5 @@
 
-# EXPRESS-CONTROLLER-JS
+# Context.JS
 
 A Controller class that can interact with [Express](https://expressjs.com/) features inspired by the coding style of ASP.NET and Java Spring.
 
@@ -333,208 +333,12 @@ class Controller extends BaseController {
 }
 ```
 
-## Grouping routes (since version 0.1.x)
 
+## Middleware for endpoints
 
-Routes grouping is a way to define routes in a specific group so that we can apply constraints to the group's routes.
-
-```js
-const {Route, BaseController, routingContext} = require('express-controller');
-
-
-@Route.group('/user')
-@routingContext()
-class Controller extends BaseController {
-
-    constructor() {
-
-      super();
-    }
-
-    // the path for of the route will be GET /user/send
-    @Route.get('/send')
-    sendSomthing() {
-
-
-    }
-}
-```
-
-#### @Route.group vs @Route.prefix differences
-
-`@Route.prefix` is just the concaternation of the prefix and route's path, each Controller class (a routing context) contains just only one prefix for it's routes.
-On another hand, a Controller Class (a routing context) can have more than one group of routes that each group has different constraints for specific purposes (such as testing).
-
-
-### Group Local Contraints
-
-Local constraint is middlewares that applied to all group's routes by using `@Middleware` on class definition.
-
-
-```js
-const {Route, BaseController, routingContext} = require('express-controller');
-    
-function log(req, res, next) {
-
-  console.log(req);
-  next()
-}
-
-
-@Route.group('/user')
-@Middleware.before(log)
-@routingContext()
-class UserController extends BaseController {
-
-    constructor() {
-
-      super();
-    }
-
-    // the current route path will be 'get /multiple/send'
-    // the '/single' prefix is ovetwritten
-    @Route.get('/send')
-    sendSomthing() {
-
-
-    }
-}
-```
-
-
-**Notice:** a group is bound with a Controller (a routing context), it's not identical when multiple classes has the same name and the local contraints would be different on different classes.
-
-
-```js
-const {Route, BaseController, routingContext} = require('express-controller');
-    
-
-function userLog() {
-
-  console.log('user log')
-}
-
-function adminLog() {
-
-  console.log('admin log');
-}
-
-@Route.group('/v1')
-@Middleware.after(userLog)
-@routingContext()
-class UserController extends BaseController {
-
-    constructor() {
-
-      super();
-    }
-
-
-    @Route.get('/send')
-    sendSomthing() {
-
-
-    }
-}
-
-@Route.group('/v1')
-@Middleware.after(adminLog)
-@routingContext()
-class AdminController extends BaseController {
-
-    constructor() {
-
-      super();
-    }
-
-
-    @Route.get('/index')
-    sendSomthing() {
-
-
-    }
-}
-
-```
-
-### Group Global Contraints
-
-Global constraint will be applied to all a specific group name (no matter how groups are isolated in different routing context).
-
-```js
-const {Route, BaseController, routingContext} = require('express-controller');
-
-
-function start(req, res, next) {
-
-  req.startTime = Date.now();
-  next();
-}
-
-function end(req, res, next) {
-
-  const now = Date.now();
-  const start = req.startTime;
-
-  console.log('the time for this req is', now - start);
-}
-
-
-Route.constraint()
-      .group('/messure')
-      .before(start) // invoke before the handlers chain of it's route
-      .after(end) // invoke after the handlers chain of it's route
-    
-
-@Route.group('/user')
-@Route.group('/messure')
-@routingContext()
-class UserController extends BaseController {
-
-    constructor() {
-
-      super();
-    }
-
-    @Route.get('/send')
-    sendSomthing() {
-
-
-    }
-}
-
-
-@Route.group('/admin')
-@Route.group('/messure')
-@routingContext()
-class AdminController extends BaseController {
-
-    constructor() {
-
-      super();
-    }
-
-    @Route.get('/index')
-    sendSomthing() {
-
-
-    }
-}
-```
-
-
-
-
-## Middleware for routes
-
-
-We can add Middlewares to the flow of route invocation. The way that this module can do is just being a wrapper for the Express's router. It catches decorators and caches decorators metadata, then stranspile it the a specific operations on the router.
-
-
+Apply `@Middleware` on Controller's method to register middlewares on an endpoint.
 
 Syntax:
-
-
 
 ```js
 // Invokes before the controller's action.
@@ -545,10 +349,7 @@ Syntax:
 
 ```
 
-
 example
-
-
 
 ```js
 const {Route, BaseController, dispatchable, Middleware} = require('express-controller');
@@ -655,7 +456,380 @@ controllerMethod() {
 }
 ```
 
+## Grouping routes (since version 0.1.x)
 
+
+Routes grouping is a way to define routes in a specific group so that we can apply constraints (add middleware for routes that is declared in group) to the group's routes.
+
+```js
+const {Route, BaseController, routingContext} = require('express-controller');
+
+
+@Route.group('/user')
+@routingContext()
+class Controller extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    // the path for of the route will be GET /user/send
+    @Route.get('/send')
+    sendSomthing() {
+
+
+    }
+}
+```
+
+#### @Route.group vs @Route.prefix 
+
+`@Route.prefix` is just the concaternation of the prefix and route's path, each Controller class (a routing context) contains just only one prefix for it's routes.
+On another hand, a Controller Class (a routing context) can have more than one group of routes that each group has different constraints for specific purposes (such as testing).
+
+
+### Group Local Contraints
+
+Local constraint is middlewares that applied to all group's routes by using `@Middleware` on class definition.
+
+
+```js
+const {Route, BaseController, routingContext} = require('express-controller');
+    
+function log(req, res, next) {
+
+  console.log(req);
+  next()
+}
+
+
+@Route.group('/user')
+@Middleware.before(log)
+@routingContext()
+class UserController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    // the current route path will be 'get /multiple/send'
+    // the '/single' prefix is ovetwritten
+    @Route.get('/send')
+    sendSomthing() {
+
+
+    }
+}
+```
+
+#### Default group
+
+If we don't define the group immediately, the specific controller class (routing context) is mapped to default group '/'
+
+```js
+const {Route, BaseController, routingContext} = require('express-controller');
+    
+function log(req, res, next) {
+
+  console.log(req);
+  next()
+}
+
+
+@Middleware.before(log)
+@routingContext()
+class UserController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    // the current route path will be 'get /multiple/send'
+    // the '/single' prefix is ovetwritten
+    @Route.get('/send')
+    sendSomthing() {
+
+
+    }
+}
+```
+
+
+
+**Notice:** Groups are isolated and has it's own local constraints (I called it "Constraint Isolation") between Controllers no matter how whose path are identical.
+
+The following example show how group '/v1' of each Controller is isolated.
+
+
+```js
+const {Route, BaseController, routingContext} = require('express-controller');
+    
+
+function userLog() {
+
+  console.log('user log')
+}
+
+function adminLog() {
+
+  console.log('admin log');
+}
+
+@Route.group('/v1')
+@Middleware.after(userLog)
+@routingContext()
+class UserController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+
+    @Route.get('/send')
+    sendSomthing() {
+
+
+    }
+}
+
+@Route.group('/v1')
+@Middleware.after(adminLog)
+@routingContext()
+class AdminController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+
+    @Route.get('/index')
+    sendSomthing() {
+
+
+    }
+}
+
+```
+
+
+### Group Global Contraints
+
+Global constraint will be applied to all a specific group name (no matter how groups are isolated in different routing context).
+
+
+```js
+const {Route, BaseController, routingContext} = require('express-controller');
+
+// define global constraint for groups
+Route.constraint()
+      .group('/messure')
+      .before(start) // invoke before the handlers chain of it's route
+      .after(end) // invoke after the handlers chain of it's route
+      .apply()
+
+function start(req, res, next) {
+
+  req.startTime = Date.now();
+  next();
+}
+
+function end(req, res, next) {
+
+  const now = Date.now();
+  const start = req.startTime;
+
+  console.log('the time for the request is', now - start);
+}
+
+
+@Route.group('/user')
+@Route.group('/messure')
+@routingContext()
+class UserController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    @Route.get('/send')
+    sendSomthing() {
+
+
+    }
+}
+
+
+@Route.group('/admin')
+@Route.group('/messure')
+@routingContext()
+class AdminController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    @Route.get('/index')
+    sendSomthing() {
+
+
+    }
+}
+```
+
+### Desugaring the flow of controll of route group
+
+Context.JS maps route base on Express.js's router. Consider the previous example
+
+```js
+const {Route, BaseController, routingContext, Middleware} = require('express-controller');
+
+
+function start(req, res, next) {
+
+  req.startTime = Date.now();
+  next();
+}
+
+function end(req, res, next) {
+
+  const now = Date.now();
+  const start = req.startTime;
+
+  console.log('the time for the request is', now - start);
+}
+
+function userLog(req, res, next) {
+
+  console.log('user log')
+
+  next();
+}
+
+function adminLog(req, res, next) {
+
+  console.log('admin log');
+
+  next();
+}
+
+Route.constraint()
+      .group('/messure')
+      .before(start) // invoke before the handlers chain of it's route
+      .after(end) // invoke after the handlers chain of it's route
+      .apply()
+
+
+@Route.group('/user')
+@Route.group('/messure')
+@Middleware.after(userLog)
+@routingContext()
+class UserController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    @Route.get('/send')
+    sendSomthing() {
+
+
+    }
+}
+
+
+@Route.group('/admin')
+@Route.group('/messure')
+@Middleware.after(adminLog)
+@routingContext()
+class AdminController extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    @Route.get('/index')
+    sendSomthing() {
+
+
+    }
+}
+```
+
+then Context.JS explains the related decorators to Express app how to map the routes as following.
+
+
+```js
+const express = require('express');
+const app = express();
+const {dispatchRequest} = require('contextjs');
+
+const mainRouter = express.Router();
+
+const userEndpoints = express.Router();
+userEndpoints.get('/send', dispatchRequest(UserController, 'sendSomething'), userLog);
+
+const adminEndpoints = express.Router();
+adminEndpoints.get('/index',dispatchRequest(AdminController, 'sendSomething'), adminLog)
+
+
+const messureGroup = express.Router();
+userEndpoints.get('/send', start, dispatchRequest(UserController, 'sendSomething'), userLog, end);
+adminEndpoints.get('/index', start, dispatchRequest(AdminController, 'sendSomething'), adminLog, end)
+
+// mapping routes this way in order to implements constraint isolation 
+// between groups that have the same path
+mainRouter.use('/user', userEndpoints);
+mainRouter.use('/admin', adminEndpoints);
+mainRouter.use('/messure', messureGroup);
+
+app.use('/', mainRouter);
+
+
+function start(req, res, next) {
+
+  req.startTime = Date.now();
+  next();
+}
+
+function end(req, res, next) {
+
+  const now = Date.now();
+  const start = req.startTime;
+
+  console.log('the time for the request is', now - start);
+}
+
+function userLog(req, res, next) {
+
+  console.log('user log')
+
+  next();
+}
+
+function adminLog(req, res, next) {
+
+  console.log('admin log');
+
+  next();
+}
+```
+
+### Scope of constraints
+
+The flow of Constraints is described below.
+
+```
+[globalConstraint.before] -> [localConstraint.before] -> [endpointMiddleware.before] -> [Controller.action] -> [endpointMiddleware.after] -> [localConstraint.after] -> [globalConstraint.after]
+```
 
 ## Response reference decorator
 
@@ -667,10 +841,7 @@ syntax:
 @Response.theMethodYouWantToAccess(...args)
 ```
 
-
 example
-
-
 
 ```js
 
@@ -707,8 +878,6 @@ class Controller extends BaseController {
 
 We can annotate annotate a controller to return the response body
 
-
-
 Syntax:
 
 
@@ -718,7 +887,6 @@ Syntax:
 
 
 *Note:* using this decorator means that we will calling the *res.send(_content)* and *res.end()*, so the response session will end there and all middlewares after this action could not interact with the response anymore.
-
 
 
 Example 
@@ -748,7 +916,7 @@ class Controller extends BaseController {
 }
 ```
 
-## Funciton library
+## Function library
 
 #### @requestParam(...paramName : string) (works on both method and property)
 
@@ -806,18 +974,15 @@ class Controller extends BaseControlle {
     @requestParam('userId', 'userName')
     getUserInfo(id, name) {
 
-      // the order of the params is stricted
-
+      // the order of the params must match the order of de request param we pass
         return {id, name};
     }
 
     @Endpoint.GET('/:userId/:userName')
     doSomthing() {
 
-        // "this.getUserInfo" here was wrapped in a DecoratorResult object
-        // when a method apply decorators (1 at least) of this module.
-        // Calling DecoratorResult.resolve() in order to resolve all the impacts that decorators
-        // did to the target controller's method
+        // we have to resolve the method which applied decorators
+        // in order to invoke it.
         const {id, name} = this.getUserInfo.resolve();
 
         console.log(id, name)
