@@ -3,11 +3,12 @@ const {BaseController, routingContext, Route, Endpoint, responseBody, Middleware
 function log(req, res, next) {
 
     console.log('admin')
-
+    //res.end();
     next();
 }
 
-@Route.prefix('/admin')
+@Middleware.before(log)
+@Route.group('/test')
 @routingContext()
 class Controller2 extends BaseController {
 
@@ -23,16 +24,19 @@ class Controller2 extends BaseController {
         return 'Hello on Admin section!';
     }
 
-    @Middleware.before(log)
+    //@Middleware.before(log)
     @Endpoint.GET('/data')
     @responseBody
     getData() {
 
         const req = this.httpContext.request;
         const res = this.httpContext.response;
+        
+        console.log('No Authentication');
+        //this.httpContext.nextMiddleware();
 
         if (!req.user) {
-
+            
             res.status(403);
             
             //console.log('no auth', res.headersSent);
@@ -42,6 +46,7 @@ class Controller2 extends BaseController {
         
         return 'Nothing to retrieve';
     }
+
 }
 
 module.exports = Controller2;

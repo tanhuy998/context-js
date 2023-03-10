@@ -2,6 +2,8 @@ const {dispatchRequest} = require('../requestDispatcher');
 const {preprocessDescriptor} = require('../decorator/utils.js');
 //const {decoratorContext} = require('../baseController.js');
 const PreInvokeFuncion = require('../callback/preInvokeFunction.js');
+const GroupConstraint = require('./groupConstraint.js');
+
 
 
 const routeDecoratorHandler = {
@@ -10,35 +12,76 @@ const routeDecoratorHandler = {
             currentRoutePrefix: '',
             routeSet: {},
         },
-        group: function(_path) {
+        state: {
+            localConstraints: {},
+            globalConstraints: {},
+        },
+        group: function(_groupPath) {
             //this.additionMethod.prop.currentRoutePrefix = _path;
 
             //const groupId = Symbol(Date.now());
 
-            return (function(_targetContructor) {
+            return (function groupLocalConstraint(_targetContructor) {
                 //this.additionMethod.prop.currentRoutePrefix = '';
                 const currentContext = RouteContext.currentContext;
 
-                const routeSet = this.prop.routeSet;
+                const localConstraints = this.state.localConstraints;
 
-                if (!routeSet[currentContext]) {
+                if (!localConstraints[currentContext]) {
+                    
+                    const groupInstance = RouteContext.config.express.Router();
 
-                    routeSet[currentContext] = {}
+                    localConstraints[currentContext] = new GroupConstraint().group(groupInstance);
+
+                    // this.state.context[currentContext] = {};
+                    // this.state.context[currentContext].groupRoutes = RouteContext.config.express.Router();
                 }
 
+                
                 //const currentRouteSet = routeSet[currentContext] = (routeSet[currentContext]) ? routeSet[currentContext] : {};
-                const currentRouteSet = routeSet[currentContext];
+                const currentConstraint = localConstraints[currentContext];
+                
+                const groupInstance = currentConstraint.groupInstance;
+                //const groupRoutes = RouteContext.config.express.Router();
 
-                currentRouteSet[_path] = {
-                    middlewareBefore: [],
-                    middlewareAfter: []
-                };
+                //currentConstraint.group(groupInstance)
 
-                RouteContext.currentPrefix = '';
+                RouteContext.router.use(_groupPath, groupInstance);
+
+                //RouteContext.currentPrefix = '';
                 return _targetContructor;
 
             }).bind(this);
-        },  
+        },
+        _middleware: function(_routingContext, _chain, _middlewarePriority = 'before', _constraintScope = 'localConstraints') {
+
+            //const contextGroups = this.prop.routeSet[_routingContext];
+            const currentConstraint = this.state[_constraintScope][_routingContext];
+            
+            if (!currentConstraint) return;
+
+            switch(_middlewarePriority) {
+
+                case 'before':
+                    currentConstraint.before(..._chain);
+                    break;
+                case 'after':
+                    currentConstraint.after(..._chain);
+                    break;
+                default:
+                    return;
+            }
+
+            return ;
+        },
+        _getLocalConstraint: function(_routingContext) {
+
+            return this.state.localConstraints[_routingContext];
+        }, 
+        _getGlobalConstraint: function(_groupPath) {
+             
+            return this.state.globalConstraints[_groupPath];
+        },
         prefix: function(_path) {
             //this.additionMethod.prop.currentRoutePrefix = _path;
             RouteContext.currentPrefix = _path;
@@ -118,6 +161,8 @@ class RouteContext {
 
     static #isResolved = false;
 
+    static #config = {};
+
     static get isResolved() {
 
         return this.#isResolved;
@@ -138,6 +183,11 @@ class RouteContext {
         return this.#context;
     }
 
+    static get config() {
+
+        return this.#config;
+    }
+
     constructor() {
 
 
@@ -154,6 +204,8 @@ class RouteContext {
     }
 
     static init(_express) {
+
+        this.#config.express = _express;
 
         if (!RouteContext.router) {
 
@@ -220,42 +272,84 @@ class RouteContext {
     
             return chain;
         };
+        
+        const mergeRouteWithGroupLocalConstraint = function(_routingContext, _routeMethod, _routePrefix, _childPath, _controllerAcion,  _currentHandlersChain) {
 
-        const combineGroupsAndDefineRoute = function(_routingContext, _routeMethod, _routePrefix, _childPath, _controllerAcion,  _currentHandlersChain) {
+            //const contextGroup = routeDecoratorHandler.additionMethod.prop.routeSet[_routingContext];
+            const localConstraint = routeDecoratorHandler.additionMethod.state.localConstraints[_routingContext];
 
-            const contextGroup = routeDecoratorHandler.additionMethod.prop.routeSet[_routingContext];
 
-            const groups = (contextGroup) ? Object.keys(contextGroup) : [];
+            if (localConstraint) {
 
-            if (groups.length > 0) {
+                const before = localConstraint.middlewareBefore;
+                const after = localConstraint.middlewareAfter;
 
-                for (const groupPrefix of groups) {
-
-                    const {middlewareBefore, middlewareAfter} = contextGroup[groupPrefix];
-
-                    const handlers = [...middlewareBefore, _currentHandlersChain, ...middlewareAfter];
-
-                    const fullPath = groupPrefix + _childPath;
-
-                    //console.log(fullPath, handlers);
-
-                    RouteContext.router[_routeMethod](fullPath, handlers);
-                }
+                localConstraint.groupInstance[_routeMethod](_childPath, ...before, ..._currentHandlersChain, ...after);
             }
             else {
-                
-                RouteContext.router[_routeMethod](_routePrefix + _childPath, _currentHandlersChain);
+
+                const fullPath = _routePrefix + _childPath;
+
+                RouteContext.router[_routeMethod](fullPath, _currentHandlersChain);
             }
+
+            //const groups = (contextGroup) ? Object.keys(contextGroup) : [];
+
+            // if (groups.length > 0) {
+                
+            //     routeDecoratorHandler.additionMethod.state.context[_routingContext].groupRoutes[_routeMethod](_childPath, _currentHandlersChain);
+
+            //     for (const groupPrefix of groups) {
+
+            //         const currentGroup = contextGroup[groupPrefix];
+
+            //         if (currentGroup.isInitialized == false) {
+
+            //             Route._initializeGroup(_routingContext, groupPrefix);
+
+            //         }
+
+            //         const fullPath = groupPrefix + _childPath;
+
+            //         //console.log(fullPath, _currentHandlersChain)
+
+            //         //currentGroup.groupRoutes[_routeMethod](_childPath, _currentHandlersChain);
+
+
+            //         //console.log(_routingContext, currentGroup.groupRoutes)
+            //         //const {middlewareBefore, middlewareAfter} = contextGroup[groupPrefix];
+
+            //         //const handlers = [...middlewareBefore, _currentHandlersChain, ...middlewareAfter];
+
+            //         //const fullPath = groupPrefix + _childPath;
+
+            //         // will be changed to use sub router instead of declaring route immediately
+            //         //RouteContext.router[_routeMethod](fullPath, handlers);
+
+            //         //console.log(_routingContext, currentGroup.groupInstance);
+            //     }
+            // }
+            // else {
+                
+            //     RouteContext.router[_routeMethod](_routePrefix + _childPath, _currentHandlersChain);
+            // }
         }
 
         return function(method, _routePrefix, path, _action) {
 
             const session = RouteContext.session(currentSessionSymbol);
 
-            const {context, action} = session.meta;
+            let validSession = undefined;
 
-            const matchContext = (routingContext == context);
-            const matchAction = (_action == action);
+            if (session) {
+
+                const {context, action} = session.meta;
+
+                const matchContext = (routingContext == context);
+                const matchAction = (_action == action);
+
+                validSession = (matchContext && matchAction) ? session: undefined;
+            }
             
             //const middleWare = (matchContext && matchAction) ? registerMiddleware : () => {};
 
@@ -269,11 +363,11 @@ class RouteContext {
             // //registerMiddleware(method, path, _session, 'afterController');
             // middleWare(method, path, session, 'afterController');
 
-            const validSession = (matchContext && matchAction) ? session: undefined;
+            
 
             const routeHandlers = combineMiddlewareChain(routingContext, controllerClass, _action, validSession);
 
-            return combineGroupsAndDefineRoute(routingContext, method, _routePrefix, path, _action, routeHandlers);
+            return mergeRouteWithGroupLocalConstraint(routingContext, method, _routePrefix, path, _action, routeHandlers);
         }
     }
 
@@ -301,6 +395,16 @@ class RouteContext {
     //     this.#hooks[_name] = [];
     // }
 
+    /**
+     * define a atomic route
+     * 
+     * @param {*} method 
+     * @param {*} _path 
+     * @param {*} _routingContext 
+     * @param {*} _action 
+     * @param {*} _sessionKey 
+     * @returns 
+     */
     static define(method, _path, _routingContext, _action, _sessionKey = undefined) {
 
         const callback = new PreInvokeFuncion(RouteContext.#dispatchRouter());

@@ -1,11 +1,91 @@
 const {preprocessDescriptor} = require('../decorator/utils');
-const {RouteContext} = require('../http/httpRouting');
+const {RouteContext, Route} = require('../http/httpRouting');
+
 
 // draft
 const middlewareInstance = {
     before: RouteContext.middlewareAfterController,
     after: RouteContext.middlewareAfterController
 };
+
+function manageMiddlewaresForClass(_constructor, routingContext, _order, _middlewares) {
+    
+    //if (RouteContext.currentContext != routingContext) return;
+
+    const hasGroup = Route._getLocalConstraint(routingContext);
+    
+    if (!hasGroup) {
+
+        // define default group for the current Controller
+        Route.group('/')(_constructor); // the way calling the decorator without applying it to class definition
+
+        //groups = Route._getGroup(routingContext);
+    }
+
+    //const priority = (_order == 'before')? 'middlewareBefore' : 'middlewareAfter';
+
+    Route._middleware(routingContext, _middlewares, _order, 'localConstraints');
+
+    return _constructor;
+}
+
+function manageMiddlewaresForMethod(_class, _action, descriptor, context, _order, _middlewares) {
+
+    const {currentRoutingContext, temporarySessionSymbol} = context;
+
+
+    const decoratorResult = preprocessDescriptor(_class, _action, descriptor);
+
+    const decoratorSessionSymbol = decoratorResult.payload['routeSession'];
+
+
+    let currentSessionSymbol;
+
+    if (!decoratorSessionSymbol) {
+        // if there is no session is setted on this controller's action
+        // register the temporary session that is created before to the current controller's action
+
+
+        // RouteContext.currentSession is switched to temporarySessionSymbol by default
+        currentSessionSymbol = temporarySessionSymbol;
+
+        decoratorResult.payload['routeSession'] = currentSessionSymbol;
+
+        RouteContext.assignSessionAction(currentSessionSymbol, _action);
+        RouteContext.assignSessionContext(currentRoutingContext);
+        // decoratorResult.on('afterResolve', function() {
+
+        //     //console.log('end session', routeSessionSymbol)
+        //     RouteContext.endSession(routeSessionSymbol);
+        // })
+    }
+    else {
+
+        currentSessionSymbol = decoratorSessionSymbol;
+        // if current decoratorResult has already start a session
+        // switch back to the existence
+        RouteContext.switchSession(decoratorSessionSymbol)
+        RouteContext.endSession(temporarySessionSymbol);
+    }
+
+    //_target[_order].call(RouteContext, routeSessionSymbol, ..._middlewares);
+
+    switch (_order) {
+        case 'before':
+            RouteContext.middlewareBeforeController(currentSessionSymbol, _action, ..._middlewares);
+            break;
+        case 'after':
+            RouteContext.middlewareAfterController(currentSessionSymbol, _action, ..._middlewares);
+            break;
+        default:
+            break;
+    }
+
+
+    descriptor.value = decoratorResult;
+
+    return descriptor;
+}
 
 const Middleware = new Proxy(middlewareInstance, {
     method: {
@@ -27,58 +107,18 @@ const Middleware = new Proxy(middlewareInstance, {
             RouteContext.switchSession(temporarySessionSymbol);
 
             return function(_class, _action, descriptor) {
-
-                const decoratorResult = preprocessDescriptor(_class, _action, descriptor);  
-
-                const decoratorSessionSymbol = decoratorResult.payload['routeSession'];
-
-
-                let currentSessionSymbol;
-
-                if (!decoratorSessionSymbol) {
-                    // if there is no session is setted on this controller's action
-                    // register the temporary session that is created before to the current controller's action
-
+                
+                if (!_action && !descriptor) {
                     
-                    // RouteContext.currentSession is switched to temporarySessionSymbol by default
-                    currentSessionSymbol = temporarySessionSymbol;
+                    // routing context in class decorator is different from routing context of method
+                    const classRoutingContext = RouteContext.currentContext;
 
-                    decoratorResult.payload['routeSession'] = currentSessionSymbol;
-
-                    RouteContext.assignSessionAction(currentSessionSymbol, _action);
-                    RouteContext.assignSessionContext(currentRoutingContext);
-                    // decoratorResult.on('afterResolve', function() {
-
-                    //     //console.log('end session', routeSessionSymbol)
-                    //     RouteContext.endSession(routeSessionSymbol);
-                    // })
+                    return manageMiddlewaresForClass(_class, classRoutingContext, _order, _middlewares);
+                    
                 }
                 else {
-                    
-                    currentSessionSymbol = decoratorSessionSymbol;
-                    // if current decoratorResult has already start a session
-                    // switch back to the existence
-                    RouteContext.switchSession(decoratorSessionSymbol)
-                    RouteContext.endSession(temporarySessionSymbol);
+                    return manageMiddlewaresForMethod(_class, _action, descriptor, {currentRoutingContext, temporarySessionSymbol}, _order, _middlewares);
                 }
-
-                //_target[_order].call(RouteContext, routeSessionSymbol, ..._middlewares);
-                
-                switch(_order) {
-                    case 'before':
-                        RouteContext.middlewareBeforeController(currentSessionSymbol, _action,..._middlewares);
-                    break;
-                    case 'after':
-                        RouteContext.middlewareAfterController(currentSessionSymbol, _action, ..._middlewares);
-                    break;
-                    default:
-                        break;
-                }
-  
-
-                descriptor.value = decoratorResult;
-    
-                return descriptor;
             }
         }
     },
