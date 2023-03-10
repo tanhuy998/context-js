@@ -3,6 +3,8 @@ const {preprocessDescriptor} = require('../decorator/utils.js');
 //const {decoratorContext} = require('../baseController.js');
 const PreInvokeFuncion = require('../callback/preInvokeFunction.js');
 const GroupConstraint = require('./groupConstraint.js');
+const GlobalConstraintConfiguration = require('./globalConstraitConfiguration.js');
+const GroupManager = require('./groupManager.js');
 
 
 
@@ -13,17 +15,20 @@ const routeDecoratorHandler = {
             routeSet: {},
         },
         state: {
+            groupList: new GroupManager(),
             localConstraints: {},
             globalConstraints: {},
         },
         group: function(_groupPath) {
             //this.additionMethod.prop.currentRoutePrefix = _path;
-
+            
             //const groupId = Symbol(Date.now());
 
             return (function groupLocalConstraint(_targetContructor) {
                 //this.additionMethod.prop.currentRoutePrefix = '';
                 const currentContext = RouteContext.currentContext;
+
+                this.state.groupList.save(currentContext, _groupPath);
 
                 const localConstraints = this.state.localConstraints;
 
@@ -32,17 +37,14 @@ const routeDecoratorHandler = {
                     const groupInstance = RouteContext.config.express.Router();
 
                     localConstraints[currentContext] = new GroupConstraint().group(groupInstance);
-
-                    // this.state.context[currentContext] = {};
-                    // this.state.context[currentContext].groupRoutes = RouteContext.config.express.Router();
                 }
 
-                
-                //const currentRouteSet = routeSet[currentContext] = (routeSet[currentContext]) ? routeSet[currentContext] : {};
                 const currentConstraint = localConstraints[currentContext];
                 
                 const groupInstance = currentConstraint.groupInstance;
                 //const groupRoutes = RouteContext.config.express.Router();
+
+                //const globalConstraint = this.state.globalConstraints[_groupPath];
 
                 //currentConstraint.group(groupInstance)
 
@@ -74,6 +76,10 @@ const routeDecoratorHandler = {
 
             return ;
         },
+        constraint: function() {
+
+            return new GlobalConstraintConfiguration(this.state.globalConstraints);
+        },
         _getLocalConstraint: function(_routingContext) {
 
             return this.state.localConstraints[_routingContext];
@@ -81,6 +87,27 @@ const routeDecoratorHandler = {
         _getGlobalConstraint: function(_groupPath) {
              
             return this.state.globalConstraints[_groupPath];
+        },
+        _initializeGroups: function (contextList) {
+            
+            const contextKeys = Reflect.ownKeys(contextList);
+            
+            for (const _context of contextKeys) {
+                
+                const localConstraint = this.state.localConstraints[_context]
+
+                const groupList  = this.state.groupList.getByContext(_context);
+
+                for (const groupPath of groupList) {
+                    
+                    const globalConstraint = this.state.globalConstraints[groupPath];
+
+                    if (globalConstraint && localConstraint) {
+                        
+                        localConstraint.mergeConfigWith(globalConstraint);
+                    }
+                }
+            }
         },
         prefix: function(_path) {
             //this.additionMethod.prop.currentRoutePrefix = _path;
@@ -222,6 +249,8 @@ class RouteContext {
 
         const the_router = RouteContext.router;
 
+        Route._initializeGroups(this.#context);
+
         for (const callback of callbackQueue) {
             
             callback.bind(the_router).invoke();
@@ -277,7 +306,6 @@ class RouteContext {
 
             //const contextGroup = routeDecoratorHandler.additionMethod.prop.routeSet[_routingContext];
             const localConstraint = routeDecoratorHandler.additionMethod.state.localConstraints[_routingContext];
-
 
             if (localConstraint) {
 

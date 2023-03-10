@@ -7,8 +7,14 @@ function log(req, res, next) {
     next();
 }
 
+Route.constraint()
+    .group('/test')
+    .before(log)
+    .apply()
+
 @Middleware.after(log)
 @Route.group('/test')
+//@Route.group('/new')
 @routingContext()
 class Controller2 extends BaseController {
 

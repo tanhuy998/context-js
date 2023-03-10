@@ -15,7 +15,13 @@ function afterContorller(req, res, next) {
     next();
 }
 
-//@Route.prefix('/user') // prefix will be skip when group is declared
+Route.constraint()
+    .group('/user')
+    .group('/test')
+    .before(log)
+    .apply()
+
+@Route.group('/user') // prefix will be skip when group is declared
 //@Middleware.before(log)
 @Middleware.after(afterContorller)
 //@Route.group('/test')
@@ -30,7 +36,7 @@ class Controller1 extends BaseController {
     
     //@Endpoint.GET('/')
     @Endpoint.GET('/temp')
-    //@Middleware.before(log)
+    @Middleware.before(log)
     //@Middleware.after(afterContorller)
     //@contentType('application/json')
     @responseBody

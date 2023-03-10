@@ -1,24 +1,28 @@
 module.exports = class GroupConstraint {
 
-    #isInitialized = false;
+    isInitialized = false;
     #groupInstance;
-    #middlewareBefore = [];
-    #middlewareAfter = []; 
+
+    #config = {
+        middlewareBefore: [],
+        middlewareAfter: [],
+    }
+    
 
     before(...middleware) {
 
-        const temp = this.#middlewareBefore;
+        const temp = this.#config.middlewareBefore;
 
-        this.#middlewareBefore = [...middleware, ...temp];
+        this.#config.middlewareBefore = [...temp, ...middleware];
 
         return this;
     }
 
     after(...middleware) {
 
-        const temp = this.#middlewareAfter;
+        const temp = this.#config.middlewareAfter;
 
-        this.#middlewareAfter = [...temp, ...middleware];
+        this.#config.middlewareAfter = [...temp, ...middleware];
 
         return this;
     }
@@ -30,14 +34,35 @@ module.exports = class GroupConstraint {
         return this;
     }
 
+    /**
+     * 
+     * @param {GroupConstraint} another 
+     * @returns 
+     */
+    mergeConfigWith(another) {
+
+        const currentBefore = this.#config.middlewareBefore;
+
+        this.#config.middlewareBefore = [...another.middlewareBefore, ...currentBefore];
+
+
+        
+        const currentAfter = this.#config.middlewareAfter;
+
+        this.#config.middlewareAfter = [...currentAfter, ...another.middlewareAfter];
+        
+
+        return this;
+    }
+
     get middlewareBefore() {
 
-        return this.#middlewareBefore;
+        return this.#config.middlewareBefore;
     }
 
     get middlewareAfter() {
 
-        return this.#middlewareAfter;
+        return this.#config.middlewareAfter;
     }
 
     get groupInstance() {
