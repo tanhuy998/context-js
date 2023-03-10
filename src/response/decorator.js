@@ -8,6 +8,8 @@ function sendResponseBodyAndEndRequest(returnValue, _controllerObject, _theContr
 
     res.send(returnValue)
     res.end();
+
+    _controllerObject.httpContext.nextMiddleware();
 }
 
 function header(...arg) {

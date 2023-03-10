@@ -7,7 +7,7 @@ function log(req, res, next) {
     next();
 }
 
-@Middleware.before(log)
+@Middleware.after(log)
 @Route.group('/test')
 @routingContext()
 class Controller2 extends BaseController {
