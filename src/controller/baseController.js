@@ -66,7 +66,7 @@ class BaseController  {
         this.#decoratedList.push(decoratedResult);
     }
 
-    resolveProperty() {
+    async resolveProperty() {
 
         const props = Object.getOwnPropertyNames(this);
 
@@ -76,7 +76,7 @@ class BaseController  {
 
             if (this[propName].constructor.name == 'PropertyDecorator') {
 
-                this[propName].bind(this).resolve();
+                await this[propName].bind(this).resolve();
             }
         }
     }

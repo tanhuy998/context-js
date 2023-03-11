@@ -1,5 +1,6 @@
 const PreInvokeFunction = require('../callback/preInvokeFunction.js');
 const {EventEmitter} = require('node:events');
+const reflectFunction = require('../libs/reflectFunction.js')
 
 const DecoratorType =  {
     CLASS_DECORATOR: 0x1,
@@ -82,17 +83,7 @@ class DecoratorResult extends EventEmitter{
         });
     }
 
-    resolve() {
-
-        
-        if (this.needContext && !this._context) throw new Error('DecoratorResult error: property decorator need context to be resolved');
-
-        this.emit('beforeResolve', this._context, this._target, this._targetDescriptor, this.type);
-
-        if (this.needContext) {
-            
-            this._target.bind(this._context);
-        }
+    async #applyTransformation() {
 
         for (const meta of this._actionQueue) {
 
@@ -110,24 +101,74 @@ class DecoratorResult extends EventEmitter{
             if (action instanceof PreInvokeFunction) {
 
                 //action.passArgs(this._target, ...this.payload[decoratorName]).invoke();
-                action.passArgs(this._target, ...args).invoke();
+                await action.passArgs(this._target, ...args).invoke();
             }
             else {
 
                 //action(this._target, ...this.payload[decoratorName]);
-                action(this._target, ...args);
+                const functionMeta = reflectFunction(action);
+
+                if (functionMeta.isAsync) {
+
+                    await action(this._target, ...args);
+                }
+            
+                action(this._target, ...args);    
+            }
+        }
+    }
+
+    
+    async resolve(_afterTransform = undefined) {
+
+        
+        if (this.needContext && !this._context) throw new Error('DecoratorResult error: property decorator need context to be resolved');
+
+        this.emit('beforeResolve', this._context, this._target, this._targetDescriptor, this.type);
+
+        if (this.needContext) {
+
+            const isFunction = (this._target.constructor.name == 'Function');
+            const isPreInvoke = (this._target instanceof PreInvokeFunction);
+
+            if (isFunction || isPreInvoke) {
+                
+                this._target.bind(this._context);
             }
         }
 
+        await this.#applyTransformation();
 
-        if (this._target instanceof PreInvokeFunction) {
+        let result;
 
-            const result = this._target.invoke();
-            this.emit('afterResolve', result, this._context, this._target, this._targetDescriptor, this.type);
-            
-            return result;
+        if (_afterTransform) {
+
+            const meta = reflectFunction(_afterTransform);
+
+            // meta exists mean the target reflection is type of Function
+            if (!meta) {
+
+                if (_afterTransform instanceof PreInvokeFunction) {
+
+                    //_afterTransform.passArgs(this._target);
+
+                    result = await _afterTransform.bind(this).invoke();
+                }
+            }
+            else {
+
+                if (meta.isAsync) {
+
+                    result = await _afterTransform.bind(this)(this._target);
+                }
+                else {
+
+                    result = _afterTransform.bind(this)(this._target);
+                }
+            }
         }
-        
+
+        this.emit('afterResolve', result, this._context, this._target, this._targetDescriptor, this.type);
         //this.emit('afterResolve', this._target, this._context, this._targetDescriptor, this.type);
         // if this._target is not instance of PreInvokeFunction 
         // it's mean the target of the decoratorResult is an class property
@@ -146,30 +187,41 @@ class PropertyDecorator extends DecoratorResult {
         super(DecoratorType.PROPERTY_DECORATOR, obj);
     }
 
-    resolve() {
+    async resolve() {
         
-        if (this.needContext && !this._context) throw new Error('PropertyDecorator error: property decorator need context to be resolved');
+        // if (this.needContext && !this._context) throw new Error('PropertyDecorator error: property decorator need context to be resolved');
         
-        for (const meta of this._actionQueue) {
+        // for (const meta of this._actionQueue) {
 
-            let {action, decoratorName} = meta;
+        //     let {action, decoratorName} = meta;
             
-            if (this.needContext) {
+        //     if (this.needContext) {
 
-                action = action.bind(this._context);
-            }
+        //         action = action.bind(this._context);
+        //     }
 
-            //const {target, propName} = super._target;
+        //     //const {target, propName} = super._target;
  
-            if (action instanceof PreInvokeFunction) {
+        //     if (action instanceof PreInvokeFunction) {
                 
-                return action.passArgs(this._target, ...this.payload[decoratorName]).invoke();
-            }
-            else {
-                
-                return action(this._target, ...this.payload[decoratorName]);
-            }
-        }
+        //         return await action.passArgs(this._target, ...this.payload[decoratorName]).invoke();
+        //     }
+        //     else {
+
+        //         const functionMeta = reflectFunction(action);
+
+        //         if (functionMeta.isAsync) {
+
+        //             return await action(this._target, ...this.payload[decoratorName])
+        //         }
+        //         else {
+
+        //             return action(this._target, ...this.payload[decoratorName]);
+        //         }   
+        //     }
+        // }
+
+        return await super.resolve();
     }
 }
 
@@ -185,9 +237,30 @@ class MethodDecorator extends DecoratorResult {
         this.bind(target);
     }
 
-    resolve() {
+    async resolve() {
 
-        const resolved_value = super.resolve();
+        return await super.resolve(async function handleAfterTransformedTheMethod() {
+
+            if (this._target instanceof PreInvokeFunction) {
+
+                const result = await this._target.invoke();
+                
+                return result;
+            }
+            else {
+    
+                const functionMeta = reflectFunction(this._target);
+
+                if (functionMeta.isAsync) {
+
+                    return await this._target.bind(this._context)();
+                }
+                else {
+
+                    return this._target.bind(this._context)();
+                }
+            }
+        });
 
         // for (const hook of this.#hooks) {
 
@@ -195,15 +268,11 @@ class MethodDecorator extends DecoratorResult {
 
         //     callback(resolved_value, ...args);
         // }
+
+        
+
+        //return resolved_value;
     }
-
-    // whenFulfill(_callback,..._args) {
-
-    //     this.#hooks.push({
-    //         callback: _callback,
-    //         args: _args,
-    //     });
-    // }
 }
 
 class ClassDecorator extends DecoratorResult {

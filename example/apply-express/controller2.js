@@ -1,4 +1,4 @@
-const {BaseController, routingContext, Route, Endpoint, responseBody, Middleware} = require('../../index.js');
+const {BaseController, routingContext, Route, Endpoint, responseBody, Middleware, requestParam} = require('../../index.js');
 
 function log(req, res, next) {
 
@@ -18,6 +18,9 @@ Route.constraint()
 @routingContext()
 class Controller2 extends BaseController {
 
+    @requestParam('userId')
+    id;
+
     constructor() {
 
         super();
@@ -31,7 +34,7 @@ class Controller2 extends BaseController {
     }
 
     //@Middleware.before(log)
-    @Endpoint.GET('/data')
+    @Endpoint.GET('/data/:userId')
     @responseBody
     getData() {
 
@@ -40,6 +43,9 @@ class Controller2 extends BaseController {
         
         console.log('No Authentication');
         //this.httpContext.nextMiddleware();
+
+        const id = this.id;
+        console.log(id);
 
         if (!req.user) {
             

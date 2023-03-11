@@ -1,10 +1,17 @@
 const {EventEmitter} = require('node:events');
+const reflectFunction = require('../libs/reflectFunction.js');
 
 class PreInvokeFunction extends EventEmitter{
 
     #callback;
     #args;
     #context;
+    #functionMeta;
+
+    get functionMeta() {
+
+        return this.#functionMeta;
+    }
 
     constructor(_callback, ...args) {
 
@@ -13,6 +20,8 @@ class PreInvokeFunction extends EventEmitter{
         if (_callback.constructor.name == 'Function') this.#callback = _callback;
 
         this.#args = args;
+
+        this.#functionMeta = reflectFunction(_callback);
 
         // return new Proxy(this, {
         //     context: this.#context,
@@ -49,17 +58,37 @@ class PreInvokeFunction extends EventEmitter{
         return this;
     }
 
-    invoke() {
+    async invoke() {
 
-        if (!this.#context) return this.#callback(...this.#args);
+        let targetFunction;
 
-        const result = this.#callback.call(this.#context, ...this.#args)
+        if (!this.#context) {
+
+            targetFunction =  this.#callback;
+        }
+        else {
+
+            targetFunction = this.#callback.bind(this.#context);
+        }
+
+        //const result = this.#callback.call(this.#context, ...this.#args)
+
+        let result;
+
+        if (this.#functionMeta.isAsync) {
+
+            result = await targetFunction(...this.#args);
+        }
+        else {
+
+            result = targetFunction(...this.#args)
+        }
 
         this.emit('fulfill', result, this.#callback ,this.#context);
 
         return result;
     }
-
+    
     whenFulfill(_callback) {
 
         this.on('fulfill', _callback);

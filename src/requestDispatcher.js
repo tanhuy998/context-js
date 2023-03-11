@@ -152,7 +152,7 @@ function initContext(arg) {
 //function dispatchRequest(controllerObject, controllerAction, _controllerClass) {
 function dispatchRequest(_controllerClass, _prop) {
     
-    return function(req, res, next) {
+    return async function(req, res, next) {
 
         const context = {
 
@@ -171,14 +171,14 @@ function dispatchRequest(_controllerClass, _prop) {
 
         controllerObject.setContext(context);
         
-        controllerObject.resolveProperty();
+        await controllerObject.resolveProperty();
 
         const controllerAction = controllerObject[_prop];
 
 
         if (controllerAction instanceof DecoratorResult) {
 
-            return controllerAction.bind(controllerObject)
+            return await controllerAction.bind(controllerObject)
                             .resolve();
 
             //return controllerAction.resolve();
