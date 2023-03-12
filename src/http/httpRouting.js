@@ -5,6 +5,7 @@ const PreInvokeFuncion = require('../callback/preInvokeFunction.js');
 const GroupConstraint = require('./groupConstraint.js');
 const GlobalConstraintConfiguration = require('./globalConstraitConfiguration.js');
 const GroupManager = require('./groupManager.js');
+const { group } = require('console');
 
 
 
@@ -36,7 +37,7 @@ const routeDecoratorHandler = {
                     
                     const groupInstance = RouteContext.config.express.Router();
 
-                    localConstraints[currentContext] = new GroupConstraint().group(groupInstance);
+                    localConstraints[currentContext] = new GroupConstraint().group(groupInstance).setPath(_groupPath);
                 }
 
                 const currentConstraint = localConstraints[currentContext];
@@ -306,6 +307,16 @@ class RouteContext {
 
             //const contextGroup = routeDecoratorHandler.additionMethod.prop.routeSet[_routingContext];
             const localConstraint = routeDecoratorHandler.additionMethod.state.localConstraints[_routingContext];
+
+            const groupManager = routeDecoratorHandler.additionMethod.state.groupList;
+
+            const groupPath = (localConstraint) ? localConstraint.path : _routePrefix;
+
+            groupManager.save(_routingContext, groupPath, {
+                method: _routeMethod, 
+                path: _childPath, 
+                throwError: true
+            })
 
             if (localConstraint) {
 

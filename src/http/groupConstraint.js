@@ -4,6 +4,7 @@ module.exports = class GroupConstraint {
     #groupInstance;
 
     #config = {
+        path: '',
         middlewareBefore: [],
         middlewareAfter: [],
     }
@@ -30,6 +31,13 @@ module.exports = class GroupConstraint {
     group(routerInstance) {
 
         this.#groupInstance = routerInstance;
+
+        return this;
+    }
+
+    setPath(value) {
+
+        this.#config.path = value;
 
         return this;
     }
@@ -69,6 +77,11 @@ module.exports = class GroupConstraint {
 
         return this.#groupInstance;
     }    
+
+    get path() {
+
+        return this.#config.path;
+    }
 
     constructor() {
 
