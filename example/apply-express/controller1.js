@@ -24,7 +24,7 @@ Route.constraint()
 @Route.group('/user') // prefix will be skip when group is declared
 //@Middleware.before(log)
 @Middleware.after(afterContorller)
-@Route.group('/test')
+//@Route.group('/test')
 //@Route.group('/test')
 @routingContext()
 class Controller1 extends BaseController {

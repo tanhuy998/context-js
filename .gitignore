@@ -5,3 +5,4 @@ chatController.js
 
 example/injector.js
 src/httpContext.js
+src/ioc
