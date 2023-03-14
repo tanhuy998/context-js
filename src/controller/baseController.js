@@ -1,5 +1,7 @@
 //const { obj } = require("../model/chatroom/chatRoom.schema");
 const {DecoratorResult} = require('../decorator/decoratorResult.js');
+const ControlerState = require('./controllerState.js');
+const ControllerConfiguration = require('./controllerConfiguration.js')
 //const {httpContext} = require('./requestDispatcher.js');
 
 const decoratorContext = {}
@@ -27,7 +29,7 @@ function dispatchable(_class) {
 
 class BaseController  {
 
-    static httpContext;
+    //static httpContext;
 
     static proxyHandler = {
 
@@ -43,12 +45,20 @@ class BaseController  {
             return result;
         }
     };
-    static proxy = new Proxy(BaseController, BaseController.proxyHandler);
+
+    static config = new ControllerConfiguration({});
+    //static proxy = new Proxy(BaseController, BaseController.proxyHandler);
 
     //@httpContext
     #context;
     #decoratedList;
+    #state = new ControlerState(BaseController.config);
 
+    get components() {
+
+        return this.#state;
+    }
+    
     constructor() {
         this.#decoratedList = [];
     }

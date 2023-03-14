@@ -4,3 +4,4 @@ node_modules
 chatController.js
 
 example/injector.js
+src/httpContext.js
