@@ -1,24 +1,11 @@
 //const { obj } = require("../model/chatroom/chatRoom.schema");
 const {DecoratorResult} = require('../decorator/decoratorResult.js');
 const ControlerState = require('./controllerState.js');
-const ControllerConfiguration = require('./controllerConfiguration.js')
+const ControllerConfiguration = require('./controllerConfiguration.js');
+const IocContainer = require('../ioc/iocContainer.js');
+const ControllerComponentManager = require('./controllerComponentManager.js');
 //const {httpContext} = require('./requestDispatcher.js');
 
-const decoratorContext = {}
-
-
-function annotation(_theConstructor) {
-
-    const reg_detemine_classname = /function\s\w+/;
-    
-    const className = _theConstructor.toString()
-                        .match(/function\s\w+/)[0]
-                        .replace('function ', '');
-
-    decoratorContext.currentClass = _theConstructor;
-
-    return _theConstructor;
-}
 
 function dispatchable(_class) {
 
@@ -46,21 +33,68 @@ class BaseController  {
         }
     };
 
-    static config = new ControllerConfiguration({});
+    static #config;
+    static #iocContainer;
+    static #supportIoc = false;
+    static #assistant;
+
+    static get assistant() {
+
+        return this.#assistant;
+    }
+
+    static get supportIoc() {
+
+        return this.#supportIoc;
+    }
+
+    static get configuration() {
+
+        return this.#config;
+    }
+
+    static get iocContainer() {
+
+        return this.#iocContainer;
+    }
+
+    static useIoc(_container) {
+
+        if (_container) {
+            
+            this.#iocContainer = _container;
+
+            this.#config = new ControllerConfiguration(_container);
+        }
+        else {
+
+            this.#iocContainer = IocContainer;
+
+            this.#config = new ControllerConfiguration(IocContainer);
+        }
+
+        this.#assistant = new ControllerComponentManager(IocContainer, this.#config);
+        this.#supportIoc = true;
+    };
     //static proxy = new Proxy(BaseController, BaseController.proxyHandler);
 
     //@httpContext
     #context;
     #decoratedList;
-    #state = new ControlerState(BaseController.config);
+    #controllerComponentAssistant;
 
     get components() {
 
-        return this.#state;
+        return this.#controllerComponentAssistant;
     }
-    
+
     constructor() {
         this.#decoratedList = [];
+
+        if (BaseController.supportIoc) {
+            
+            this.#controllerComponentAssistant = new ControllerComponentManager(BaseController.iocContainer, BaseController.configuration, this);
+        }
     }
 
     setContext(_httpContext) {
@@ -97,4 +131,4 @@ class BaseController  {
     }
 };
 
-module.exports = {BaseController, annotation, dispatchable};
+module.exports = {BaseController, dispatchable};

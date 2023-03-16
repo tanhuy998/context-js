@@ -76,6 +76,7 @@ class ReflectionFunction {
     #isAsync;
     #name;
     #isAnnonymous;
+    #preset = {};
 
     get target() {
 
@@ -112,8 +113,7 @@ class ReflectionFunction {
         if (typeof _targetFunction != 'function') throw new Error('ReflectionFunction Error: invalid instance');
 
         this.#target = _targetFunction;
-
-        this.#Init();
+        
     }
 
     #Init() {
@@ -128,31 +128,36 @@ class ReflectionFunction {
         //const test = /(\/*(\s|\t)*\w*(\s|\t)*)(async){0,1}(\s|\t)*(function){0,1}(\s|\t)*(\w*)*(\s|\t)*\((\s|\t)*((\w*(\s|\t)*(\=(\s|\t)*(((\'|\"|\`){0,1})(\w*)\15))*)((\s|\t)*\,(\s|\t)*(\w*(\s|\t)*(\=(\s|\t)*(((\'|\"|\`){0,1})(\w*)\15))*))*)*(\s|\t)*\)/g;
         //const test = /(\/\/*(\s|\t)*)*((\s|\t)*\w+)*(\s|\t)*\((\s|\t)*((\w*(\s|\t)*(\=(\s|\t)*(((\'|\"|\`){0,1})(\w*)\13))*)((\s|\t)*\,(\s|\t)*(\w*(\s|\t)*(\=(\s|\t)*(((\'|\"|\`){0,1})(\w*)\24))*))*)*(\s|\t)*\)(\s|\t)*(\=\>)*/g;
         //const test = /(\/\/*\s*)*((\s)*\w+)*(\s)*\((\s)*((\w*(\s)*(\=(\s)*(((\'|\"|\`){0,1})(\w*)\13))*)((\s)*\,(\s)*(\w*(\s)*(\=(\s)*(((\'|\"|\`){0,1})(\w*)\24))*))*)*(\s)*\)(\s)*(\=\>)*/g
-        const test = /(\/\/*\s*)*((\s)*(\w+))*(\s)*\(((\s|\w|\'|\"|\`|\=|\,)*)*\)(\s)*(\=\>)*/g;
+        //const test = /(\/\/*\s*)*((\s)*(\w+))*(\s)*\(((\s|\w|\'|\"|\`|\=|\,)*)*\)(\s)*(\=\>)*/g;
+
+        //best performance
+        //const test = /(\s)(\/+)*(\s*)(\_|\w*)(\s*)\(((\s|\w|\'|\"|\`|\=|\,|\{|\}|\:|\_|\(|\)|\[|\])*)\)(\s)*((\=\>(\s)*(\{){0,1})|(\{))/g;
+        const test = /(\s)(\/+)*(\s*)(\_|\w*)(\s*)\((.*)\)(\s)*((\=\>(\s)*(\{){0,1})|(\{))/g;
+        
         const _function = this.#target.toString();
-
+        
         const isClass = (_function.match(/^class/) != null) ? true : false;
-
+        
         const meta = _function
                     .matchAll(test);
         
         const matches = [...meta];
-
+        
         if (matches.length == 0) {
-
+            
             this.#name = this.#target.name;
             
             return;
         }
         else {
-
+            
             this.#findBestMatch(matches, isClass);
         }
     }
 
     #findBestMatch(_list, _isClass = false) {
 
-        const name = 4, params = 6, isCommented = 1, isArrow = 9;
+        const name = 4, params = 6, isCommented = 2, isArrow = 10;
 
         let meta;
         //console.log(_list)

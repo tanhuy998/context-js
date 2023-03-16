@@ -12,7 +12,7 @@ module.exports = class controlerState {
 
     }
 
-    loaded(key) {
+    isloaded(key) {
 
         return this.#components.has(key);
     }

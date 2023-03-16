@@ -1,6 +1,6 @@
 const reflectClass = require('../libs/reflectClass.js');
-const reflectFunction = require('../libs/reflectFunction.js')
-
+const reflectFunction = require('../libs/reflectFunction.js');
+const {ReflectionBabelDecoratorClass_Stage_0} = require('../libs/babelDecoratorClassReflection.js');
 class Empty {
 
     constructor() {
@@ -8,23 +8,37 @@ class Empty {
     };
 }
 
-function IocContainer() {
+class IocContainer {
 
-    var _container = new WeakMap();
+    static #container = new WeakMap();
 
-    var _stringKeys = new Map();
+    static #stringKeys = new Map();
 
-    var _singleton = new WeakMap();
+    static #singleton = new WeakMap();
 
-    var _metadata = {
+    static #id = Date.now();
+
+    static #preset = {
+        specialReflectionCase: [],
+    };
+
+    static #metadata = {
 
         reflections: new WeakMap()
     }
     //var objectPool = new Set();
 
-    function _cacheReflection(key, value) {
+    static preset(_config) {
 
-        const reflections = _metadata.reflections;
+        for (const key in _config) {
+
+            this.#preset[key] = _config[key];
+        }
+    }
+
+    static cacheReflection(key, value) {
+
+        const reflections = this.#metadata.reflections;
 
         if (reflections.has(key)) {
 
@@ -34,17 +48,17 @@ function IocContainer() {
         reflections.set(key, value);
     }
 
-    function _bindArbitrary(key, value) {
+    static bindArbitrary(key, value) {
 
-        if (_stringKeys.has(key)) {
+        if (this.#stringKeys.has(key)) {
 
-            _stringKeys.delete(key);
+            this.#stringKeys.delete(key);
         }
 
-        _stringKeys.set(key, value);
+        this.#stringKeys.set(key, value);
     }
 
-    function _bind(abstract, concrete, override = false) {
+    static bind(abstract, concrete, override = false) {
 
         if (!abstract.constructor && !concrete.constructor) {
 
@@ -58,68 +72,77 @@ function IocContainer() {
 
         const key = abstract.name;
 
-        if (_container.has(abstract) && override) {
+        if (this.#container.has(abstract) && override) {
 
-            _container.delete(abstract);
+            this.#container.delete(abstract);
 
-            //_stringKeys.delete(key);
+            //this.#stringKeys.delete(key);
         }
 
-        //_stringKeys.set(key, concrete);
+        //this.#stringKeys.set(key, concrete);
 
-        _bindArbitrary(key, abstract);
-        _container.set(abstract, concrete);
+        this.bindArbitrary(key, abstract);
+        this.#container.set(abstract, concrete);
     }
 
-    function _bindSingleton(abstract, concrete, override = false) {
+    static bindSingleton(abstract, concrete, override = false) {
 
-        _bind(abstract, concrete, override);
+        this.bind(abstract, concrete, override);
 
-        if (_singleton.has(abstract) && override) {
+        if (this.#singleton.has(abstract) && override) {
 
-            _singleton.delete(abstract);
+            this.#singleton.delete(abstract);
         }
 
-        _singleton.set(abstract, new Empty());
+        this.#singleton.set(abstract, new Empty());
     }
 
-    function _get(abstract) {
+    static get(abstract) {
 
-        if (!_container.has(abstract)) return undefined;
+        if (!this.#container.has(abstract)) return undefined;
+        
+        const concrete = this.#container.get(abstract);
 
-        const concrete = _container.get(abstract);
+        let result;
 
-        if (_singleton.has(abstract)) {
+        if (this.#singleton.has(abstract)) {
 
-            const obj = _singleton.get(abstract);
+            const obj = this.#singleton.get(abstract);
 
             if (obj.constructor.name == "Empty") {
 
-                const instance = _build(concrete);
+                const instance = this.build(concrete);
 
-                _singleton.delete(abstract);
-                _singleton.set(abstract, instance);
+                this.#singleton.delete(abstract);
+                this.#singleton.set(abstract, instance);
 
-                return instance;
+                //return instance;
+                result = instance;
             }
             else {
 
-                return obj;
+                //return obj;
+                result = obj;
             }
         }
         else {
 
-            return _build(concrete);
+            //return this.build(concrete);
+            result = this.build(concrete);
+
         }
+
+        console.log(this.#id, 'build', result);
+        return result;
     }
 
-    function _getByKey(key) {
+    static getByKey(key) {
 
-        if (!_stringKeys.has(key)) return undefined;
+        if (!this.#stringKeys.has(key)) return undefined;
 
-        const abstract = _stringKeys.get(key);
+        const abstract = this.#stringKeys.get(key);
         
-        const concrete =  _get(abstract);
+        const concrete =  this.get(abstract);
 
         if (concrete) {
 
@@ -127,44 +150,69 @@ function IocContainer() {
         } 
         else {
 
-            return _build(abstract);
+            return this.build(abstract);
         }
     }
 
-    function _build(concrete) {
+    static build(concrete) {
 
-        let reflection = _metadata.reflections.get(concrete);
+        let reflection = this.#metadata.reflections.get(concrete);
 
         if (!concrete.constructor) {
 
             throw new Error(`IocContainer Error: cannot build ${concrete}`)
         }
-
+        
         if (!reflection) {
 
             try {
-
+                
                 reflection = reflectClass(concrete);
             }
             catch(error) {
 
-                if (error.constructor.name == 'InvalidClassReflectionError') {
+                const specialReflectionCases = this.#preset.specialReflectionCase;
+
+                for (const reflector of specialReflectionCases) {
+
+                    try {
+
+                        reflection = new reflector(concrete);
+                    }
+                    catch(e) {
+
+
+                    }
+
+                    if (reflection) break;
+                }
+            }
+            finally {
+
+                if (!reflection) {
 
                     reflection = reflectFunction(concrete);
                 }
+                // caching reflection of the concrete for further usage
+                this.#metadata.reflections.set(concrete, reflection);
+                const args = this.#discoverParams(reflection.params);
+        
+                return new concrete(...args);
             }
         }
+        else {
 
-        const args = _discoverParams(reflection.params);
-        
-        return new concrete(...args);
+            const args = this.#discoverParams(reflection.params);
+
+            return new concrete(...args);
+        }
     }
     /**
      * 
      * @param {Array<ReflectionParameter>} list 
      * @returns 
      */
-    function _discoverParams(list) {
+    static #discoverParams(list) {
 
 
 
@@ -172,7 +220,7 @@ function IocContainer() {
             
             if (param.defaultValue != undefined && !param.isTypeOfString) {
                 //console.log(1, param.defaultValue != undefined)
-                const arg = _getByKey(param.defaultValue);
+                const arg = this.getByKey(param.defaultValue);
 
                 return arg;
             }
@@ -185,49 +233,24 @@ function IocContainer() {
         return result;
     }
 
-    var instance = {
-        get: _get,
-        getByKey: _getByKey,
-        bind: _bind,
-        bindSingleton: _bindSingleton,
-        bindArbitrary: _bindArbitrary,
-        build: _build,
-        cacheReflection: _cacheReflection,
-    }
+    // var instance = {
+    //     get: _get,
+    //     getByKey: _getByKey,
+    //     bind: _bind,
+    //     bindSingleton: _bindSingleton,
+    //     bindArbitrary: _bindArbitrary,
+    //     build: _build,
+    //     cacheReflection: _cacheReflection,
+    // }
 
-    return instance;
+    // return instance;
 }
+
+IocContainer.preset({
+    specialReflectionCase: [ReflectionBabelDecoratorClass_Stage_0]
+})
 
 module.exports = IocContainer;
 
-class A {}
-
-class C {
-    prop = 'hello world'
-}
-
-class B extends A {
-
-    random = Date.now();
-    state;
 
 
-    constructor(init = C, a) {
-
-        super();
-
-        this.state = init;
-    }
-}
-
-module.exports = IocContainer;
-
-const container = IocContainer();
-
-container.bindSingleton(A, B);
-container.bind(C, C);
-
-
-
-console.log(container.getByKey('A'));
-console.log(container.get(A).random);

@@ -3,6 +3,8 @@ const PreInvokeFunction = require('./callback/preInvokeFunction.js');
 const {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, ClassDecorator} = require('./decorator/decoratorResult.js');
 //const BaseController = require('./controller/baseController.js');
 const {preprocessDescriptor} = require('./decorator/utils.js');
+const {BaseController} = require('./controller/baseController.js');
+const reflectFunction = require('./libs/reflectFunction.js');
 
 
 // const ControllerContextFunctions = {
@@ -149,10 +151,96 @@ function initContext(arg) {
     }
 }
 
+
+
+
+
 //function dispatchRequest(controllerObject, controllerAction, _controllerClass) {
 function dispatchRequest(_controllerClass, _prop) {
+
+    /**
+     * 
+     * @param {PreinvokeFunction} _targetFunction 
+     * @returns 
+     */
+    function passParameter(_targetFunction) {
+        // context of of 'this' here is the controller object
+        const transformedFunction = (_targetFunction.constructor.name == PreInvokeFunction.name) ? _targetFunction : new PreInvokeFunction(_targetFunction);
+        const reflection = (_targetFunction.constructor.name == PreInvokeFunction.name) ? _targetFunction.functionMeta : reflectFunction(_targetFunction);
+
+        const args = reflection.params.map(function(param) {
+
+            const defaultValue = param.defaultValue;
+
+            if (defaultValue) {
+
+                if (param.isTypeOfString) {
+
+                    return undefined;
+                }
+                else {
     
-    return async function(req, res, next) {
+                    return this.components.get(defaultValue);
+                }
+            }
+        }, this)
+
+        transformedFunction.passArgs(args);
+
+        return transformedFunction;
+    }
+
+    /**
+     * 
+     * @param {*} _controllerObject 
+     * @param {*} _action 
+     * @returns 
+     */
+    async function handleRequest(_controllerObject, _action) {
+
+        const controllerAction = _controllerObject[_action];
+        
+        if (!controllerAction) {
+
+            throw new Error(`Dispatch Error: ${_controllerObject.constructor.name}.${_action} is not defined`);
+        }
+        else if (!(controllerAction instanceof DecoratorResult) && typeof controllerAction != 'function') {
+
+            throw new Error(`Dispatch Error: ${_controllerObject.constructor.name}.${_action} is not invocable`);
+        }
+
+        if (BaseController.supportIoc) {
+
+            if (controllerAction instanceof DecoratorResult) {
+
+                controllerAction.payload['handleRequest'] = '';
+                controllerAction.transform(passParameter, 'handleRequest');
+    
+                return await controllerAction.bind(_controllerObject)
+                    .resolve();
+    
+                //return controllerAction.resolve();
+            }
+            else {
+    
+                return await passParameter.bind(_controllerObject).invoke(controllerAction);
+            }
+        }
+        else {
+
+            if (controllerAction instanceof DecoratorResult) {
+                
+                return await controllerAction.bind(_controllerObject)
+                    .resolve();
+            }
+            else {
+
+                return controllerAction.bind(_controllerObject)();
+            }
+        }
+    }
+
+    return async function (req, res, next) {
 
         const context = {
 
@@ -163,28 +251,26 @@ function dispatchRequest(_controllerClass, _prop) {
             parentRoute: req.baseUrl,
             //routeContext: _router || undefined,
         }
-        
         //BaseController.httpContext = context;
-        HttpContextCatcher.newContext(context);
+        //HttpContextCatcher.newContext(context);
+
+        let controllerObject;
         
-        controllerObject = new _controllerClass();
+        if (BaseController.supportIoc) {
+            
+            controllerObject = BaseController.assistant.get(_controllerClass);
+        }
+        else {
+
+            controllerObject = new _controllerClass();
+        }
 
         controllerObject.setContext(context);
-        
+
         await controllerObject.resolveProperty();
-
-        const controllerAction = controllerObject[_prop];
-
-
-        if (controllerAction instanceof DecoratorResult) {
-
-            return await controllerAction.bind(controllerObject)
-                            .resolve();
-
-            //return controllerAction.resolve();
-        }
         
-        return controllerAction();
+        handleRequest(controllerObject, _prop);
+        //controllerObject.setIocContainer(_IocContext);
     }
 }
 

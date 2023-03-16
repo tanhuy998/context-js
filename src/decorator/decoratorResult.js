@@ -121,7 +121,6 @@ class DecoratorResult extends EventEmitter{
     
     async resolve(_afterTransform = undefined) {
 
-        
         if (this.needContext && !this._context) throw new Error('DecoratorResult error: property decorator need context to be resolved');
 
         this.emit('beforeResolve', this._context, this._target, this._targetDescriptor, this.type);
@@ -138,26 +137,19 @@ class DecoratorResult extends EventEmitter{
         }
 
         await this.#applyTransformation();
-
+        
         let result;
-
+        
         if (_afterTransform) {
 
-            const meta = reflectFunction(_afterTransform);
+            if (_afterTransform instanceof PreInvokeFunction) {
+                //_afterTransform.passArgs(this._target);
 
-            // meta exists mean the target reflection is type of Function
-            if (!meta) {
+                result = await _afterTransform.bind(this).invoke();
 
-                if (_afterTransform instanceof PreInvokeFunction) {
+            }else if (typeof _afterTransform == 'function') {
 
-                    //_afterTransform.passArgs(this._target);
-
-                    result = await _afterTransform.bind(this).invoke();
-                }
-            }
-            else {
-
-                if (meta.isAsync) {
+                if (_afterTransform.constructor.name == 'AsyncFunction') {
 
                     result = await _afterTransform.bind(this)(this._target);
                 }
@@ -240,9 +232,9 @@ class MethodDecorator extends DecoratorResult {
     async resolve() {
 
         return await super.resolve(async function handleAfterTransformedTheMethod() {
-
+            
             if (this._target instanceof PreInvokeFunction) {
-
+                
                 const result = await this._target.invoke();
                 
                 return result;
@@ -261,17 +253,6 @@ class MethodDecorator extends DecoratorResult {
                 }
             }
         });
-
-        // for (const hook of this.#hooks) {
-
-        //     const {callback, args} = hook;
-
-        //     callback(resolved_value, ...args);
-        // }
-
-        
-
-        //return resolved_value;
     }
 }
 

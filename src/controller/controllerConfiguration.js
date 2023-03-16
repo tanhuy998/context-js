@@ -4,7 +4,7 @@ module.exports = class ControllerConfiguration {
 
     #scope = new Set();
 
-    constructor(_container) {
+    constructor(_container = undefined) {
 
         this.#container = _container;
     }

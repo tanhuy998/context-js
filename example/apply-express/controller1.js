@@ -1,5 +1,5 @@
 const {BaseController, Route, Endpoint, routingContext, contentType, responseBody, Middleware} = require('../../index.js');
-
+const IocContainer = require('../../src/ioc/iocContainer.js')
 
 function log(req, res, next) {
 
@@ -16,11 +16,36 @@ function afterContorller(req, res, next) {
 }
 
 Route.constraint()
+    .group('/messure')
+    .before((req, res, next) => {
+
+        req.startTime = Date.now();
+        next();
+    })
+    .after((req, res, next) => {
+        const end = Date.now();
+        const start = req.startTime;
+
+        console.log('Handle time', end - start)
+        next();
+    })
+    .apply();
+
+Route.constraint()
     .group('/user')
     .group('/test')
     .before(log)
-    .apply()
+    .apply();
 
+
+class ComponentA {
+
+    prop = Date.now()
+}
+
+IocContainer.bindSingleton(ComponentA, ComponentA);
+
+@Route.group('/messure')
 @Route.group('/user') // prefix will be skip when group is declared
 //@Middleware.before(log)
 @Middleware.after(afterContorller)
@@ -29,9 +54,13 @@ Route.constraint()
 @routingContext()
 class Controller1 extends BaseController {
 
-    constructor() {
+    #component;
 
+    constructor(_component = ComponentA, a, b, c, d) {
+        
         super();
+
+        this.#component = _component
     }
 
     
@@ -55,12 +84,12 @@ class Controller1 extends BaseController {
     // test duplicate endpoint 
     @Endpoint.GET('/')
     //@contentType('application/json')
-    //@responseBody
+    @responseBody
     postSomthing() {
 
         const req = this.httpContext.request;
         const res = this.httpContext.response;
-
+        console.log(this.#component)
         return {
             status: 'ok',
             yourMessage: req.body
