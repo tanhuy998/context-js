@@ -1,6 +1,8 @@
 const reflectClass = require('../libs/reflectClass.js');
 const reflectFunction = require('../libs/reflectFunction.js');
 const {ReflectionBabelDecoratorClass_Stage_0} = require('../libs/babelDecoratorClassReflection.js');
+const { contentType } = require('../response/decorator.js');
+const { PropertyDecorator } = require('../decorator/decoratorResult.js');
 class Empty {
 
     constructor() {
@@ -10,25 +12,30 @@ class Empty {
 
 class IocContainer {
 
-    static #container = new WeakMap();
+    #container = new WeakMap();
 
-    static #stringKeys = new Map();
+    #stringKeys = new Map();
 
-    static #singleton = new WeakMap();
+    #singleton = new WeakMap();
 
-    static #id = Date.now();
+    #id = Date.now();
 
-    static #preset = {
-        specialReflectionCase: [],
+    #preset = {
+        specialReflectionCase: [ReflectionBabelDecoratorClass_Stage_0],
     };
 
-    static #metadata = {
+    #metadata = {
 
         reflections: new WeakMap()
     }
     //var objectPool = new Set();
 
-    static preset(_config) {
+    constructor() {
+
+
+    }
+
+    preset(_config) {
 
         for (const key in _config) {
 
@@ -36,7 +43,12 @@ class IocContainer {
         }
     }
 
-    static cacheReflection(key, value) {
+    getPreset() {
+
+        return this.#preset;
+    }
+
+    cacheReflection(key, value) {
 
         const reflections = this.#metadata.reflections;
 
@@ -48,7 +60,14 @@ class IocContainer {
         reflections.set(key, value);
     }
 
-    static bindArbitrary(key, value) {
+    getReflectionOf(key) {
+
+        if (!this.#metadata.reflections.has(key)) return undefined;
+
+        return this.#metadata.reflections.get(key);
+    }
+
+    bindArbitrary(key, value) {
 
         if (this.#stringKeys.has(key)) {
 
@@ -58,17 +77,9 @@ class IocContainer {
         this.#stringKeys.set(key, value);
     }
 
-    static bind(abstract, concrete, override = false) {
+    bind(abstract, concrete, override = false) {
 
-        if (!abstract.constructor && !concrete.constructor) {
-
-            throw new Error('IocContainer Error: abstract and concrete must have contructor')
-        }
-
-        if (!concrete instanceof abstract) {
-
-            throw new Error('IocContainer Error: cannot bind ' + abstract.constructor.name + ' with ' + concrete.constructor.name);
-        }
+        this.checkType(abstract, concrete);
 
         const key = abstract.name;
 
@@ -85,7 +96,34 @@ class IocContainer {
         this.#container.set(abstract, concrete);
     }
 
-    static bindSingleton(abstract, concrete, override = false) {
+    checkType(abstract, concrete) {
+
+        // const concreteType = (typeof concrete);
+        // const abstractType = (typeof abstract);
+
+        if (!abstract.constructor && !concrete.constructor) {
+
+            throw new Error('IocContainer Error: abstract and concrete must have contructor')
+        }
+
+        if (abstract == concrete) return;
+
+        let prototype = abstract.__proto__;
+
+        while(prototype !== null) {
+
+            if (prototype === concrete) {
+
+                return;
+            }
+
+            prototype = prototype.__proto__;
+        } 
+
+        throw new Error('IocContainer Error: cannot bind ' + abstract.constructor.name + ' with ' + concrete.constructor.name);
+    }
+
+    bindSingleton(abstract, concrete, override = false) {
 
         this.bind(abstract, concrete, override);
 
@@ -97,7 +135,50 @@ class IocContainer {
         this.#singleton.set(abstract, new Empty());
     }
 
-    static get(abstract) {
+    has(_abstract) {
+
+        return this.#container.has(_abstract);
+    }
+
+    hasKey(key) {
+
+        return this.#stringKeys.has(key);
+    }
+
+    getConcreteByKey(key) {
+
+        const abstract = this.getAbstractByKey(key);
+
+        if (abstract) {
+
+            return this.getConcreteOf(abstract);
+        }
+        else {
+
+            return undefined;
+        }
+    }
+
+    getConcreteOf(abstract) {
+
+        if (!this.#container.has(abstract)) return undefined;
+
+        return this.#container.get(abstract);
+    }
+
+    getAbstractByKey(key) {
+
+        if (!this.#stringKeys.has(key)) return undefined;
+
+        return this.#stringKeys.get(key);
+    }
+
+    hasSingleton(_abstract) {
+
+        return this.#singleton.has(_abstract);
+    }
+
+    get(abstract) {
 
         if (!this.#container.has(abstract)) return undefined;
         
@@ -136,7 +217,7 @@ class IocContainer {
         return result;
     }
 
-    static getByKey(key) {
+    getByKey(key) {
 
         if (!this.#stringKeys.has(key)) return undefined;
 
@@ -154,7 +235,7 @@ class IocContainer {
         }
     }
 
-    static build(concrete) {
+    build(concrete) {
 
         let reflection = this.#metadata.reflections.get(concrete);
 
@@ -212,7 +293,7 @@ class IocContainer {
      * @param {Array<ReflectionParameter>} list 
      * @returns 
      */
-    static #discoverParams(list) {
+    #discoverParams(list) {
 
 
 
@@ -245,10 +326,6 @@ class IocContainer {
 
     // return instance;
 }
-
-IocContainer.preset({
-    specialReflectionCase: [ReflectionBabelDecoratorClass_Stage_0]
-})
 
 module.exports = IocContainer;
 

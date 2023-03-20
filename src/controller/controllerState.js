@@ -1,6 +1,7 @@
 module.exports = class controlerState {
 
     #components = new WeakMap();
+    #keys = new Map();
     #scope;
 
     constructor(controllerConfiguration) {
@@ -12,24 +13,40 @@ module.exports = class controlerState {
 
     }
 
-    isloaded(key) {
+    isLoaded(key) {
+
+        if (typeof key == 'string') {
+
+            return this.#keys.has(key);
+        }
 
         return this.#components.has(key);
     }
 
-    load(_key, _container) {
+    load(_component, _container) {
+        
+        const component = _component;
 
-        if (this.#scope.has(_key)) return;
+        if (!this.#scope.has(component)) return;
 
-        if (this.#components.has(_key)) return;
+        //if (!this.#components.has(component)) return;
 
-        const component = _container.build(_key);
+        const instance = _container.build(component, this);
 
-        this.#components.set(_key, component);
+        this.#components.set(component, instance);
+
+        this.#keys.set(component.name, instance);
     }
 
-    get(key) {
+    getComponentByKey(_key) {
 
-        return this.#components.get(key);
+        if (!this.#keys.has(_key)) return undefined;
+
+        return this.#keys.get(_key);
+    }
+
+    get(component) {
+
+        return this.#components.get(component);
     }
 }

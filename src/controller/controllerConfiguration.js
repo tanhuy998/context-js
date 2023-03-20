@@ -1,6 +1,7 @@
 module.exports = class ControllerConfiguration {
 
     #container;
+    #keys = new Map();
 
     #scope = new Set();
 
@@ -12,6 +13,22 @@ module.exports = class ControllerConfiguration {
     getScope() {
 
         return this.#scope;
+    }
+
+    getByKey(_key) {
+
+        if (!this.#keys.has(_key)) return undefined;
+
+        return this.#keys.get(_key);
+    }
+
+    #addScopeComponent(component) {
+
+        this.#scope.add(component);
+
+        //const component = this.#scope.get(component);
+
+        this.#keys.set(component.name, component);
     }
 
     bindSingleton(key, value) {
@@ -26,9 +43,7 @@ module.exports = class ControllerConfiguration {
 
     bindScope(key, value) {
 
-        const scope = this.#scope;
-
-        scope.add(key);
+        this.#addScopeComponent(key);
 
         this.#container.bind(key, value);
     }

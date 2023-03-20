@@ -40,10 +40,19 @@ Route.constraint()
 
 class ComponentA {
 
+    static count = 0;
+
+    constructor() {
+
+        this.number = ++(ComponentA.count);
+    }
+
+    number;
     prop = Date.now()
 }
 
-IocContainer.bindSingleton(ComponentA, ComponentA);
+//IocContainer.bindSingleton(ComponentA, ComponentA);
+BaseController.configuration.bindScope(ComponentA, ComponentA)
 
 @Route.group('/messure')
 @Route.group('/user') // prefix will be skip when group is declared
@@ -55,10 +64,13 @@ IocContainer.bindSingleton(ComponentA, ComponentA);
 class Controller1 extends BaseController {
 
     #component;
+    #prop;
 
-    constructor(_component = ComponentA, a, b, c, d) {
+    constructor(_component = ComponentA, a = 'asdasd', b = ComponentA, c, d) {
         
         super();
+
+        this.#prop = a;
 
         this.#component = _component
     }
@@ -89,12 +101,14 @@ class Controller1 extends BaseController {
 
         const req = this.httpContext.request;
         const res = this.httpContext.response;
-        console.log(this.#component)
+        console.log(this.#component, this.#prop)
         return {
             status: 'ok',
             yourMessage: req.body
         };
     }
 }
+
+console.log(Controller1.prototype)
 
 module.exports = Controller1;

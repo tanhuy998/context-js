@@ -258,7 +258,7 @@ function dispatchRequest(_controllerClass, _prop) {
         
         if (BaseController.supportIoc) {
             
-            controllerObject = BaseController.assistant.get(_controllerClass);
+            controllerObject = BaseController.buildController(_controllerClass);
         }
         else {
 

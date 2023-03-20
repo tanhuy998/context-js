@@ -9,7 +9,7 @@ const ControllerComponentManager = require('./controllerComponentManager.js');
 
 function dispatchable(_class) {
 
-    _class.action = new Proxy(_class, BaseController.proxyHandler);
+    _class.action = new Proxy(_class, BaseController.dispatch);
 
     return _class;
 }
@@ -18,7 +18,7 @@ class BaseController  {
 
     //static httpContext;
 
-    static proxyHandler = {
+    static dispatch = {
 
         get: (target, prop) => {
 
@@ -30,17 +30,18 @@ class BaseController  {
             result.push(prop);
 
             return result;
-        }
+        },
+        set: () => false,
     };
 
     static #config;
     static #iocContainer;
     static #supportIoc = false;
-    static #assistant;
+    static #componentManager;
 
-    static get assistant() {
+    static get components() {
 
-        return this.#assistant;
+        return this.#config;
     }
 
     static get supportIoc() {
@@ -58,22 +59,26 @@ class BaseController  {
         return this.#iocContainer;
     }
 
-    static useIoc(_container) {
+    static buildController(_concrete) {
 
-        if (_container) {
-            
-            this.#iocContainer = _container;
+        if (this.#supportIoc) {
 
-            this.#config = new ControllerConfiguration(_container);
-        }
-        else {
-
-            this.#iocContainer = IocContainer;
-
-            this.#config = new ControllerConfiguration(IocContainer);
+            return this.#componentManager.buildController(_concrete);
         }
 
-        this.#assistant = new ControllerComponentManager(IocContainer, this.#config);
+        return new _class();
+    }
+
+    static useIoc() {
+
+        if (this.supportIoc) return;        
+
+        const container = new ControllerComponentManager();
+
+        this.#config = container.configuration;
+
+        this.#componentManager = container;
+        
         this.#supportIoc = true;
     };
     //static proxy = new Proxy(BaseController, BaseController.proxyHandler);
@@ -81,19 +86,32 @@ class BaseController  {
     //@httpContext
     #context;
     #decoratedList;
-    #controllerComponentAssistant;
+    #state;
 
-    get components() {
+    get state() {
 
-        return this.#controllerComponentAssistant;
+        return this.#state;
     }
 
     constructor() {
         this.#decoratedList = [];
 
-        if (BaseController.supportIoc) {
+        // if (BaseController.supportIoc) {
             
-            this.#controllerComponentAssistant = new ControllerComponentManager(BaseController.iocContainer, BaseController.configuration, this);
+        //     //this.#components = new ControllerComponentManager(BaseController.iocContainer, BaseController.configuration, this);
+        //     this.#state = new ControlerState(BaseController.configuration);
+        // }
+    }
+
+    setState(controllerState) {
+
+        if (this.#state) return;
+
+        if (this.controllerState instanceof ControlerState) return;
+
+        if (BaseController.supportIoc) {
+
+            this.#state = controllerState;
         }
     }
 
