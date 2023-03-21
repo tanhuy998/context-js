@@ -10,7 +10,12 @@ A Controller class that can interact with [Express](https://expressjs.com/) feat
 
 - Routing and register middleware in controller definition context using decorators.
 - Auto binding http context(such as request, response and next objects) to each controller object.
-- Access some Express's methods via given decorators.
+- Access Express's methods via given decorators in different http context.
+
+#### New features:
+
+- Dependency injection (since 1.x).
+- Grouping routes with constraint (since 1.x).
 
 ## Acknowledgment
 
@@ -36,11 +41,56 @@ yarn:
 yarn add express-controller-js
 ```
 
+#### Configuration 
+
+Merge one of the following methods with you babel configuration.
+
+**.babelrc or babel.config.json**
+
+```js
+{
+  "plugins": [["@babel/plugin-proposal-decorators", { "legacy": true }]]
+}
+```
+
+**package.json**
+
+```js
+{
+  "babel" : {
+    "plugins": [["@babel/plugin-proposal-decorators", { "legacy": true }]]
+  }
+}
+```
+
+#### Note
+
+The whole package does not use Decorator internally. We just need to transpile the file that apply decorator.
+
+```js
+require('@babel/register')({
+    only: [
+        'Path/to/The/Controller/File',
+    ]
+}); // to tell Babel that the file needs to be tranpiled 
+
+
+const app = require('express')();
+const {dispatchRequest} = require('express-controller');
+
+const Controller = require('Path/to/The/Controller/File');
+
+app.get('/path', dispatchRequest(...Controller.action.sendSomething));
+```
+
+or you can transpile files first then import it. This reduce runtime latency (spend on transpilling the syntax).
+
+This inconvience will no longer happen when Decorator officially been released.
+
 #### Simple usage
 
 
 Define a controller class
-
 
 
 ```js
@@ -70,10 +120,16 @@ Import into Express:
 
 
 ```js
+require('@babel/register')({
+    only: [
+        'Path/to/The/Controller/File',
+    ]
+}); 
+
 const app = require('express')();
 const {dispatchRequest} = require('express-controller');
 
-const Controller = require('The/Controller/directory');
+const Controller = require('Path/to/The/Controller/File');
 
 app.get('/path', dispatchRequest(...Controller.action.sendSomething));
 ```
@@ -831,14 +887,14 @@ The flow of Constraints is described below.
 [globalConstraint.before] -> [localConstraint.before] -> [endpointMiddleware.before] -> [Controller.action] -> [endpointMiddleware.after] -> [localConstraint.after] -> [globalConstraint.after]
 ```
 
-## Response reference decorator
+## Response decorator
 
 The `@Response` decorator represent the current *httpContext.response* of current http context. We can invoke all the method of the "response" object.
 
 syntax:
 
 ```js
-@Response.theMethodYouWantToAccess(...args)
+@Response.Method(...args)
 ```
 
 example
@@ -988,6 +1044,101 @@ class Controller extends BaseControlle {
         console.log(id, name)
     }
 }
+```
+
+## Dependency injection (since 1.x)
+
+
+This package implements dependency injection by using an ioc container. The ioc container just support constructor and property injection.
+
+Borrowing the DI concept of ASP.NET, Dependency Injection in this package has 3 type of binding.
+
+  - Sington: The whole project just have one instance of the component.
+  - Scope: Like Singleton. But the component's life cycle only outlast in the context of a httpContext.
+  - transient: Each time we need a component, the ioc container will build a new intance
+
+
+### Binding component
+
+
+```js
+const {BaseController} = require('express-controller-js');
+
+BaseController.useIoc();
+
+// bind singleton
+BaseController.components.bindSingleton(abstract, concrete);
+
+// bind scope
+BaseController.components.bindScope(abstract, concrete);
+
+// bind transient
+BaseController.components.bind(abstract, concrete);
+
+// abstract and concrete are the classes or functions. The concrete must inherits the abstract.
+```
+
+### Autobinding
+
+```js
+const {autoBind} = require('express-controller-js');
+
+@autoBind()
+class AutoBindClass {
+
+  
+}
+
+// like BaseController.components.bind(AutoBindClass, AutoBindClass);
+
+```
+
+### Injecting dependency
+
+#### Constructor injection 
+
+On the constructor parameter, just annotate the specific param that need to be injected by passing the class as default value. The ioc container will looking for the abstraction if it is bound before.
+
+```js
+@autoBind()
+class AutoBindClass {
+
+  
+}
+
+@autoBind()
+class Controller extends BaseController {
+
+  constructor(component = AutoBindClass) {
+
+    
+  }
+}
+
+```
+
+#### Property injection
+
+```js
+
+@autoBind()
+class AutoBindClass {
+
+  
+}
+
+@autoBind()
+class Controller extends BaseController {
+
+  @is(AutoBindClass)
+  #prop
+
+  constructor() {
+
+    
+  }
+}
+
 ```
 
 

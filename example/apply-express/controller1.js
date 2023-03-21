@@ -19,14 +19,20 @@ Route.constraint()
     .group('/messure')
     .before((req, res, next) => {
 
-        req.startTime = Date.now();
+        const label = Date.now().toString();
+
+        console.time(label);
+
+        req.startTime = label;
+
         next();
     })
     .after((req, res, next) => {
-        const end = Date.now();
-        const start = req.startTime;
+        
+        const label = req.startTime;
 
-        console.log('Handle time', end - start)
+        console.log('Handle time');
+        console.timeEnd(label);
         next();
     })
     .apply();
