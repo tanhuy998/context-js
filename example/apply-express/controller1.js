@@ -1,6 +1,7 @@
 const {BaseController, Route, Endpoint, routingContext, contentType, responseBody, Middleware} = require('../../index.js');
 const {autoBind, is, BindType} = require('../../src/ioc/decorator.js')
 const IocContainer = require('../../src/ioc/iocContainer.js')
+const {consumes} = require('../../src/request/decorator.js');
 
 function log(req, res, next) {
 
@@ -108,6 +109,9 @@ class Controller1 extends BaseController {
 
     // test duplicate endpoint 
     @Endpoint.GET('/')
+    @consumes({
+        'User-Agent' : 'Edge'
+    })
     //@contentType('application/json')
     @responseBody
     postSomthing() {
