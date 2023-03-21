@@ -1,13 +1,23 @@
 const Response = require('./responseResult.js');
 const {preprocessDescriptor} = require('../decorator/utils.js');
+const { IActionResult } = require('./actionResult.js');
 
 
-function sendResponseBodyAndEndRequest(returnValue, _controllerObject, _theControllerAction, descriptor, type) {
+function handleActionResult(returnValue, _controllerObject, _theControllerAction, descriptor, type) {
 
-    const res = _controllerObject.httpContext.response;
+    if (returnValue instanceof IActionResult) {
 
-    res.send(returnValue)
-    res.end();
+        returnValue.setContext(_controllerObject);
+
+        returnValue.resolve();
+    }
+    else {
+        
+        const res = _controllerObject.httpContext.response;
+
+        res.send(returnValue)
+        res.end();
+    }
 
     _controllerObject.httpContext.nextMiddleware();
 }
@@ -27,7 +37,7 @@ function responseBody(_controllerClass, _action, descriptor) {
     const decoratorResult = preprocessDescriptor(_controllerClass, _action, descriptor);
 
     decoratorResult.payload['responseBody'] = 1;
-    decoratorResult.on('afterResolve', sendResponseBodyAndEndRequest);
+    decoratorResult.on('afterResolve', handleActionResult);
     //decoratedResult.transform(catchControllerActionReturnValue, 'responseBody');
 
     descriptor.value = decoratorResult;
