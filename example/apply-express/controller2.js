@@ -1,4 +1,5 @@
 const {BaseController, routingContext, Route, Endpoint, responseBody, Middleware, requestParam} = require('../../index.js');
+const { autoBind } = require('../../src/ioc/decorator.js');
 
 function log(req, res, next) {
 
@@ -16,6 +17,7 @@ Route.constraint()
 @Route.group('/test')
 //@Route.group('/new')
 @routingContext()
+@autoBind()
 class Controller2 extends BaseController {
 
     @requestParam('userId')

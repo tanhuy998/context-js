@@ -4,6 +4,7 @@ const ControlerState = require('./controllerState.js');
 const ControllerConfiguration = require('./controllerConfiguration.js');
 const IocContainer = require('../ioc/iocContainer.js');
 const ControllerComponentManager = require('./controllerComponentManager.js');
+const {BindingContext} = require('../ioc/decorator.js');
 //const {httpContext} = require('./requestDispatcher.js');
 
 
@@ -56,7 +57,7 @@ class BaseController  {
 
     static get iocContainer() {
 
-        return this.#iocContainer;
+        return this.#componentManager;
     }
 
     static buildController(_concrete) {
@@ -78,6 +79,8 @@ class BaseController  {
         this.#config = container.configuration;
 
         this.#componentManager = container;
+
+        BindingContext.fixedContext(container);
         
         this.#supportIoc = true;
     };

@@ -1,4 +1,5 @@
 const {BaseController, Route, Endpoint, routingContext, contentType, responseBody, Middleware} = require('../../index.js');
+const {autoBind, is, BindType} = require('../../src/ioc/decorator.js')
 const IocContainer = require('../../src/ioc/iocContainer.js')
 
 function log(req, res, next) {
@@ -43,7 +44,7 @@ Route.constraint()
     .before(log)
     .apply();
 
-
+@autoBind(BindType.SINGLETON)
 class ComponentA {
 
     static count = 0;
@@ -58,7 +59,7 @@ class ComponentA {
 }
 
 //IocContainer.bindSingleton(ComponentA, ComponentA);
-BaseController.configuration.bindScope(ComponentA, ComponentA)
+// BaseController.configuration.bindScope(ComponentA, ComponentA)
 
 @Route.group('/messure')
 @Route.group('/user') // prefix will be skip when group is declared
@@ -67,16 +68,22 @@ BaseController.configuration.bindScope(ComponentA, ComponentA)
 //@Route.group('/test')
 //@Route.group('/test')
 @routingContext()
+@autoBind()
 class Controller1 extends BaseController {
 
     #component;
     #prop;
+
+    @is(ComponentA)
+    component
 
     constructor(_component = ComponentA, a = 'asdasd', b = ComponentA, c, d) {
         
         super();
 
         this.#prop = a;
+
+        console.log(_component, b);
 
         this.#component = _component
     }
@@ -107,7 +114,7 @@ class Controller1 extends BaseController {
 
         const req = this.httpContext.request;
         const res = this.httpContext.response;
-        console.log(this.#component, this.#prop)
+        console.log(this.#component, this.#prop, this.component)
         return {
             status: 'ok',
             yourMessage: req.body
