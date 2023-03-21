@@ -213,7 +213,7 @@ class IocContainer {
 
         }
 
-        console.log(this.#id, 'build', result);
+        //console.log(this.#id, 'build', result);
         return result;
     }
 
