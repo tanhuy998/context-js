@@ -9,6 +9,7 @@ const express = require('express');
 const {RouteContext, Route} = require('../../index.js');
 const IocContainer = require('../../src/ioc/iocContainer.js');
 const {BaseController} = require('../../index.js');
+const path = require('path');
 
 const body_parser = require('body-parser');
 
@@ -27,8 +28,12 @@ const container = IocContainer;
 
 
 console.time('init')
-const port = 3000;
+const port = 4000;
 const app = express();
+
+app.set('views', path.join(__dirname, './view'));
+app.set('file', path.join(__dirname, './static'))
+app.set('view engine', 'ejs');
 
 app.use(body_parser.json());
 

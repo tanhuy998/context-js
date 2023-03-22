@@ -1,6 +1,7 @@
-const {ActionResult, ActionResultNoContextError} = require('../actionResult')
+const {ActionResult, ActionResultNoContextError} = require('../actionResult.js');
+//const AsyncActionResult = require('../asyncActionResult.js');
 
-class RedirectResultError extends ActionResultNoContextError {
+class RedirectResultNoContextError extends ActionResultNoContextError {
 
     constructor() {
 
@@ -27,11 +28,11 @@ class RedirectResult extends ActionResult {
 
             const res = this.context.httpContext.response;
 
-            res.redirect(...this.#options);
+            return res.redirect(...this.#options);
         }
         else {
 
-            throw new RedirectResultError();
+            throw new RedirectResultNoContextError();
         }
     }
 }
@@ -41,4 +42,4 @@ function redirect(..._options) {
     return new RedirectResult(..._options);
 }
 
-module.exports = {redirect, RedirectResult, RedirectResultError}
+module.exports = {redirect, RedirectResult, RedirectResultNoContextError}

@@ -1,6 +1,7 @@
-const {ActionResult, ActionResultNoContextError} = require('../actionResult.js');
+const {ActionResultNoContextError} = require('../actionResult.js');
+const AsyncActionResult = require('../asyncActionResult.js');
 
-class DownloadResultError extends ActionResultNoContextError {
+class DownloadResultNoContextError extends ActionResultNoContextError {
 
     constructor() {
 
@@ -8,7 +9,7 @@ class DownloadResultError extends ActionResultNoContextError {
     }
 }
 
-class DownloadResult extends ActionResult {
+class DownloadResult extends AsyncActionResult {
 
     #options;
 
@@ -19,32 +20,36 @@ class DownloadResult extends ActionResult {
         this.#options = _options || [''];
     }
 
-    resolve() {
+    async resolve() {
 
-        super.resolve();
+        //res.download(this.#options[0], this.#options[1] || undefined, );
 
         if (this.context) {
 
             const res = this.context.httpContext.response;
 
-            const callback = (function (error) {
+            const resDownload = (res.download).bind(res);
 
-                if (error) {
+            super.setAsyncHandler(resDownload);
 
-                    const res = this.httpContext.response;
+            const download = await super.resolve();
 
-                    res.status(500)
-                    res.send('An error occurs when loading file');
-                    res.end();
-                }
+            try {
 
-            }).bind(this.context);
+                await download(this.#options[0], this.#options[1] || undefined);
+            }
+            catch (error) {
 
-            res.download(this.#options[0], this.#options[1] || undefined, );
+                res.status(500)
+                res.send('An error occurs when loading file');
+                //res.end();
+
+                console.log(error)
+            }
         }
         else {
 
-            throw new DownloadResultError();
+            throw new DownloadResultNoContextError();
         }
     }
 }
@@ -54,4 +59,4 @@ function download(..._options) {
     return new DownloadResult(..._options);
 }
 
-module.exports = {download, DownloadResult, DownloadResultError}
+module.exports = {download, DownloadResult, DownloadResultNoContextError}

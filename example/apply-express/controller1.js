@@ -2,6 +2,11 @@ const {BaseController, Route, Endpoint, routingContext, contentType, responseBod
 const {autoBind, is, BindType} = require('../../src/ioc/decorator.js')
 const IocContainer = require('../../src/ioc/iocContainer.js')
 const {consumes} = require('../../src/request/decorator.js');
+const {view} = require('../../src/response/utils/view.js');
+const path = require('path');
+const {file} = require('../../src/response/utils/fileResult.js');
+const {download} = require('../../src/response/utils/download.js');
+const { redirect } = require('../../src/response/utils/redirect.js');
 
 function log(req, res, next) {
 
@@ -109,9 +114,9 @@ class Controller1 extends BaseController {
 
     // test duplicate endpoint 
     @Endpoint.GET('/')
-    @consumes({
-        'User-Agent' : 'Edge'
-    })
+    // @consumes({
+    //     'User-Agent' : 'Edge'
+    // })
     //@contentType('application/json')
     @responseBody
     postSomthing() {
@@ -119,10 +124,20 @@ class Controller1 extends BaseController {
         const req = this.httpContext.request;
         const res = this.httpContext.response;
         console.log(this.#component, this.#prop, this.component)
-        return {
-            status: 'ok',
-            yourMessage: req.body
-        };
+
+        const filePath = path.join(__dirname, './static/new.js');
+
+        console.log(filePath);
+
+        // return ('/messure/temp');   
+
+        return view('index', {data: 'Hello World!'})
+                .cookie('testCookie', 'value');
+
+        // return {
+        //     status: 'ok',
+        //     yourMessage: req.body
+        // };
     }
 }
 

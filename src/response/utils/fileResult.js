@@ -1,6 +1,7 @@
-const {ActionResult, ActionResultNoContextError} = require('../actionResult.js');
+const {ActionResultNoContextError} = require('../actionResult.js');
+const AsyncActionResult = require('../asyncActionResult.js');
 
-class FileResultError extends ActionResultNoContextError {
+class FileResultNoContextError extends ActionResultNoContextError {
 
     constructor() {
 
@@ -8,7 +9,7 @@ class FileResultError extends ActionResultNoContextError {
     }
 }
 
-class FileResult extends ActionResult {
+class FileResult extends AsyncActionResult {
 
     #options;
 
@@ -19,33 +20,75 @@ class FileResult extends ActionResult {
         this.#options = _options || [''];
     }
 
-    resolve() {
-
-        super.resolve();
+    async resolve() {
 
         if (this.context) {
 
             const res = this.context.httpContext.response;
 
-            const callback = (function (error) {
+            const resSendFile = (res.sendFile).bind(res);
 
-                if (error) {
 
-                    const res = this.httpContext.response;
+            super.setAsyncHandler(resSendFile);
 
-                    res.status(500)
-                    res.send('An error occurs when loading file');
-                    res.end();
-                }
+            const handler = await super.resolve();
 
-            }).bind(this.context);
+            try {
 
-            res.sendFile(this.#options[0], this.#options[1] || undefined, );
+                await handler(this.#options[0], this.#options[1] || undefined);
+
+                //res.end();
+            }
+            catch (error) {
+
+                //const res = this.context.httpContext.response;
+
+                res.status(500)
+                res.send('An error occurs when loading file');
+                //res.end();
+
+                console.log(error)
+            }
         }
         else {
 
-            throw new FileResultError();
+            throw new FileResultNoContextError();
         }
+
+        
+
+        // return new Promise((function (resolve, reject) {
+
+        //     if (this.context) {
+
+        //         const res = this.context.httpContext.response;
+    
+        //         const callback = (function (error) {
+    
+        //             if (error) {
+    
+        //                 const res = this.httpContext.response;
+    
+        //                 res.status(500)
+        //                 res.send('An error occurs when loading file');    
+    
+        //                 console.log(error)
+        //             }
+    
+        //             res.end();
+    
+        //             resolve();
+    
+        //         }).bind(this.context);
+    
+        //         res.sendFile(this.#options[0], this.#options[1] || undefined, callback);
+        //     }
+        //     else {
+    
+        //         reject(new FileResultError());
+        //     }
+
+        // }).bind(this))
     }
 
 }
@@ -55,4 +98,4 @@ function file(..._options) {
     return new FileResult(..._options);
 }
 
-module.exports = {file, FileResult, FileResultError}
+module.exports = {file, FileResult, FileResultNoContextError}

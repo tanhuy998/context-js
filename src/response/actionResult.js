@@ -1,3 +1,4 @@
+const IActionResult = require('./iActionResult.js');
 
 class ActionResultNoContextError extends Error{
 
@@ -7,20 +8,19 @@ class ActionResultNoContextError extends Error{
         super('there is no controller context for the ActionResult to resolve the result');
     }
 }
-
-class ActionResult {
+class ActionResult extends IActionResult {
 
     #controllerContext;
     #hooks = [];
 
+    constructor() {
+
+        super();
+    }
+
     get context() {
 
         return this.#controllerContext;
-    }
-
-    constructor() {
-
-
     }
 
     setContext(_controller) {
@@ -36,7 +36,7 @@ class ActionResult {
 
             res.cookie(..._options);
 
-        }).bind(this.#controllerContext);
+        });
 
         this.#hooks.push(callback);
 
@@ -51,7 +51,38 @@ class ActionResult {
 
             res.clearCookie(..._options);
 
-        }).bind(this.#controllerContext);
+        })
+        this.#hooks.push(callback)
+
+        return this;
+    }
+
+    status(_code) {
+
+        const callback = (function () {
+
+            const res = this.httpContext.response;
+
+            res.status(_code);
+
+        });
+
+        this.#hooks.push(callback);
+
+        return this;
+    }
+
+    header(_headerSet) {
+
+        const callback = (function () {
+
+            const res = this.httpContext.response;
+
+            res.header(_headerSet);
+
+        });
+
+        this.#hooks.push(callback);
 
         return this;
     }
@@ -60,17 +91,17 @@ class ActionResult {
 
         if (!this.context) {
 
-            throw new IActionResultNoContextError();
+            throw new ActionResultNoContextError();
         }
 
         for (const callback of this.#hooks || []) {
 
             if (typeof callback == 'function') {
 
-                callback();
+                callback.bind(this.#controllerContext)();
             }
         }
     }
 }
 
-module.exports = {ActionResult, ActionResultNoContextError}
+module.exports = {ActionResult, ActionResultNoContextError};

@@ -1,24 +1,33 @@
 const Response = require('./responseResult.js');
 const {preprocessDescriptor} = require('../decorator/utils.js');
-const { IActionResult } = require('./actionResult.js');
+const IActionResult = require('./iActionResult.js');
+const AsyncActionResult = require('./asyncActionResult.js');
 
 
-function handleActionResult(returnValue, _controllerObject, _theControllerAction, descriptor, type) {
+async function handleActionResult(returnValue, _controllerObject, _theControllerAction, descriptor, type) {
 
     if (returnValue instanceof IActionResult) {
 
         returnValue.setContext(_controllerObject);
 
-        returnValue.resolve();
+        if (returnValue instanceof AsyncActionResult) {
+
+            await returnValue.resolve();
+        }
+        else {
+
+            returnValue.resolve();
+        }
     }
     else {
         
         const res = _controllerObject.httpContext.response;
 
         res.send(returnValue)
-        res.end();
+        
     }
 
+    _controllerObject.httpContext.response.end();
     _controllerObject.httpContext.nextMiddleware();
 }
 
