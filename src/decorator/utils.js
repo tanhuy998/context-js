@@ -7,7 +7,7 @@ const ControllerContextFunctions = {
 }
 
 function transformProperty(decoratorResultTarget, ...decoratorResultPayload) {
-    //console.log('transform', decoratorResultTarget)
+    
     // this context of the function is the controller object
     const reqParams = this.httpContext.request.params || {};
 
@@ -42,6 +42,10 @@ function transformProperty(decoratorResultTarget, ...decoratorResultPayload) {
 };
 
 function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType = DecoratorType.PROPERTY_DECORATOR) {
+
+    //[propName, descriptor] = [descriptor, propName];
+
+    //console.log(descriptor)
 
     if (decoratorType = DecoratorType.PROPERTY_DECORATOR) {
 

@@ -47,10 +47,10 @@ module.exports = class GlobalConstraintConfiguration {
             //console.log(this.#globalConfig[_groupPath])
 
             const midBefore = this.#constraint.middlewareBefore;
-            this.#globalConfig[_groupPath].before(midBefore) ;
+            this.#globalConfig[_groupPath].before(...midBefore) ;
 
             const midAfter = this.#constraint.middlewareAfter;
-            this.#globalConfig[_groupPath].after(midAfter);
+            this.#globalConfig[_groupPath].after(...midAfter);
         }
     }
 }

@@ -7,7 +7,7 @@ const reflectFunction = require('../libs/reflectFunction.js');
 const IocContainer = require('../ioc/iocContainer.js');
 const ControllerConfiguration = require('./controllerConfiguration.js');
 const { findConfigUpwards } = require('@babel/core/lib/config/files/index.js');
-
+const {ReflectionBabelDecoratorClass_Stage_3} = require('../libs/babelDecoratorClassReflection.js');
 //const controlerState = require('./controllerState.js');
 
 
@@ -15,9 +15,16 @@ class ControllerComponentManager extends IocContainer {
 
     #config;
 
-    constructor() {
+    constructor(presetVersion = undefined) {
 
         super();
+
+        if (presetVersion == 'stage3') {
+
+            this.preset({
+                specialReflectionCase: [ReflectionBabelDecoratorClass_Stage_3],
+            })
+        }
 
         this.#config = new ControllerConfiguration(this);
     }
@@ -167,7 +174,7 @@ class ControllerComponentManager extends IocContainer {
 
 
         const args = this.#discoverParamWithScope(reflection.params, _controllerState);
-
+        
         return new concrete(...args);
     }
 
@@ -201,7 +208,7 @@ class ControllerComponentManager extends IocContainer {
                 else {
 
                     const component = this.getAbstractByKey(className);
-
+                    
                     if (component) {
 
                         const concrete = this.getConcreteOf(component);

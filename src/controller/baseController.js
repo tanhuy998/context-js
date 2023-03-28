@@ -74,7 +74,9 @@ class BaseController  {
 
         if (this.supportIoc) return;        
 
-        const container = new ControllerComponentManager();
+        const {decoratorVersion} = require('../../index.js');
+
+        const container = new ControllerComponentManager(decoratorVersion);
 
         this.#config = container.configuration;
 

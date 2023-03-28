@@ -1,5 +1,5 @@
-const {BaseController, routingContext, Route, Endpoint, responseBody, Middleware, requestParam} = require('../../index.js');
-const { autoBind } = require('../../src/ioc/decorator.js');
+const {BaseController, routingContext, Route, Endpoint, responseBody, Middleware, requestParam, autoBind} = require('../../index.js');
+//const { autoBind } = require('../../src/ioc/decorator.js');
 
 function log(req, res, next) {
 
@@ -14,6 +14,7 @@ Route.constraint()
     .apply()
 
 @Middleware.after(log)
+@Route.group('/messure')
 @Route.group('/test')
 //@Route.group('/new')
 @routingContext()
@@ -28,7 +29,7 @@ class Controller2 extends BaseController {
         super();
     }
 
-    @Endpoint.GET('/')
+    @Endpoint.GET('/index')
     @responseBody
     index(a, b) {
 

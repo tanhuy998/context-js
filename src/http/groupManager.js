@@ -19,6 +19,11 @@ module.exports = class GroupManager {
         
     }
 
+    get list() {
+
+        return this.#list;
+    }
+
     save(_context, _groupPath, _endpoint = undefined) {
 
         if (!this.#list[_context]) {
@@ -83,6 +88,7 @@ module.exports = class GroupManager {
 
             const endpointToSave = this.#EndpointStringify(method, _groupPath + path);
 
+            
             if (this.#endpoints.has(endpointToSave)) {
 
                 if (throwError) {

@@ -1,12 +1,18 @@
-const {BaseController, Route, Endpoint, routingContext, contentType, responseBody, Middleware} = require('../../index.js');
-const {autoBind, is, BindType} = require('../../src/ioc/decorator.js')
-const IocContainer = require('../../src/ioc/iocContainer.js')
-const {consumes} = require('../../src/request/decorator.js');
-const {view} = require('../../src/response/utils/view.js');
+let {BaseController, is, Route, Endpoint, routingContext, contentType, consumes, responseBody, Middleware, file, autoBind, BindType, redirect, download, view} = require('../../index.js');
+// let {autoBind, is, BindType} = require('../../src/ioc/decorator.js')
+// const IocContainer = require('../../src/ioc/iocContainer.js')
+// const {consumes} = require('../../src/request/decorator.js');
+// const {view} = require('../../src/response/utils/view.js');
 const path = require('path');
-const {file} = require('../../src/response/utils/fileResult.js');
-const {download} = require('../../src/response/utils/download.js');
-const { redirect } = require('../../src/response/utils/redirect.js');
+// const {file} = require('../../src/response/utils/fileResult.js');
+// const {download} = require('../../src/response/utils/download.js');
+// const { redirect } = require('../../src/response/utils/redirect.js');
+
+// const {adapter} = require('../stage3.js');
+
+// autoBind = new Proxy(autoBind, adapter);
+// Route = new Proxy(Route, adapter);
+// routingContext = new Proxy(routingContext, adapter);
 
 function log(req, res, next) {
 
@@ -64,15 +70,15 @@ class ComponentA {
     prop = Date.now()
 }
 
+//console.log(BaseController.iocContainer.get(ComponentA))
+
 //IocContainer.bindSingleton(ComponentA, ComponentA);
 // BaseController.configuration.bindScope(ComponentA, ComponentA)
 
 @Route.group('/messure')
 @Route.group('/user') // prefix will be skip when group is declared
-//@Middleware.before(log)
-@Middleware.after(afterContorller)
-//@Route.group('/test')
-//@Route.group('/test')
+// //@Middleware.before(log)
+//@Middleware.after(afterContorller)
 @routingContext()
 @autoBind()
 class Controller1 extends BaseController {
@@ -89,35 +95,37 @@ class Controller1 extends BaseController {
 
         this.#prop = a;
 
-        console.log(_component, b);
+        //console.log(_component instanceof ComponentA, b);
 
-        this.#component = _component
+        this.#component = _component;
     }
 
     
-    //@Endpoint.GET('/')
+    //@Route.get('/')
     @Endpoint.GET('/temp')
     @Middleware.before(log)
-    //@Middleware.after(afterContorller)
+    @Middleware.after(afterContorller)
     //@contentType('application/json')
     @responseBody
     index() {
 
         const res = this.httpContext.response;
 
+        //res.send('test stage3')
+        console.log('hello world')
         //res.send('Hello World!');
 
-        this.httpContext.nextMiddleware();
+        //this.httpContext.nextMiddleware();
 
-        return 'Hello World'
+        return view('index', {data: 'Hello World!'})
+        .cookie('testCookie', 'value');
     }
 
     // test duplicate endpoint 
+    
+    @Middleware.before(log)
+    @Middleware.after(afterContorller)
     @Endpoint.GET('/')
-    // @consumes({
-    //     'User-Agent' : 'Edge'
-    // })
-    //@contentType('application/json')
     @responseBody
     postSomthing() {
 
@@ -134,13 +142,13 @@ class Controller1 extends BaseController {
         return view('index', {data: 'Hello World!'})
                 .cookie('testCookie', 'value');
 
+        //return 'test';
+
         // return {
         //     status: 'ok',
         //     yourMessage: req.body
         // };
     }
 }
-
-console.log(Controller1.prototype)
 
 module.exports = Controller1;

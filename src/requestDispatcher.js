@@ -164,9 +164,38 @@ function dispatchRequest(_controllerClass, _prop) {
      * @returns 
      */
     function passParameter(_targetFunction) {
+        
+        //console.log('target', _targetFunction)
         // context of of 'this' here is the controller object
-        const transformedFunction = (_targetFunction.constructor.name == PreInvokeFunction.name) ? _targetFunction : new PreInvokeFunction(_targetFunction);
-        const reflection = (_targetFunction.constructor.name == PreInvokeFunction.name) ? _targetFunction.functionMeta : reflectFunction(_targetFunction);
+        const transformedFunction = (_targetFunction instanceof PreInvokeFunction) ? _targetFunction : new PreInvokeFunction(_targetFunction);
+        const reflection = (_targetFunction instanceof PreInvokeFunction) ? _targetFunction.functionMeta : reflectFunction(_targetFunction);
+
+        const args = reflection.params.map(function(param) {
+
+            const defaultValue = param.defaultValue;
+
+            if (defaultValue) {
+
+                if (param.isTypeOfString) {
+
+                    return undefined;
+                }
+                else {
+    
+                    return this.components.get(defaultValue);
+                }
+            }
+        }, this)
+
+        transformedFunction.passArgs(args);
+
+        return transformedFunction;
+    }
+
+    function passParameterForStage3(_targetFunction) {
+
+        const transformedFunction = (_targetFunction instanceof PreInvokeFunction) ? _targetFunction : new PreInvokeFunction(_targetFunction);
+        const reflection = (_targetFunction instanceof PreInvokeFunction) ? _targetFunction.functionMeta : reflectFunction(_targetFunction);
 
         const args = reflection.params.map(function(param) {
 
@@ -223,7 +252,59 @@ function dispatchRequest(_controllerClass, _prop) {
             }
             else {
     
-                return await passParameter.bind(_controllerObject).invoke(controllerAction);
+                return await passParameter.bind(_controllerObject)(controllerAction).bind(_controllerObject).resolve();
+            }
+        }
+        else {
+
+            if (controllerAction instanceof DecoratorResult) {
+                
+                return await controllerAction.bind(_controllerObject)
+                    .resolve();
+            }
+            else {
+
+                return controllerAction.bind(_controllerObject)();
+            }
+        }
+    }
+
+    async function Stage3_handleRequest(_controllerObject, _action) {
+
+        let controllerAction = _controllerObject[_action];
+        
+        if (!controllerAction) {
+
+            throw new Error(`Dispatch Error: ${_controllerObject.constructor.name}.${_action} is not defined`);
+        }
+        else if (!(controllerAction instanceof DecoratorResult) && typeof controllerAction != 'function') {
+
+            throw new Error(`Dispatch Error: ${_controllerObject.constructor.name}.${_action} is not invocable`);
+        }
+
+        if (controllerAction.name == 'stage3WrapperFunction') {
+
+            controllerAction = controllerAction();
+        }
+        
+
+        if (BaseController.supportIoc) {
+
+            if (controllerAction instanceof DecoratorResult) {
+                
+                controllerAction.payload['handleRequest'] = '';
+                controllerAction.transform(passParameter, 'handleRequest');
+    
+                return await controllerAction.bind(_controllerObject)
+                    .resolve();
+    
+                //return controllerAction.resolve();
+            }
+            else {
+                
+                const func = passParameter.bind(_controllerObject)(controllerAction);
+                
+                return await func.bind(_controllerObject).invoke();
             }
         }
         else {
@@ -269,7 +350,9 @@ function dispatchRequest(_controllerClass, _prop) {
 
         await controllerObject.resolveProperty();
         
-        handleRequest(controllerObject, _prop);
+        //handleRequest(controllerObject, _prop);
+        Stage3_handleRequest(controllerObject, _prop);
+
         //controllerObject.setIocContainer(_IocContext);
     }
 }
@@ -277,7 +360,4 @@ function dispatchRequest(_controllerClass, _prop) {
 module.exports = {
     dispatchRequest,
     requestParam,
-    httpContext,
-    initContext,
-    //ControllerContextFunctions
 };

@@ -12,18 +12,20 @@ module.exports = class GroupConstraint {
 
     before(...middleware) {
 
-        const temp = this.#config.middlewareBefore;
+        // const temp = this.#config.middlewareBefore;
 
-        this.#config.middlewareBefore = [...temp, ...middleware];
+        // const newArr = [...temp, ...middleware]
+
+        this.#config.middlewareBefore.push(...middleware);
 
         return this;
     }
 
     after(...middleware) {
 
-        const temp = this.#config.middlewareAfter;
-
-        this.#config.middlewareAfter = [...temp, ...middleware];
+        //const temp = this.#config.middlewareAfter;
+        
+        this.#config.middlewareAfter.push(...middleware)
 
         return this;
     }

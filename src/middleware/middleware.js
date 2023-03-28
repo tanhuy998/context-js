@@ -45,7 +45,6 @@ function manageMiddlewaresForMethod(_class, _action, descriptor, context, _order
         // if there is no session is setted on this controller's action
         // register the temporary session that is created before to the current controller's action
 
-
         // RouteContext.currentSession is switched to temporarySessionSymbol by default
         currentSessionSymbol = temporarySessionSymbol;
 
@@ -53,6 +52,7 @@ function manageMiddlewaresForMethod(_class, _action, descriptor, context, _order
 
         RouteContext.assignSessionAction(currentSessionSymbol, _action);
         RouteContext.assignSessionContext(currentRoutingContext);
+
         // decoratorResult.on('afterResolve', function() {
 
         //     //console.log('end session', routeSessionSymbol)
@@ -64,10 +64,13 @@ function manageMiddlewaresForMethod(_class, _action, descriptor, context, _order
         currentSessionSymbol = decoratorSessionSymbol;
         // if current decoratorResult has already start a session
         // switch back to the existence
-        RouteContext.switchSession(decoratorSessionSymbol)
-        RouteContext.endSession(temporarySessionSymbol);
+        //RouteContext.switchSession(decoratorSessionSymbol)
+        //RouteContext.endSession(temporarySessionSymbol);
+
+        //RouteContext.redirectSession(temporarySessionSymbol, decoratorSessionSymbol)
     }
 
+    RouteContext.switchSession(currentSessionSymbol)
     //_target[_order].call(RouteContext, routeSessionSymbol, ..._middlewares);
 
     switch (_order) {
