@@ -43,13 +43,13 @@ yarn add express-controller-js
 
 #### Configuration 
 
-Merge one of the following methods with you babel configuration.
+Merge one of the following methods with you babel configuration. 
 
 **.babelrc or babel.config.json**
 
 ```js
 {
-  "plugins": [["@babel/plugin-proposal-decorators", { "legacy": true }]]
+  "plugins": [["@babel/plugin-proposal-decorators", { "version": "legacy" }]]
 }
 ```
 
@@ -58,8 +58,19 @@ Merge one of the following methods with you babel configuration.
 ```js
 {
   "babel" : {
-    "plugins": [["@babel/plugin-proposal-decorators", { "legacy": true }]]
+    "plugins": [["@babel/plugin-proposal-decorators", { "version": "legacy" }]]
   }
+}
+```
+
+#### *update
+
+To use decorator with class's private properties. Change the version of [@babel/plugin-decorator-proposal](https://babeljs.io/docs/en/babel-plugin-proposal-decorators) to "2022-03"
+
+The config will be
+```js
+{
+  "plugins": [["@babel/plugin-proposal-decorators", { "version": "2022-03" }]]
 }
 ```
 
@@ -87,11 +98,10 @@ or you can transpile files first then import it. This reduce runtime latency (sp
 
 This inconvience will no longer happen when Decorator officially been released.
 
-#### Simple usage
+## Simple usage
 
 
 Define a controller class
-
 
 ```js
 const {BaseController, dispatchable} = require('express-controller');
@@ -113,11 +123,7 @@ class Controller extends BaseController {
 }
 ```
 
-
-
 Import into Express:
-
-
 
 ```js
 require('@babel/register')({
@@ -135,7 +141,7 @@ app.get('/path', dispatchRequest(...Controller.action.sendSomething));
 ```
 
 
-or (without `@dispatchable` decorator on class)
+or (without `@dispatchable` decorator)
 
 
 ```javascript
@@ -147,7 +153,7 @@ app.get('/path', dispatchRequest(Controller, 'sendSonthing'));
 #### Go to the detail
 
 
-A controller class which can be assigned to a route must extends (instance of) BaseController class. Then, the controller object will be dispatched the http's context when a request arrive.
+A controller class which can be assigned to a route must extends BaseController class. Then, the controller object will be dispatched the httpContext when a request arrive.
 
 To access to the context, use `this.httpContext` (borrowing the concept of ASP.NET) inside *controllers.
 
@@ -163,18 +169,10 @@ The `httpContext` object would looks like
 }
 ```
 
-The `@dispatchable` decorator is optional to apply to controller. Use `@dispatchable` when you want to to use the syntax `...Controller.action.sendSomething` (just only in readable manner). the pattern for the syntax is `...[youControllerClass].action.[theControllerMethodYouWantToBeDispatch]`.
-
-
-
 
 ## Routing with Controllers
 
-
-
 Firstly hit the codes:
-
-
 
 ```javascript
 const express = require('express');
@@ -190,12 +188,9 @@ app.use('/', RouteContext.resolve());
 ```
 
 
-
-
 in class definition:
 
 use `@routingContext()` on class to annotate that the specific class is defining route inside
-
 
 
 ```js
@@ -449,7 +444,7 @@ class Controller extends BaseController {
 ***Note:** When controller's action that is not defining route, all middleware applied to that action is meaningless. 
 
 
-***ALERT!*** 
+***Best practice*** 
 
 Using `@Middleware` like the follwing example is not be adviced, it will be confusing to reading codes
 
@@ -541,13 +536,13 @@ class Controller extends BaseController {
 
 #### @Route.group vs @Route.prefix 
 
-`@Route.prefix` is just the concaternation of the prefix and route's path, each Controller class (a routing context) contains just only one prefix for it's routes.
+`@Route.prefix` is just the concaternation of the prefix and endpoint's path, each Controller class (a routing context) contains just only one prefix for it's routes.
 On another hand, a Controller Class (a routing context) can have more than one group of routes that each group has different constraints for specific purposes (such as testing).
 
 
 ### Group Local Contraints
 
-Local constraint is middlewares that applied to all group's routes by using `@Middleware` on class definition.
+Local constraint is middlewares that applied to all group's endpoints. To add local constraint to a group, apply `@Middleware` on controller class.
 
 
 ```js
@@ -582,7 +577,7 @@ class UserController extends BaseController {
 
 #### Default group
 
-If we don't define the group immediately, the specific controller class (routing context) is mapped to default group '/'
+If using `@Middleware` without declaring any groups immediately, the specific controller class (routing context) is mapped to default group '/'
 
 ```js
 const {Route, BaseController, routingContext} = require('express-controller');
@@ -615,9 +610,11 @@ class UserController extends BaseController {
 
 
 
-**Notice:** Groups are isolated and has it's own local constraints (I called it "Constraint Isolation") between Controllers no matter how whose path are identical.
+#### Groups's local constraint Isolation
 
-The following example show how group '/v1' of each Controller is isolated.
+Groups's local constraint are isolated between controllers, so their local constraints are different no matter how whose path are identical.
+
+The following example show how groups is isolated. '/v1' on each Controller.
 
 
 ```js
@@ -648,7 +645,7 @@ class UserController extends BaseController {
     @Route.get('/send')
     sendSomthing() {
 
-
+        this.httpContext.response.next();
     }
 }
 
@@ -666,16 +663,16 @@ class AdminController extends BaseController {
     @Route.get('/index')
     sendSomthing() {
 
-
+        this.httpContext.response.next();
     }
 }
 
 ```
 
 
-### Group Global Contraints
+### Group Global Contraint
 
-Global constraint will be applied to all a specific group name (no matter how groups are isolated in different routing context).
+Global constraint is applied to specific group's path (dismissing groups local constraint isolation).
 
 
 ```js
@@ -838,14 +835,14 @@ adminEndpoints.get('/index',dispatchRequest(AdminController, 'sendSomething'), a
 
 
 const messureGroup = express.Router();
-userEndpoints.get('/send', start, dispatchRequest(UserController, 'sendSomething'), userLog, end);
-adminEndpoints.get('/index', start, dispatchRequest(AdminController, 'sendSomething'), adminLog, end)
+messureGroup.get('/send', dispatchRequest(UserController, 'sendSomething'), userLog;
+messureGroup.get('/index', dispatchRequest(AdminController, 'sendSomething'), adminLog)
 
 // mapping routes this way in order to implements constraint isolation 
 // between groups that have the same path
 mainRouter.use('/user', userEndpoints);
 mainRouter.use('/admin', adminEndpoints);
-mainRouter.use('/messure', messureGroup);
+mainRouter.use('/messure', start, messureGroup, end);
 
 app.use('/', mainRouter);
 
@@ -879,12 +876,110 @@ function adminLog(req, res, next) {
 }
 ```
 
-### Scope of constraints
+### Priority of constraints
 
 The flow of Constraints is described below.
 
 ```
 [globalConstraint.before] -> [localConstraint.before] -> [endpointMiddleware.before] -> [Controller.action] -> [endpointMiddleware.after] -> [localConstraint.after] -> [globalConstraint.after]
+```
+
+## Dependency injection (since 1.x)
+
+
+This package provides Dependency Injection by using an ioc container to help Javascript user on wiring between components dependencies.
+
+Dependency Injection of this package just support two type of injection is Constructor Injection and Property Injection.
+
+Borrowing the concept Dependency Injection of ASP.NET, Components (also known a Dependencies) has it's own lifecycle depend on which type of binding.
+
+  - Sington: The Ioc Container just resolve the component once and then reuse it over the application.
+  - Scope: Like Singleton. But the component is resolved when a httpContext arrive. This component will be reuse on context of a .
+  - transient: Each time we need a component, the ioc container will resolve a new intance.
+
+
+### Binding component
+
+Binding components is the way implementing the Dependency Inversion. Binding means telling the Ioc Container which component (concrete) should be injected as abstraction.
+
+```js
+const {BaseController} = require('express-controller-js');
+
+BaseController.useIoc();
+
+// bind singleton
+BaseController.components.bindSingleton(abstract, concrete);
+
+// bind scope
+BaseController.components.bindScope(abstract, concrete);
+
+// bind transient
+BaseController.components.bind(abstract, concrete);
+
+// abstract and concrete are the classes or functions. The concrete must inherits the abstract.
+```
+
+### Autobinding
+
+```js
+const {autoBind} = require('express-controller-js');
+
+@autoBind()
+class AutoBindClass {
+
+  
+}
+
+// like BaseController.components.bind(AutoBindClass, AutoBindClass);
+
+```
+
+### Injecting dependency
+
+#### Constructor injection 
+
+On the constructor parameter, just annotate the specific param that need to be injected by passing the class as default value. The ioc container will looking for the abstraction if it is bound before.
+
+```js
+@autoBind()
+class AutoBindClass {
+
+  
+}
+
+@autoBind()
+class Controller extends BaseController {
+
+  constructor(component = AutoBindClass) {
+
+    
+  }
+}
+
+```
+
+#### Property injection
+
+```js
+
+@autoBind()
+class AutoBindClass {
+
+  
+}
+
+@autoBind()
+class Controller extends BaseController {
+
+  @is(AutoBindClass)
+  #prop
+
+  constructor() {
+
+    
+  }
+}
+
 ```
 
 ## Response decorator
@@ -1046,100 +1141,7 @@ class Controller extends BaseControlle {
 }
 ```
 
-## Dependency injection (since 1.x)
 
-
-This package implements dependency injection by using an ioc container. The ioc container just support constructor and property injection.
-
-Borrowing the DI concept of ASP.NET, Dependency Injection in this package has 3 type of binding.
-
-  - Sington: The whole project just have one instance of the component.
-  - Scope: Like Singleton. But the component's life cycle only outlast in the context of a httpContext.
-  - transient: Each time we need a component, the ioc container will build a new intance
-
-
-### Binding component
-
-
-```js
-const {BaseController} = require('express-controller-js');
-
-BaseController.useIoc();
-
-// bind singleton
-BaseController.components.bindSingleton(abstract, concrete);
-
-// bind scope
-BaseController.components.bindScope(abstract, concrete);
-
-// bind transient
-BaseController.components.bind(abstract, concrete);
-
-// abstract and concrete are the classes or functions. The concrete must inherits the abstract.
-```
-
-### Autobinding
-
-```js
-const {autoBind} = require('express-controller-js');
-
-@autoBind()
-class AutoBindClass {
-
-  
-}
-
-// like BaseController.components.bind(AutoBindClass, AutoBindClass);
-
-```
-
-### Injecting dependency
-
-#### Constructor injection 
-
-On the constructor parameter, just annotate the specific param that need to be injected by passing the class as default value. The ioc container will looking for the abstraction if it is bound before.
-
-```js
-@autoBind()
-class AutoBindClass {
-
-  
-}
-
-@autoBind()
-class Controller extends BaseController {
-
-  constructor(component = AutoBindClass) {
-
-    
-  }
-}
-
-```
-
-#### Property injection
-
-```js
-
-@autoBind()
-class AutoBindClass {
-
-  
-}
-
-@autoBind()
-class Controller extends BaseController {
-
-  @is(AutoBindClass)
-  #prop
-
-  constructor() {
-
-    
-  }
-}
-
-```
 
 
 #### @contentType(value : string)
