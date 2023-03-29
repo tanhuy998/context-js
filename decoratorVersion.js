@@ -1,44 +1,8 @@
 const path = require('node:path');
 const fs = require('node:fs');
+const resolveProjectRootDir = require('./src/libs/dir.js');
 
 module.exports = getBabelConfig();
-
-
-function resolveProjectRootDir(_dir) {
-
-    let dirname;
-
-    if (!_dir || (typeof _dir == 'string')) {
-
-        dirname = __dirname;
-    }
-
-    const systemRoot = path.parse(__dirname).root;
-
-    if (dirname == systemRoot) {
-
-        throw new Error('cannot determine the babel decorator version');
-    }
-
-    const isPackage = dirname.match(/node_modules/);
-
-    if (isPackage != 'null') {
-
-        return dirname.split(/node_modules/)[0];
-    }
-
-    const files = fs.readdirSync(dirname);
-    
-    for (const file of files) {
-
-        if (file == 'node_modules') {
-
-            return dirname;
-        }
-    }
-
-    resolveRootDir(path.dirname(dirname));
-}
 
 function getBabelConfig() {
 

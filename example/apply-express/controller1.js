@@ -56,7 +56,7 @@ Route.constraint()
     .before(log)
     .apply();
 
-@autoBind(BindType.SINGLETON)
+@autoBind(BindType.SCOPE)
 class ComponentA {
 
     static count = 0;

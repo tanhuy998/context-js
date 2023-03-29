@@ -9,6 +9,7 @@ const { DecoratorResult } = require('../decorator/decoratorResult');
 
 
 
+
 const routeDecoratorHandler = {
     additionMethod: {
         prop: {
@@ -187,6 +188,16 @@ class RouteContext {
 
     static #config = {};
 
+    static #applicationContext;
+
+    static setApplicationContext(_context) {
+
+        if (typeof _context == 'object' && _context.constructor.name == 'ApplicationContext') {
+
+            this.#applicationContext = _context;
+        }
+    }
+
     static get isResolved() {
 
         return this.#isResolved;
@@ -286,6 +297,8 @@ class RouteContext {
 
         const currentSessionSymbol = this.transformSession(RouteContext.#currentSession);
 
+        const applicationContext = this.#applicationContext || undefined;
+
         const registerMiddleware = function(_method, _path, _routeSession, _order = 'beforeController') {
 
             if (!_routeSession) return;
@@ -311,7 +324,7 @@ class RouteContext {
     
             const after = (_session) ? _session['afterController'] : [];
     
-            const chain = [...before, dispatchRequest(_controllerClass, _controllerAcion), ...after];
+            const chain = [...before, dispatchRequest(_controllerClass, _controllerAcion, applicationContext), ...after];
     
             return chain;
         };

@@ -6,7 +6,7 @@ require('@babel/register')({
 });
 
 const express = require('express');
-const {RouteContext, Route} = require('../../index.js');
+const {RouteContext, Route, ApplicationContext} = require('../../index.js');
 const IocContainer = require('../../src/ioc/iocContainer.js');
 const {BaseController, decoratorVersion} = require('../../index.js');
 const path = require('path');
@@ -15,8 +15,9 @@ console.log(decoratorVersion)
 
 const body_parser = require('body-parser');
 
-BaseController.useIoc();
-RouteContext.init(express);
+// BaseController.useIoc();
+// RouteContext.init(express);
+ApplicationContext.useIoc();
 
 
 const Controller1 = require('./controller1.js');
@@ -33,7 +34,7 @@ app.set('view engine', 'ejs');
 
 app.use(body_parser.json());
 
-const router = RouteContext.resolve();
+const router = ApplicationContext.resolveRoutes();
 app.use('/', router);
 
 

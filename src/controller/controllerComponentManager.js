@@ -1,14 +1,11 @@
-//const { BaseController } = require("./baseController");
-//const reflecClass = require('../libs/reflectionClass');
+
 const ControllerState = require('./controllerState.js');
 const reflecClass = require('../libs/reflectClass.js');
 const reflectFunction = require('../libs/reflectFunction.js');
-//const ControllerState = require('./controllerState.js');
 const IocContainer = require('../ioc/iocContainer.js');
 const ControllerConfiguration = require('./controllerConfiguration.js');
-const { findConfigUpwards } = require('@babel/core/lib/config/files/index.js');
 const {ReflectionBabelDecoratorClass_Stage_3} = require('../libs/babelDecoratorClassReflection.js');
-//const controlerState = require('./controllerState.js');
+
 
 
 class ControllerComponentManager extends IocContainer {
@@ -32,6 +29,11 @@ class ControllerComponentManager extends IocContainer {
     get configuration() {
 
         return this.#config;
+    }
+
+    bindScope(abstract, concrete) {
+
+        this.#config.bindScope(abstract, concrete);
     }
 
     setConfig(config) {

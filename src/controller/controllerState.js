@@ -1,4 +1,4 @@
-module.exports = class controlerState {
+module.exports = class ControlerState {
 
     #components = new WeakMap();
     #keys = new Map();

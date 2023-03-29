@@ -1,10 +1,11 @@
 //const { obj } = require("../model/chatroom/chatRoom.schema");
-const {DecoratorResult} = require('../decorator/decoratorResult.js');
-const ControlerState = require('./controllerState.js');
-const ControllerConfiguration = require('./controllerConfiguration.js');
-const IocContainer = require('../ioc/iocContainer.js');
-const ControllerComponentManager = require('./controllerComponentManager.js');
-const {BindingContext} = require('../ioc/decorator.js');
+// const {DecoratorResult} = require('../decorator/decoratorResult.js');
+const HttpContext = require('../httpContext.js');
+const ControllerState = require('./controllerState.js');
+// const ControllerConfiguration = require('./controllerConfiguration.js');
+// const IocContainer = require('../ioc/iocContainer.js');
+// const ControllerComponentManager = require('./controllerComponentManager.js');
+// const {BindingContext} = require('../ioc/decorator.js');
 //const {httpContext} = require('./requestDispatcher.js');
 
 
@@ -35,57 +36,57 @@ class BaseController  {
         set: () => false,
     };
 
-    static #config;
-    static #iocContainer;
-    static #supportIoc = false;
-    static #componentManager;
+    // static #config;
+    // static #iocContainer;
+    // static #supportIoc = false;
+    // static #componentManager;
 
-    static get components() {
+    // static get components() {
 
-        return this.#config;
-    }
+    //     return this.#config;
+    // }
 
-    static get supportIoc() {
+    // static get supportIoc() {
 
-        return this.#supportIoc;
-    }
+    //     return this.#supportIoc;
+    // }
 
-    static get configuration() {
+    // static get configuration() {
 
-        return this.#config;
-    }
+    //     return this.#config;
+    // }
 
-    static get iocContainer() {
+    // static get iocContainer() {
 
-        return this.#componentManager;
-    }
+    //     return this.#componentManager;
+    // }
 
-    static buildController(_concrete) {
+    // static buildController(_concrete) {
 
-        if (this.#supportIoc) {
+    //     if (this.#supportIoc) {
 
-            return this.#componentManager.buildController(_concrete);
-        }
+    //         return this.#componentManager.buildController(_concrete);
+    //     }
 
-        return new _class();
-    }
+    //     return new _class();
+    // }
 
-    static useIoc() {
+    // static useIoc() {
 
-        if (this.supportIoc) return;        
+    //     if (this.supportIoc) return;        
 
-        const {decoratorVersion} = require('../../index.js');
+    //     const {decoratorVersion} = require('../../index.js');
 
-        const container = new ControllerComponentManager(decoratorVersion);
+    //     const container = new ControllerComponentManager(decoratorVersion);
 
-        this.#config = container.configuration;
+    //     this.#config = container.configuration;
 
-        this.#componentManager = container;
+    //     this.#componentManager = container;
 
-        BindingContext.fixedContext(container);
+    //     BindingContext.fixedContext(container);
         
-        this.#supportIoc = true;
-    };
+    //     this.#supportIoc = true;
+    // };
     //static proxy = new Proxy(BaseController, BaseController.proxyHandler);
 
     //@httpContext
@@ -100,29 +101,27 @@ class BaseController  {
 
     constructor() {
         this.#decoratedList = [];
-
-        // if (BaseController.supportIoc) {
-            
-        //     //this.#components = new ControllerComponentManager(BaseController.iocContainer, BaseController.configuration, this);
-        //     this.#state = new ControlerState(BaseController.configuration);
-        // }
     }
 
-    setState(controllerState) {
+    setState(_controllerState) {
 
         if (this.#state) return;
 
-        if (this.controllerState instanceof ControlerState) return;
+        if (this.controllerState instanceof ControllerState) return;
 
-        if (BaseController.supportIoc) {
+        //this.#context.setState(_controllerState);
 
-            this.#state = controllerState;
-        }
+        this.#state = _controllerState;
+
+        // if (BaseController.supportIoc) {
+
+        //     this.#state = controllerState;
+        // }
     }
 
     setContext(_httpContext) {
 
-        if (!this.#context) {
+        if (!this.#context && _httpContext instanceof HttpContext) {
 
             this.#context = _httpContext;
         }

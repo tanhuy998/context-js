@@ -56,6 +56,4 @@ for (const name in legacy) {
     exportContent[name] = new Proxy(legacy[name], stage_0_To_Stage_3_Adapter);
 }
 
-//console.log(Reflect.ownKeys(exportContent), Reflect.ownKeys(legacy));
-
 module.exports = exportContent;

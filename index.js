@@ -23,17 +23,32 @@ class InvalidBabelDecoratorVersion extends Error {
 
 const babelDecoratorVersion = require('./decoratorVersion.js');
 
+let modules;
+
 if (babelDecoratorVersion == 'legacy') {
 
-    module.exports = require('./legacy.js');
+    modules = require('./legacy.js');
 }
 else if (babelDecoratorVersion == 'stage3') {
 
-    module.exports = require('./stage3.js');
+    modules = require('./stage3.js');
 }
 else {
 
     throw new InvalidBabelDecoratorVersion();
 }
 
+module.exports = modules;
+
 module.exports.decoratorVersion = babelDecoratorVersion;
+
+const ApplicationContext = require('./src/applicationContext.js');
+
+const appContextPreset = {
+    RouteContext: modules.RouteContext,
+    ioc: {
+        BindingContext: modules.BindingContext,
+    }
+}
+
+module.exports.ApplicationContext = new ApplicationContext(appContextPreset);

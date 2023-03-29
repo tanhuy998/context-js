@@ -4,6 +4,8 @@ const {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, Class
 //const BaseController = require('./controller/baseController.js');
 const {preprocessDescriptor} = require('./decorator/utils.js');
 const {BaseController} = require('./controller/baseController.js');
+const HttpContext = require('./httpContext.js');
+const ApplicationContext = require('./applicationContext.js');
 const reflectFunction = require('./libs/reflectFunction.js');
 
 
@@ -156,7 +158,7 @@ function initContext(arg) {
 
 
 //function dispatchRequest(controllerObject, controllerAction, _controllerClass) {
-function dispatchRequest(_controllerClass, _prop) {
+function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
 
     /**
      * 
@@ -165,7 +167,6 @@ function dispatchRequest(_controllerClass, _prop) {
      */
     function passParameter(_targetFunction) {
         
-        //console.log('target', _targetFunction)
         // context of of 'this' here is the controller object
         const transformedFunction = (_targetFunction instanceof PreInvokeFunction) ? _targetFunction : new PreInvokeFunction(_targetFunction);
         const reflection = (_targetFunction instanceof PreInvokeFunction) ? _targetFunction.functionMeta : reflectFunction(_targetFunction);
@@ -287,8 +288,8 @@ function dispatchRequest(_controllerClass, _prop) {
             controllerAction = controllerAction();
         }
         
-
-        if (BaseController.supportIoc) {
+        if (_appContext instanceof ApplicationContext && _appContext.supportIoc) {
+        //if (BaseController.supportIoc) {
 
             if (controllerAction instanceof DecoratorResult) {
                 
@@ -323,28 +324,39 @@ function dispatchRequest(_controllerClass, _prop) {
 
     return async function (req, res, next) {
 
-        const context = {
+        // const context = {
 
-            request: req,
-            response: res,
-            nextMiddleware: next,
-            currentRoute: req.path,
-            parentRoute: req.baseUrl,
-            //routeContext: _router || undefined,
-        }
+        //     request: req,
+        //     response: res,
+        //     nextMiddleware: next,
+        //     currentRoute: req.path,
+        //     parentRoute: req.baseUrl,
+        //     //routeContext: _router || undefined,
+        // }
+
+        const context = new HttpContext(req, res, next);
         //BaseController.httpContext = context;
         //HttpContextCatcher.newContext(context);
 
         let controllerObject;
         
-        if (BaseController.supportIoc) {
+        if (_appContext instanceof ApplicationContext && _appContext.supportIoc) {
             
-            controllerObject = BaseController.buildController(_controllerClass);
+            controllerObject = _appContext.buildController(_controllerClass);
         }
         else {
 
             controllerObject = new _controllerClass();
         }
+
+        // if (BaseController.supportIoc) {
+            
+        //     controllerObject = BaseController.buildController(_controllerClass);
+        // }
+        // else {
+
+        //     controllerObject = new _controllerClass();
+        // }
 
         controllerObject.setContext(context);
 
