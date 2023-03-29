@@ -1,18 +1,6 @@
 let {BaseController, is, Route, Endpoint, routingContext, contentType, consumes, responseBody, Middleware, file, autoBind, BindType, redirect, download, view} = require('../../index.js');
-// let {autoBind, is, BindType} = require('../../src/ioc/decorator.js')
-// const IocContainer = require('../../src/ioc/iocContainer.js')
-// const {consumes} = require('../../src/request/decorator.js');
-// const {view} = require('../../src/response/utils/view.js');
 const path = require('path');
-// const {file} = require('../../src/response/utils/fileResult.js');
-// const {download} = require('../../src/response/utils/download.js');
-// const { redirect } = require('../../src/response/utils/redirect.js');
 
-// const {adapter} = require('../stage3.js');
-
-// autoBind = new Proxy(autoBind, adapter);
-// Route = new Proxy(Route, adapter);
-// routingContext = new Proxy(routingContext, adapter);
 
 function log(req, res, next) {
 
@@ -77,7 +65,7 @@ class ComponentA {
 
 @Route.group('/messure')
 @Route.group('/user') // prefix will be skip when group is declared
-// //@Middleware.before(log)
+@Middleware.before(log)
 //@Middleware.after(afterContorller)
 @routingContext()
 @autoBind()

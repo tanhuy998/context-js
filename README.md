@@ -1,5 +1,5 @@
 
-# Context.JS
+# Context-JS
 
 A Controller class that can interact with [Express](https://expressjs.com/) features inspired by the coding style of ASP.NET and Java Spring.
 
@@ -14,16 +14,13 @@ A Controller class that can interact with [Express](https://expressjs.com/) feat
 
 #### New features:
 
-- Dependency injection (since 1.x).
-- Grouping routes with constraint (since 1.x).
+- Dependency Injection (since 1.x).
+- Route Group (since 1.x).
 
 ## Acknowledgment
 
-This project use the `legacy` version of [@babel/plugin-decorator-proposal](https://babeljs.io/docs/en/babel-plugin-proposal-decorators) which is implementing stage 1 [tc39/proposal-decorators](https://github.com/wycats/javascript-decorators/blob/e1bf8d41bfa2591d949dd3bbf013514c8904b913/README.md).
-
-In case using this package with Typescript, we recommend using [@babel/preset-typescript](https://babeljs.io/docs/babel-preset-typescript) instead of [tsc](https://www.npmjs.com/package/typescript) because the conflict between [@babel/plugin-decorator-proposal](https://babeljs.io/docs/en/babel-plugin-proposal-decorators) (`legacy` version implements stage 1 [tc39/proposal-decorators](https://github.com/wycats/javascript-decorators/blob/e1bf8d41bfa2591d949dd3bbf013514c8904b913/README.md)) and [tsc/experimentalDecorators](https://www.typescriptlang.org/docs/handbook/decorators.html) (currently implements stage 2 [tc39/proposal-decorators](https://github.com/tc39/proposal-decorators/tree/7fa580b40f2c19c561511ea2c978e307ae689a1b)).
-
-In Typescript, you will face the type-checking issue with ES6 javascript's Proxy. This issue is being handled for future stable adaption with Typescript.
+This project codebase is implementing coding convention of `legacy` version of [@babel/plugin-decorator-proposal](https://babeljs.io/docs/en/babel-plugin-proposal-decorators) which is implementing stage 1 [tc39/proposal-decorators](https://github.com/wycats/javascript-decorators/blob/e1bf8d41bfa2591d949dd3bbf013514c8904b913/README.md).
+In case using this package with Typescript, we recommend using [@babel/preset-typescript](https://babeljs.io/docs/babel-preset-typescript) as transpiller instead of [tsc](https://www.npmjs.com/package/typescript) because this package is not compatible with Typescript.
 
 ## Usage
 
@@ -76,7 +73,7 @@ The config will be
 
 #### Note
 
-The whole package does not use Decorator internally. We just need to transpile the file that apply decorator.
+The whole package does not use Decorator internally. The file which use decorator syntax must be before execution or register with @Babel.
 
 ```js
 require('@babel/register')({
@@ -87,7 +84,7 @@ require('@babel/register')({
 
 
 const app = require('express')();
-const {dispatchRequest} = require('express-controller');
+const {dispatchRequest} = require('context-js');
 
 const Controller = require('Path/to/The/Controller/File');
 
@@ -104,7 +101,7 @@ This inconvience will no longer happen when Decorator officially been released.
 Define a controller class
 
 ```js
-const {BaseController, dispatchable} = require('express-controller');
+const {BaseController, dispatchable} = require('context-js');
 
 @dispatchable // => (optional)
 class Controller extends BaseController {
@@ -133,7 +130,7 @@ require('@babel/register')({
 }); 
 
 const app = require('express')();
-const {dispatchRequest} = require('express-controller');
+const {dispatchRequest} = require('context-js');
 
 const Controller = require('Path/to/The/Controller/File');
 
@@ -176,15 +173,14 @@ Firstly hit the codes:
 
 ```javascript
 const express = require('express');
-const {RouteContext} = require('express-controller');
+const {ApplicationContext} = require('context-js');
 
-RouteContext.init(express);
-
+// Controller files must be imported be for ApplicationContext resolves routes
 const Controller = require('The/Controller/directory');
 
 const app = express();
 
-app.use('/', RouteContext.resolve());
+app.use('/', ApplicationContext.resolveRoutes());
 ```
 
 
@@ -194,13 +190,11 @@ use `@routingContext()` on class to annotate that the specific class is defining
 
 
 ```js
-const {Route, BaseController, dispatchable, routingContext} = require('express-controller');
+const {Route, BaseController, dispatchable, routingContext} = require('context-js');
 
 /*
-* use routingContext() decorator to annotate that this class
+* use @routingContext() decorator to annotate that the controller
 * is mapping routes inside.
-* routingContext() must be placed before all routing decorators 
-* that affects on class.
 */
 @routingContext()
 class Controller extends BaseController {
@@ -209,8 +203,8 @@ class Controller extends BaseController {
 
       super();
     }
-
-    @Route.get('/send')
+    
+    @Route.get('/send')  // define an enpoint
     sendSomthing() {
 
 
@@ -219,13 +213,7 @@ class Controller extends BaseController {
 
 ```
 
-**importance:** We must import `const {RouteContext} = require('express-controller')` on the highest priority (before importing controllers). 
-
-
-_notice:_ the `@Route` decorator represents the Router generated by Express. Therefore, we could access to another standard **method** of the Express's router.
-
-
-***RESTRICTION!***  DO NOT miss the `@routingContext()` in each class definition when routing, it would cause unexpected mapping on routing.
+DO NOT miss the `@routingContext()` in each class definition when routing, it would cause unexpected mapping on routing.
 
 ```js
 @routingContext()
@@ -278,50 +266,14 @@ This is the "index" method of Controller class
 ```
 
 
-It happened because there is currently only one routing context for *FirstController* class, then the `@Route.get('/index')` mapping on *SecondController* class refers to the current routing context (*FirstController*) so that the route will be mapped with `FirstController.index` instead of `SecondController.index`.
-
+It happens because the *SecondController* has no routing context, then the `@Route.get('/index')` mapping on *SecondController* class refers to the latest routing context (*FirstController*'s routing context). So, the endpoint `GET /index` will be mapped to `FirstController.index` instead of `SecondController.index`.
 In case if the `FirstController` class did not define the `index` method, requesting to `GET /index` would cause ***FirstController.index*** _is not a funtion_ error.
 
-
-```js
-@routingContext()
-class FirstController extends BaseController {
-
-    constructor() {
-
-      super();
-    }
-
-    @Route.get('/send')
-    sendSomthing() {
-
-
-    }
-}
-
-class SecondController extends BaseController {
-
-  contructor() {
-
-    super();
-  }
-
-  @Route.get('/index') 
-  index() {
-
-    // requesting to GET /index will cause "Controller.index is not a funtion"
-    console.log('What we want to see');
-  }
-}
-```
 
 
 ### Routes prefix 
 
-
 syntax:
-
-
 
 ```js
 @Route.prefix('/example')
@@ -329,7 +281,7 @@ class Controller extends BaseController {}
 ```
 
 ```js
-const {Route, BaseController, dispatchable, routingContext} = require('express-controller');
+const {Route, BaseController, dispatchable, routingContext} = require('context-js');
 
 /*
 * Route.prefix decorator affect on class.
@@ -347,7 +299,7 @@ class Controller extends BaseController {
       super();
     }
 
-    // the current route path is 'get /user/send'
+    // the route path is 'get /user/send'
     @Route.get('/send')
     sendSomthing() {
 
@@ -362,7 +314,7 @@ when calling multiple prefix on single class
 
 
 ```js
-const {Route, BaseController, dispatchable, routingContext} = require('express-controller');
+const {Route, BaseController, dispatchable, routingContext} = require('context-js');
 
 @Route.prefit('/multiple')
 @Route.prefix('/single')
@@ -403,7 +355,7 @@ Syntax:
 example
 
 ```js
-const {Route, BaseController, dispatchable, Middleware} = require('express-controller');
+const {Route, BaseController, dispatchable, Middleware} = require('context-js');
 
 const bodyParser = require('body-parser');
 
@@ -510,10 +462,10 @@ controllerMethod() {
 ## Grouping routes (since version 0.1.x)
 
 
-Routes grouping is a way to define routes in a specific group so that we can apply constraints (add middleware for routes that is declared in group) to the group's routes.
+Group routes is a way to group enpoints in in order to apply constraints to the group's members. Something we want a set of endpoints passthrough some middlewares.
 
 ```js
-const {Route, BaseController, routingContext} = require('express-controller');
+const {Route, BaseController, routingContext} = require('context-js');
 
 
 @Route.group('/user')
@@ -536,20 +488,19 @@ class Controller extends BaseController {
 
 #### @Route.group vs @Route.prefix 
 
-`@Route.prefix` is just the concaternation of the prefix and endpoint's path, each Controller class (a routing context) contains just only one prefix for it's routes.
-On another hand, a Controller Class (a routing context) can have more than one group of routes that each group has different constraints for specific purposes (such as testing).
+`@Route.prefix` is just the concaternation of the prefix and endpoint's path, each Controller class (a routing context) contains just only one prefix.
+On the other hand, a Controller Class (a routing context) can be declared with more than one group that each group has different constraints for specific purposes (such as testing).
 
 
 ### Group Local Contraints
 
-Local constraint is middlewares that applied to all group's endpoints. To add local constraint to a group, apply `@Middleware` on controller class.
+Local constraint is middlewares that applied to groups that are declared on a controller. To add local constraint to a group, apply `@Middleware` on controller.
 
 
 ```js
-const {Route, BaseController, routingContext} = require('express-controller');
+const {Route, BaseController, routingContext} = require('context-js');
     
 function log(req, res, next) {
-
   console.log(req);
   next()
 }
@@ -565,8 +516,7 @@ class UserController extends BaseController {
       super();
     }
 
-    // the current route path will be 'get /multiple/send'
-    // the '/single' prefix is ovetwritten
+
     @Route.get('/send')
     sendSomthing() {
 
@@ -577,10 +527,10 @@ class UserController extends BaseController {
 
 #### Default group
 
-If using `@Middleware` without declaring any groups immediately, the specific controller class (routing context) is mapped to default group '/'
+If using `@Middleware` without declaring any groups immediately, the specific controller class is declared with default group '/'
 
 ```js
-const {Route, BaseController, routingContext} = require('express-controller');
+const {Route, BaseController, routingContext} = require('context-js');
     
 function log(req, res, next) {
 
@@ -598,8 +548,6 @@ class UserController extends BaseController {
       super();
     }
 
-    // the current route path will be 'get /multiple/send'
-    // the '/single' prefix is ovetwritten
     @Route.get('/send')
     sendSomthing() {
 
@@ -612,13 +560,12 @@ class UserController extends BaseController {
 
 #### Groups's local constraint Isolation
 
-Groups's local constraint are isolated between controllers, so their local constraints are different no matter how whose path are identical.
-
+Groups in different controllers (routing context) are isolated, so their local constraints are different no matter how whose path are identical.
 The following example show how groups is isolated. '/v1' on each Controller.
 
 
 ```js
-const {Route, BaseController, routingContext} = require('express-controller');
+const {Route, BaseController, routingContext} = require('context-js');
     
 
 function userLog() {
@@ -649,8 +596,8 @@ class UserController extends BaseController {
     }
 }
 
-@Route.group('/v1')
 @Middleware.after(adminLog)
+@Route.group('/v1')
 @routingContext()
 class AdminController extends BaseController {
 
@@ -661,9 +608,9 @@ class AdminController extends BaseController {
 
 
     @Route.get('/index')
-    sendSomthing() {
+    index() {
 
-        this.httpContext.response.next();
+        this.httpContext.nextMiddlware();
     }
 }
 
@@ -672,14 +619,13 @@ class AdminController extends BaseController {
 
 ### Group Global Contraint
 
-Global constraint is applied to specific group's path (dismissing groups local constraint isolation).
-
+Global Constraint is inversion of Local Constraint. Groups that have path which is managed with Global Contraint will have the inherit the same constraint
 
 ```js
-const {Route, BaseController, routingContext} = require('express-controller');
+const {Route, BaseController, routingContext} = require('context-js');
 
 // define global constraint for groups
-Route.constraint()
+Route.constraint()  // the purpose of this global constraint is to meassure the time the request is handled.
       .group('/messure')
       .before(start) // invoke before the handlers chain of it's route
       .after(end) // invoke after the handlers chain of it's route
@@ -713,7 +659,7 @@ class UserController extends BaseController {
     @Route.get('/send')
     sendSomthing() {
 
-
+        this.httpContext.nextMiddleware();
     }
 }
 
@@ -731,7 +677,7 @@ class AdminController extends BaseController {
     @Route.get('/index')
     sendSomthing() {
 
-
+        this.httpContext.nextMiddleware();
     }
 }
 ```
@@ -741,7 +687,7 @@ class AdminController extends BaseController {
 Context.JS maps route base on Express.js's router. Consider the previous example
 
 ```js
-const {Route, BaseController, routingContext, Middleware} = require('express-controller');
+const {Route, BaseController, routingContext, Middleware} = require('context-js');
 
 
 function start(req, res, next) {
@@ -817,7 +763,7 @@ class AdminController extends BaseController {
 }
 ```
 
-then Context.JS explains the related decorators to Express app how to map the routes as following.
+then Context-JS explains the related decorators to Express app how to map the routes as following.
 
 
 ```js
@@ -838,8 +784,7 @@ const messureGroup = express.Router();
 messureGroup.get('/send', dispatchRequest(UserController, 'sendSomething'), userLog;
 messureGroup.get('/index', dispatchRequest(AdminController, 'sendSomething'), adminLog)
 
-// mapping routes this way in order to implements constraint isolation 
-// between groups that have the same path
+
 mainRouter.use('/user', userEndpoints);
 mainRouter.use('/admin', adminEndpoints);
 mainRouter.use('/messure', start, messureGroup, end);
@@ -887,60 +832,69 @@ The flow of Constraints is described below.
 ## Dependency injection (since 1.x)
 
 
-This package provides Dependency Injection by using an ioc container to help Javascript user on wiring between components dependencies.
-
+This package provides Dependency Injection by using an ioc container to help Javascript user on wiring dependencies between components.
 Dependency Injection of this package just support two type of injection is Constructor Injection and Property Injection.
-
 Borrowing the concept Dependency Injection of ASP.NET, Components (also known a Dependencies) has it's own lifecycle depend on which type of binding.
 
   - Sington: The Ioc Container just resolve the component once and then reuse it over the application.
   - Scope: Like Singleton. But the component is resolved when a httpContext arrive. This component will be reuse on context of a .
-  - transient: Each time we need a component, the ioc container will resolve a new intance.
+  - Transient: Each time we need a component, the ioc container will resolve a new intance.
 
 
-### Binding component
+### Binding components
 
-Binding components is the way implementing the Dependency Inversion. Binding means telling the Ioc Container which component (concrete) should be injected as abstraction.
+Binding components is the way implementing the Dependency Inversion. Binding means telling the Ioc Container which component (concrete) should be injected as abstraction (base classes or interfaces).
 
 ```js
-const {BaseController} = require('express-controller-js');
+const {ApplicationContext} = require('express-controller-js');
 
-BaseController.useIoc();
+ApplicationContext.useIoc();
 
 // bind singleton
-BaseController.components.bindSingleton(abstract, concrete);
+ApplicationContext.components.bindSingleton(abstract, concrete);
 
 // bind scope
-BaseController.components.bindScope(abstract, concrete);
+ApplicationContext.components.bindScope(abstract, concrete);
 
 // bind transient
-BaseController.components.bind(abstract, concrete);
+ApplicationContext.components.bind(abstract, concrete);
 
-// abstract and concrete are the classes or functions. The concrete must inherits the abstract.
+// abstract and concrete are classes or functions. The concrete must inherits the abstract.
 ```
 
 ### Autobinding
 
+Autobinding is the way class binding itseflt as abastract and concreate
+
 ```js
-const {autoBind} = require('express-controller-js');
+const {autoBind, BindType} = require('express-controller-js');
 
-@autoBind()
-class AutoBindClass {
+@autoBind()  // bind itself as Transient component
+class Transient {
 
-  
 }
 
-// like BaseController.components.bind(AutoBindClass, AutoBindClass);
+@autoBind(BindType.SCOPE) // bind itself as Scope component
+class Scope {
+    
+}
 
+@autoBind(BindType.SINGLETON) / bind itself as Singleton component
+class Singleton {
+    
+}
 ```
 
-### Injecting dependency
+
+### Injecting dependencies
 
 #### Constructor injection 
 
-On the constructor parameter, just annotate the specific param that need to be injected by passing the class as default value. The ioc container will looking for the abstraction if it is bound before.
+On the constructor parameters, set the constructor's parameters default value as the component class to annotate the Ioc Container which type of component you want to inject.
 
 ```js
+const {autoBind, BaseController} = require('context-js')
+
 @autoBind()
 class AutoBindClass {
 
@@ -949,10 +903,14 @@ class AutoBindClass {
 
 @autoBind()
 class Controller extends BaseController {
-
-  constructor(component = AutoBindClass) {
-
     
+    prop;
+    
+    // inject a instance of AutoBindClass to the parameter
+  constructor(component = AutoBindClass) {
+    super();
+    
+    this.prop = component;
   }
 }
 
@@ -961,6 +919,7 @@ class Controller extends BaseController {
 #### Property injection
 
 ```js
+const {autoBind, is, BaseController} = require('context-js')
 
 @autoBind()
 class AutoBindClass {
@@ -972,11 +931,11 @@ class AutoBindClass {
 class Controller extends BaseController {
 
   @is(AutoBindClass)
-  #prop
+  prop;
 
   constructor() {
 
-    
+    super();
   }
 }
 
@@ -995,8 +954,7 @@ syntax:
 example
 
 ```js
-
-const {Route, BaseController, dispatchable, Response, routingContext} = require('express-controller');
+const {Route, BaseController, dispatchable, Response, routingContext} = require('context-js');
 
 @routingContext()
 class Controller extends BaseController {
@@ -1006,7 +964,7 @@ class Controller extends BaseController {
       super();
     }
 
-    // Beware of using the method of the http/request module
+    // Beware of using the method of Node.js native Response
     // because it works directly with STREAM and there is no buffering mechanism
     // for http operations.
     // In this example, the response status code and response header will be sent directly to the network
@@ -1031,20 +989,19 @@ We can annotate annotate a controller to return the response body
 
 Syntax:
 
-
 ```js
 @responseBody
 ```
 
 
-*Note:* using this decorator means that we will calling the *res.send(_content)* and *res.end()*, so the response session will end there and all middlewares after this action could not interact with the response anymore.
+*Note:* using this decorator means that we will calling the *res.send(_content)* and *res.end()*, so the response session will end there but Middlewares after the controller action still invoke.
 
 
 Example 
 
 
 ```js
-const {BaseController, dispatchable, responseBody} = require('express-controller');
+const {BaseController, dispatchable, responseBody} = require('context-js');
 
 @dispatchable
 class Controller extends BaseController {
@@ -1067,9 +1024,81 @@ class Controller extends BaseController {
 }
 ```
 
-## Function library
+### @responseBody ActionResult
 
-#### @requestParam(...paramName : string) (works on both method and property)
+`@responseBody` deals with IActionResult returned by the controller's action. This package provide 4 types of ActionResult.
+
+```js
+const {BaseController, dispatchable, responseBody, view, redirect, file, download} = require('context-js');
+
+@dispatchable
+class Controller extends BaseController {
+
+    constructor() {
+
+      super();
+    }
+
+    
+    @responseBody
+    view() {
+        const data = {
+            message: 'Hello world';
+        }
+    
+       return view('index', data);
+    }
+    
+    @responseBody
+    file() {
+        
+        return file('pathToFile');
+    }
+    
+    @responseBody
+    redirect() {
+        
+        return redirect('url/path');
+    }
+    
+    @responseBody
+    download() {
+        
+        return download('filePath');
+    }
+}
+```
+
+#### ActionResult methods
+
+`ActionResult.status(code)`
+Set the http status code of the response. An alias of Express.Response.status()
+
+`ActionResult.header(field, [value])`
+Set headers to the response. An alias of Express.Response.header()
+
+`ActionResult.cookie(name, value [, options])`
+Set cookies to the response. An alias of Express.Response.cookie()
+
+`ActionResult.clearCookie(name [, options])`
+clear cookies of the response. An alias of Express.Response.clearCookie()
+
+Example
+```js
+@responseBody
+someMethod() {
+    
+    return view('index')
+            .cookie('name', 'tobi', { domain: '.example.com', path: '/admin', secure: true })
+            .header({
+                Keep-Alive: 'timeout=5, max=997'
+            });
+}
+```
+
+## Utility Decorators
+
+#### @requestParam(...paramName : string) [Unstable] (works on both method and property)
 
 Assign specific *request.param* to a specific instance (method and property).
 
@@ -1081,7 +1110,7 @@ Apply to property
 class Controller extends BaseControlle {
 
   @requestParam('userId')
-  #id;
+  id;
 
 
   // in this case the "info" property
@@ -1092,11 +1121,10 @@ class Controller extends BaseControlle {
   // }
   @requestParam('userId', 'userName')
   info;
-
 }
 ```
 
-Apply to method 
+Apply to method (deprecated)
 
 ```js
 class Controller extends BaseControlle {
@@ -1111,48 +1139,29 @@ class Controller extends BaseControlle {
 }
 ```
 
+#### @consumes(field, [value])
+Register a middleware before the controller's action to check for request headers. response status 400 If the request headers do not match.
 
-In application
-
-
+Example 
 ```js
-const {routingContext, Endpoint, requestParam, Route} = require('express-controller');
 
-@Route.prefix('/user')
-@routingContext()
-class Controller extends BaseControlle {
-
-    @requestParam('userId', 'userName')
-    getUserInfo(id, name) {
-
-      // the order of the params must match the order of de request param we pass
-        return {id, name};
-    }
-
-    @Endpoint.GET('/:userId/:userName')
-    doSomthing() {
-
-        // we have to resolve the method which applied decorators
-        // in order to invoke it.
-        const {id, name} = this.getUserInfo.resolve();
-
-        console.log(id, name)
-    }
+@comsumes({
+    'User-agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.59'
+})
+someMethod() {
+    
+    // just handle request from Edge browser
 }
 ```
 
-
-
-
 #### @contentType(value : string)
-Preset the response 'Content-Type' header, can be overwritten via `this.httpContext.response`
+Pre-set the response 'Content-Type' header, can be overwritten in controller action.
 
 #### @header(name : string, value : string || array)
-Preset the response header (using Express's res.setHeader method), the setted headers can be ovetwritten via `this.httpContext.response`
+Pre-set the response header (using Express's res.setHeader method), headers can be overwritten in controller action
 
 #### @Endpoint decorator
-The *@Endpoint* is a "http method" friendly to mapping route. *@Endpoint* just only have the following methods:
-
+The *@Endpoint* is a "http method" friendly to mapping route. *@Endpoint* just focuses following methods:
 
 ```js
 @Endpoint.GET(path:string)
@@ -1176,5 +1185,5 @@ The *@Endpoint* is a "http method" friendly to mapping route. *@Endpoint* just o
 
 ## License
 
-[MIT](https://github.com/tanhuy998/express-controller/blob/master/LICENSE)
+[MIT](https://github.com/tanhuy998/context-js/blob/master/LICENSE)
 
