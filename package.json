@@ -1,14 +1,13 @@
 {
-  "name": "context-js",
-  "version": "0.1.0",
-  "description": "Controller class for Express.js",
+  "name": "@tanhuy998/context-js",
+  "version": "1.0.0",
+  "description": "Controller management for Express.js",
   "main": "index.js",
-  "types": "index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tanhuy998/controller-js"
+    "url": "https://github.com/tanhuy998/context-js"
   },
-  "homepage": "https://github.com/tanhuy998/controller-js",
+  "homepage": "https://github.com/tanhuy998/context-js",
   "scripts": {
     "test": "node ./test/apply-express/test.js"
   },
@@ -39,6 +38,7 @@
     "LICENSE",
     "README.md",
     ".babelrc",
+    "tc39-stage3-decorator/",
     "src/"
   ],
   "devDependencies": {
