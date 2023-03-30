@@ -1,3 +1,7 @@
+const {Type, reflectParameterType} = require('./type.js');
+const ReflectionParameter = require('./reflectionParameter.js');
+const { raw } = require('body-parser');
+
 class NotBabelDecoratorClassError extends Error {
 
     constructor(_targetFunciton) {
@@ -87,25 +91,10 @@ class ReflectionBabelDecoratorClass_Stage_0 {
 
         this.#params = matches.map((rawParam) => {
         
-            const isString = (rawParam[defaultValue]) ? (rawParam[defaultValue].match(/(\'|\"|\`)\w*\1/) != null) : false;
 
-            const result = {
-                origin: this.#target,
-                name: rawParam[name] || undefined,
-                defaultValue: rawParam[defaultValue] || undefined,
-                isTypeOfString: isString,
-            };
+            const parsedRawParam = `${rawParam[name]} = ${rawParam[defaultValue]}`
 
-            return new Proxy(result, {
-                get(target, prop) {
-
-                    return target[prop];
-                },
-                set() {
-
-                    return false;
-                }
-            });
+            return new ReflectionParameter(parsedRawParam , this.#target);
         }, this)
     }
 }
@@ -190,28 +179,10 @@ class ReflectionBabelDecoratorClass_Stage_3 {
         const name = 1, defaultValue = 4;
 
         this.#params = matches.map((rawParam) => {
-        
-            const isString = (rawParam[defaultValue]) ? (rawParam[defaultValue].match(/(\'|\"|\`)\w*\1/) != null) : false;
 
-            const paramDefaultValue = (rawParam[defaultValue]) ? rawParam[defaultValue].replace(/^_/, '') : undefined;
+            const parsedRawParam = `${rawParam[name]} = ${rawParam[defaultValue]}`
 
-            const result = {
-                origin: this.#target,
-                name: rawParam[name] || undefined,
-                defaultValue: paramDefaultValue,
-                isTypeOfString: isString,
-            };
-
-            return new Proxy(result, {
-                get(target, prop) {
-
-                    return target[prop];
-                },
-                set() {
-
-                    return false;
-                }
-            });
+            return new ReflectionParameter(parsedRawParam , this.#target);
         }, this)
     }
 }

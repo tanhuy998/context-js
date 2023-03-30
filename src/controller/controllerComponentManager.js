@@ -2,6 +2,7 @@
 const ControllerState = require('./controllerState.js');
 const reflecClass = require('../libs/reflectClass.js');
 const reflectFunction = require('../libs/reflectFunction.js');
+const {Type} = require('../libs/type.js');
 const IocContainer = require('../ioc/iocContainer.js');
 const ControllerConfiguration = require('./controllerConfiguration.js');
 const {ReflectionBabelDecoratorClass_Stage_3} = require('../libs/babelDecoratorClassReflection.js');
@@ -201,7 +202,7 @@ class ControllerComponentManager extends IocContainer {
 
             const className = param.defaultValue;
 
-            if (!param.isTypeOfString && className) {
+            if (param.defaultValueType == Type.UNIT && className) {
 
                 if (this.#hasScope(className)) {
 

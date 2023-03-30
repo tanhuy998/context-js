@@ -1,68 +1,83 @@
-class ReflectionParameter {
+const ReflectionParameter = require('./reflectionParameter.js')
 
-    #origin;
-    #name;
-    #defaultValue;
-    #isString;
+// const {Type, reflectParameterType} = require('./type.js');
+// class ReflectionParameter {
 
-    #raw;
+//     #origin;
+//     #name;
+//     #defaultValue;
+//     #defaultValueType;
+//     #isString;
 
-    get origin() {
+//     #raw;
 
-        return this.#origin;
-    }
+//     get origin() {
 
-    get name() {
+//         return this.#origin;
+//     }
 
-        return this.#name;
-    }
+//     get name() {
 
-    get defaultValue() {
+//         return this.#name;
+//     }
 
-        return this.#defaultValue;
-    }
+//     get defaultValue() {
 
-    get isTypeOfString() {
+//         return this.#defaultValue;
+//     }
 
-        return this.#isString;
-    }
+//     get defaultValueType() {
 
-    constructor(_rawParam, _origin) {
+//         return this.#defaultValueType;
+//     }
 
-        this.#origin = _origin;
-        this.#raw = _rawParam;
+//     get isTypeOfString() {
 
-        this.#Init();
-    }
+//         return this.#isString;
+//     }
 
-    #Init() {
+//     constructor(_rawParam, _origin) {
 
-        this.#reflect();
-    }
+//         this.#origin = _origin;
+//         this.#raw = _rawParam;
 
-    #reflect() {
+//         this.#Init();
+//     }
 
-        const tokens = this.#raw.split(/(\s|\t)*\=(\s|\t)*/);
+//     #Init() {
+
+//         this.#reflect();
+//     }
+
+//     #reflect() {
+
+//         const tokens = this.#raw.split(/(\s|\t)*\=(\s|\t)*/);
         
-        if (tokens == null) throw new Error('ReflectionParameter Error: invalid value');
+//         if (tokens == null) throw new Error('ReflectionParameter Error: invalid value');
 
-        const last = tokens.length - 1;
+//         const last = tokens.length - 1;
 
-        this.#name = tokens[0];
+//         this.#name = tokens[0];
 
-        if (tokens.length > 1) {
+//         if (tokens.length > 1) {
 
-            this.#isString = (tokens[last].match(/(\'|\"|\`)\w*\1/) != null);
+//             this.#isString = (tokens[last].match(/(\'|\"|\`)\w*\1/) != null);
 
-            this.#defaultValue = (this.#isString) ? tokens[last].replace(/(\'|\"|\`)/g, '') : tokens[last];
-        }
-        else {
+//             this.#defaultValue = (this.#isString) ? tokens[last].replace(/(\'|\"|\`)/g, '') : tokens[last];
+//         }
+//         else {
             
-            this.#isString = false;
-            this.#defaultValue = undefined;
-        }
-    }
-}
+//             this.#isString = false;
+//             this.#defaultValue = undefined;
+//         }
+
+//         const defaultValue = this.#defaultValue;
+
+//         const reflectionDefaultValue = reflectParameterType(defaultValue);
+
+//         this.#defaultValueType = reflectionDefaultValue.type;
+//     }
+// }
 
 
 /**
@@ -122,13 +137,6 @@ class ReflectionFunction {
     }
 
     #reflect() {
-
-        //const detecFunction = /^(async){0,1}(\s|\t)*(function){0,1}(\s|\t)*(\w(\w)*)*(\s|\t)*\((\s|\t)*(\w*((\s|\t)*\,(\s|\t)*\w+)*)(\s|\t)*\)/;
-    
-        //const test = /(\/*(\s|\t)*\w*(\s|\t)*)(async){0,1}(\s|\t)*(function){0,1}(\s|\t)*(\w*)*(\s|\t)*\((\s|\t)*((\w*(\s|\t)*(\=(\s|\t)*(((\'|\"|\`){0,1})(\w*)\15))*)((\s|\t)*\,(\s|\t)*(\w*(\s|\t)*(\=(\s|\t)*(((\'|\"|\`){0,1})(\w*)\15))*))*)*(\s|\t)*\)/g;
-        //const test = /(\/\/*(\s|\t)*)*((\s|\t)*\w+)*(\s|\t)*\((\s|\t)*((\w*(\s|\t)*(\=(\s|\t)*(((\'|\"|\`){0,1})(\w*)\13))*)((\s|\t)*\,(\s|\t)*(\w*(\s|\t)*(\=(\s|\t)*(((\'|\"|\`){0,1})(\w*)\24))*))*)*(\s|\t)*\)(\s|\t)*(\=\>)*/g;
-        //const test = /(\/\/*\s*)*((\s)*\w+)*(\s)*\((\s)*((\w*(\s)*(\=(\s)*(((\'|\"|\`){0,1})(\w*)\13))*)((\s)*\,(\s)*(\w*(\s)*(\=(\s)*(((\'|\"|\`){0,1})(\w*)\24))*))*)*(\s)*\)(\s)*(\=\>)*/g
-        //const test = /(\/\/*\s*)*((\s)*(\w+))*(\s)*\(((\s|\w|\'|\"|\`|\=|\,)*)*\)(\s)*(\=\>)*/g;
 
         //best performance
         //const test = /(\s)(\/+)*(\s*)(\_|\w*)(\s*)\(((\s|\w|\'|\"|\`|\=|\,|\{|\}|\:|\_|\(|\)|\[|\])*)\)(\s)*((\=\>(\s)*(\{){0,1})|(\{))/g;
@@ -234,5 +242,6 @@ class ReflectionFunction {
         }, this)
     }
 }
+
 
 module.exports = ReflectionFunction;
