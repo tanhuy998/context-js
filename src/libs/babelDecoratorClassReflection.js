@@ -1,6 +1,4 @@
-const {Type, reflectParameterType} = require('./type.js');
 const ReflectionParameter = require('./reflectionParameter.js');
-const { raw } = require('body-parser');
 
 class NotBabelDecoratorClassError extends Error {
 
@@ -188,24 +186,3 @@ class ReflectionBabelDecoratorClass_Stage_3 {
 }
 
 module.exports = {ReflectionBabelDecoratorClass_Stage_0, ReflectionBabelDecoratorClass_Stage_3};
-// reflection parameter interface
-
-// get origin() {
-
-//     return this.#origin;
-// }
-
-// get name() {
-
-//     return this.#name;
-// }
-
-// get defaultValue() {
-
-//     return this.#defaultValue;
-// }
-
-// get isTypeOfString() {
-
-//     return this.#isString;
-// }
