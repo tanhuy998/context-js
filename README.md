@@ -46,6 +46,9 @@ Merge one of the following methods with you babel configuration.
 
 ```js
 {
+  "presets": [
+        "@babel/preset-env"
+    ],
   "plugins": [["@babel/plugin-proposal-decorators", { "version": "legacy" }]]
 }
 ```
@@ -55,6 +58,9 @@ Merge one of the following methods with you babel configuration.
 ```js
 {
   "babel" : {
+    "presets": [
+        "@babel/preset-env"
+    ],
     "plugins": [["@babel/plugin-proposal-decorators", { "version": "legacy" }]]
   }
 }
@@ -84,7 +90,7 @@ require('@babel/register')({
 
 
 const app = require('express')();
-const {dispatchRequest} = require('context-js');
+const {dispatchRequest} = require('@tanhuy998/context-js');
 
 const Controller = require('Path/to/The/Controller/File');
 
@@ -101,7 +107,7 @@ This inconvience will no longer happen when Decorator officially been released.
 Define a controller class
 
 ```js
-const {BaseController, dispatchable} = require('context-js');
+const {BaseController, dispatchable} = require('@tanhuy998/context-js');
 
 @dispatchable // => (optional)
 class Controller extends BaseController {
@@ -130,7 +136,7 @@ require('@babel/register')({
 }); 
 
 const app = require('express')();
-const {dispatchRequest} = require('context-js');
+const {dispatchRequest} = require('@tanhuy998/context-js');
 
 const Controller = require('Path/to/The/Controller/File');
 
@@ -173,7 +179,7 @@ Firstly hit the codes:
 
 ```javascript
 const express = require('express');
-const {ApplicationContext} = require('context-js');
+const {ApplicationContext} = require('@tanhuy998/context-js');
 
 // Controller files must be imported be for ApplicationContext resolves routes
 const Controller = require('The/Controller/directory');
@@ -190,7 +196,7 @@ use `@routingContext()` on class to annotate that the specific class is defining
 
 
 ```js
-const {Route, BaseController, dispatchable, routingContext} = require('context-js');
+const {Route, BaseController, dispatchable, routingContext} = require('@tanhuy998/context-js');
 
 /*
 * use @routingContext() decorator to annotate that the controller
@@ -281,7 +287,7 @@ class Controller extends BaseController {}
 ```
 
 ```js
-const {Route, BaseController, dispatchable, routingContext} = require('context-js');
+const {Route, BaseController, dispatchable, routingContext} = require('@tanhuy998/context-js');
 
 /*
 * Route.prefix decorator affect on class.
@@ -314,7 +320,7 @@ when calling multiple prefix on single class
 
 
 ```js
-const {Route, BaseController, dispatchable, routingContext} = require('context-js');
+const {Route, BaseController, dispatchable, routingContext} = require('@tanhuy998/context-js');
 
 @Route.prefit('/multiple')
 @Route.prefix('/single')
@@ -355,7 +361,7 @@ Syntax:
 example
 
 ```js
-const {Route, BaseController, dispatchable, Middleware} = require('context-js');
+const {Route, BaseController, dispatchable, Middleware} = require('@tanhuy998/context-js');
 
 const bodyParser = require('body-parser');
 
@@ -465,7 +471,7 @@ controllerMethod() {
 Group routes is a way to group enpoints in in order to apply constraints to the group's members. Something we want a set of endpoints passthrough some middlewares.
 
 ```js
-const {Route, BaseController, routingContext} = require('context-js');
+const {Route, BaseController, routingContext} = require('@tanhuy998/context-js');
 
 
 @Route.group('/user')
@@ -498,7 +504,7 @@ Local constraint is middlewares that applied to groups that are declared on a co
 
 
 ```js
-const {Route, BaseController, routingContext} = require('context-js');
+const {Route, BaseController, routingContext} = require('@tanhuy998/context-js');
     
 function log(req, res, next) {
   console.log(req);
@@ -530,7 +536,7 @@ class UserController extends BaseController {
 If using `@Middleware` without declaring any groups immediately, the specific controller class is declared with default group '/'
 
 ```js
-const {Route, BaseController, routingContext} = require('context-js');
+const {Route, BaseController, routingContext} = require('@tanhuy998/context-js');
     
 function log(req, res, next) {
 
@@ -565,7 +571,7 @@ The following example show how groups is isolated. '/v1' on each Controller.
 
 
 ```js
-const {Route, BaseController, routingContext} = require('context-js');
+const {Route, BaseController, routingContext} = require('@tanhuy998/context-js');
     
 
 function userLog() {
@@ -622,7 +628,7 @@ class AdminController extends BaseController {
 Global Constraint is inversion of Local Constraint. Groups that have path which is managed with Global Contraint will have the inherit the same constraint
 
 ```js
-const {Route, BaseController, routingContext} = require('context-js');
+const {Route, BaseController, routingContext} = require('@tanhuy998/context-js');
 
 // define global constraint for groups
 Route.constraint()  // the purpose of this global constraint is to meassure the time the request is handled.
@@ -687,7 +693,7 @@ class AdminController extends BaseController {
 Context.JS maps route base on Express.js's router. Consider the previous example
 
 ```js
-const {Route, BaseController, routingContext, Middleware} = require('context-js');
+const {Route, BaseController, routingContext, Middleware} = require('@tanhuy998/context-js');
 
 
 function start(req, res, next) {
@@ -893,7 +899,7 @@ class Singleton {
 On the constructor parameters, set the constructor's parameters default value as the component class to annotate the Ioc Container which type of component you want to inject.
 
 ```js
-const {autoBind, BaseController} = require('context-js')
+const {autoBind, BaseController} = require('@tanhuy998/context-js')
 
 @autoBind()
 class AutoBindClass {
@@ -919,7 +925,7 @@ class Controller extends BaseController {
 #### Property injection
 
 ```js
-const {autoBind, is, BaseController} = require('context-js')
+const {autoBind, is, BaseController} = require('@tanhuy998/context-js')
 
 @autoBind()
 class AutoBindClass {
@@ -954,7 +960,7 @@ syntax:
 example
 
 ```js
-const {Route, BaseController, dispatchable, Response, routingContext} = require('context-js');
+const {Route, BaseController, dispatchable, Response, routingContext} = require('@tanhuy998/context-js');
 
 @routingContext()
 class Controller extends BaseController {
@@ -1001,7 +1007,7 @@ Example
 
 
 ```js
-const {BaseController, dispatchable, responseBody} = require('context-js');
+const {BaseController, dispatchable, responseBody} = require('@tanhuy998/context-js');
 
 @dispatchable
 class Controller extends BaseController {
@@ -1029,7 +1035,7 @@ class Controller extends BaseController {
 `@responseBody` deals with IActionResult returned by the controller's action. This package provide 4 types of ActionResult.
 
 ```js
-const {BaseController, dispatchable, responseBody, view, redirect, file, download} = require('context-js');
+const {BaseController, dispatchable, responseBody, view, redirect, file, download} = require('@tanhuy998/context-js');
 
 @dispatchable
 class Controller extends BaseController {
