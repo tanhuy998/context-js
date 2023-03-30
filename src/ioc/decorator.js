@@ -156,6 +156,8 @@ function is(component) {
         decoratorResult.transform(injectComponent, 'injectProperty');
 
         descriptor.initializer = () => decoratorResult;
+
+        return descriptor;
     }
 }
 

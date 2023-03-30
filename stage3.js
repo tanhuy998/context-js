@@ -23,6 +23,7 @@ const {
     FileResultNoContextError,
     DownloadResult, 
     DownloadResultNoContextError,
+    BindingContext,
 } = legacy;
 
 const exportContent = {
@@ -46,6 +47,7 @@ const exportContent = {
     FileResultNoContextError,
     DownloadResult, 
     DownloadResultNoContextError,
+    BindingContext
 };
 
 
