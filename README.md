@@ -787,8 +787,8 @@ adminEndpoints.get('/index',dispatchRequest(AdminController, 'sendSomething'), a
 
 
 const messureGroup = express.Router();
-messureGroup.get('/send', dispatchRequest(UserController, 'sendSomething'), userLog;
-messureGroup.get('/index', dispatchRequest(AdminController, 'sendSomething'), adminLog)
+messureGroup.use(userEndpoint);
+messureGroup.use(adminEndpoint);
 
 
 mainRouter.use('/user', userEndpoints);
