@@ -14,6 +14,30 @@ const stage_0_To_Stage_3_Adapter =  {
             value: undefined,
 		}
 
+		const pseudoObject = {
+			
+		}
+
+		Object.defineProperty(pseudoObject, 'isPseudo', {
+			value: true,
+			writable: false,
+			configurable: false
+		})
+
+		// Object.defineProperty(descriptor, 'private', {
+		// 	value: context.private,
+		// 	writable: false,
+		// 	configurable: false
+		// })
+
+		//console.log(descriptor)
+
+		// Object.defineProperty(pseudoObject, name, {
+		// 	value: value,
+		// 	get : context.access.get,
+		// 	set: context.access.set
+		// })
+
 		//console.log(context.access.get())
 
 		switch(kind) {
@@ -23,15 +47,23 @@ const stage_0_To_Stage_3_Adapter =  {
 				break;
 			case 'method':
 				descriptor.value = (value.name == 'stage3WrapperFunction') ? value() : value;
-				break;
 			case 'field':
 				descriptor.initializer = () => value;
+			default:
+				descriptor.get = context.access.get;
+				descriptor.set = context.access.set;
+				descriptor.private = context.private;
 				break;
 		}
 
-		return [value, name, descriptor];
+		return [pseudoObject, name, descriptor];
 	},
 	convertToStage3coratorMeta(_stage3Value, _stage3Context, _legacyMeta, _thisContext) {
+		/**
+		 * 	the _legacyMeta is the object that returned by the legacy decorator
+		 * 	If type of the legacy decorator is property decorator, _legacyMeta is the descriptor of class property
+		 * 	Otherwise, _legacyMeta is the class that is decorated.
+		 */
 
 		let result;
 
@@ -40,27 +72,13 @@ const stage_0_To_Stage_3_Adapter =  {
 		switch(kind) {
 
 			case 'class':
-				result = _stage3Value;
+				result = _legacyMeta;
 				break;
 			case 'method': {
 
                 const descriptorValue = _legacyMeta.value;
-                //console.log('decoratored method', descriptorValue);
 
                 function stage3WrapperFunction() {
-
-                    // if (this instanceof BaseController) {
-
-                    //     if (descriptorValue instanceof DecoratorResult) {
-
-                    //         return descriptorValue.bind(this).resolve();
-                    //     }
-                    //     else {
-
-                    //         console.log('invoke controller action');
-                    //         return descriptorValue.bind(this)(...args);
-                    //     }
-                    // }
 
                     return descriptorValue;
                 }
@@ -72,6 +90,8 @@ const stage_0_To_Stage_3_Adapter =  {
 			case 'field': {
 
                 const initializer = _legacyMeta.initializer; 
+
+				
 
 				result = function(_initValue) {
 
@@ -93,13 +113,9 @@ const stage_0_To_Stage_3_Adapter =  {
 
 		if (typeof result == 'function') {
 
-			//console.log('is function');
-
 			return new Proxy(result, this);
 		}
 		else {
-
-			//console.log('not function')
 
 			return result;
 		}
@@ -116,8 +132,6 @@ const stage_0_To_Stage_3_Adapter =  {
 	},
 	apply(target, thisArg, args) {
 
-        //console.log('apply', target, args)
-
 		// to check if the applied funciton is calling as a decorator
 		if (args.length == 2) {
 
@@ -130,14 +144,6 @@ const stage_0_To_Stage_3_Adapter =  {
 				const theTargetLegacyDecorator = target;
 
 				return this.resolveDecorator(value, context, theTargetLegacyDecorator, thisArg);
-
-				// const legacyMeta = this.convertToLegacyDecoratorMeta(value, context);
-				
-				// const resolvedDecriptor = target(...legacyMeta);
-
-				// const stage3Meta = this.convertToStage3coratorMeta(value, context, resolvedDecriptor) 
-
-				// return stage3Meta;
 			}
 		}
 		

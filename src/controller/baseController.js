@@ -1,12 +1,7 @@
-//const { obj } = require("../model/chatroom/chatRoom.schema");
-// const {DecoratorResult} = require('../decorator/decoratorResult.js');
 const HttpContext = require('../httpContext.js');
 const ControllerState = require('./controllerState.js');
-// const ControllerConfiguration = require('./controllerConfiguration.js');
-// const IocContainer = require('../ioc/iocContainer.js');
-// const ControllerComponentManager = require('./controllerComponentManager.js');
-// const {BindingContext} = require('../ioc/decorator.js');
-//const {httpContext} = require('./requestDispatcher.js');
+const {PropertyDecorator} = require('../decorator/decoratorResult.js');
+
 
 
 function dispatchable(_class) {
@@ -16,7 +11,7 @@ function dispatchable(_class) {
     return _class;
 }
 
-class BaseController  {
+class BaseController {
 
     //static httpContext;
 
@@ -91,7 +86,7 @@ class BaseController  {
 
     //@httpContext
     #context;
-    #decoratedList;
+    // #decoratedList;
     #state;
 
     get state() {
@@ -100,7 +95,7 @@ class BaseController  {
     }
 
     constructor() {
-        this.#decoratedList = [];
+        //this.#decoratedList = [];
     }
 
     setState(_controllerState) {
@@ -117,6 +112,7 @@ class BaseController  {
 
         //     this.#state = controllerState;
         // }
+        
     }
 
     setContext(_httpContext) {
@@ -127,10 +123,10 @@ class BaseController  {
         }
     }
 
-    pushDecoratedProp(decoratedResult) {
+    // pushDecoratedProp(decoratedResult) {
         
-        this.#decoratedList.push(decoratedResult);
-    }
+    //     this.#decoratedList.push(decoratedResult);
+    // }
 
     async resolveProperty() {
 
@@ -140,11 +136,18 @@ class BaseController  {
 
             if (this[propName] == undefined) continue;
 
-            if (this[propName].constructor.name == 'PropertyDecorator') {
+            if (this[propName] instanceof PropertyDecorator) {
 
                 await this[propName].bind(this).resolve();
             }
         }
+        // for (const prop of this.#decoratedList) {
+
+        //     if (prop instanceof PropertyDecorator) {
+
+        //         await prop.bind(this).resolve();
+        //     }
+        // }
     }
 
     get httpContext() {

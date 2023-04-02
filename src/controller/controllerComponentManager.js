@@ -6,6 +6,9 @@ const {Type} = require('../libs/type.js');
 const IocContainer = require('../ioc/iocContainer.js');
 const ControllerConfiguration = require('./controllerConfiguration.js');
 const {ReflectionBabelDecoratorClass_Stage_3} = require('../libs/babelDecoratorClassReflection.js');
+const {EventEmitter} = require('node:events');
+const HttpContext = require('../httpContext.js');
+
 
 
 
@@ -32,9 +35,21 @@ class ControllerComponentManager extends IocContainer {
         return this.#config;
     }
 
+    
+
     bindScope(abstract, concrete) {
 
         this.#config.bindScope(abstract, concrete);
+    }
+
+    bind(abstract, concrete, override = false) {
+
+        super.bind(abstract, concrete, override);
+    }
+
+    bindSingleton(abstract, concrete, override = false) {
+
+        super.bindSingleton(abstract, concrete, override);
     }
 
     setConfig(config) {
@@ -59,6 +74,13 @@ class ControllerComponentManager extends IocContainer {
     }
 
     get(abstract, _controllerState) {
+
+        const instance = this.#_get(abstract, _controllerState);
+
+        return instance;
+    }
+
+    #_get(abstract, _controllerState) {
 
         if (!this.has(abstract)) return undefined;
 
@@ -122,7 +144,11 @@ class ControllerComponentManager extends IocContainer {
                 _controllerState = new ControllerState(this.#config);
             }
 
-            return this.#analyzeConcrete(concrete, _controllerState);
+            const instance = this.#analyzeConcrete(concrete, _controllerState);
+
+            this.#notifyNewInstance(instance, concrete); 
+
+            return instance;
         }
         else {
 
@@ -178,7 +204,9 @@ class ControllerComponentManager extends IocContainer {
 
         const args = this.#discoverParamWithScope(reflection.params, _controllerState);
         
-        return new concrete(...args);
+        const instance = new concrete(...args);
+
+        return instance;
     }
 
     #hasScope(abstract) {
@@ -228,6 +256,26 @@ class ControllerComponentManager extends IocContainer {
         }, this);
 
         return args;
+    }
+
+    #notifyResolvedComponent(_instance, _abstract, _concrete) {
+
+        this.emit('resolveComponets', _instance, _abstract, _concrete);
+    }
+
+    #notifyNewInstance(_instance, _concrete) {
+
+        this.emit('newInstance', _instance, _concrete);
+    }
+
+    onNewInstance(_callbak) {
+
+        this.on('newInstance', _callbak);
+    }
+
+    onResolveComponent(_callback) {
+
+        this.on('resolveComponets', _callback);
     }
 }
 

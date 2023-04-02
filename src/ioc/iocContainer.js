@@ -3,6 +3,8 @@ const reflectFunction = require('../libs/reflectFunction.js');
 const {ReflectionBabelDecoratorClass_Stage_0} = require('../libs/babelDecoratorClassReflection.js');
 const { contentType } = require('../response/decorator.js');
 const { PropertyDecorator } = require('../decorator/decoratorResult.js');
+const {EventEmitter} = require('node:events');
+
 class Empty {
 
     constructor() {
@@ -10,7 +12,7 @@ class Empty {
     };
 }
 
-class IocContainer {
+class IocContainer extends EventEmitter {
 
     #container = new WeakMap();
 
@@ -32,7 +34,7 @@ class IocContainer {
 
     constructor() {
 
-
+        super();
     }
 
     preset(_config) {
@@ -188,6 +190,8 @@ class IocContainer {
 
         if (this.#singleton.has(abstract)) {
 
+            this.#notifyResolvedComponent(instance, abstract, concrete)
+
             const obj = this.#singleton.get(abstract);
 
             if (obj.constructor.name == "Empty") {
@@ -197,12 +201,10 @@ class IocContainer {
                 this.#singleton.delete(abstract);
                 this.#singleton.set(abstract, instance);
 
-                //return instance;
                 result = instance;
             }
             else {
 
-                //return obj;
                 result = obj;
             }
         }
@@ -227,7 +229,7 @@ class IocContainer {
 
         if (concrete) {
 
-            return concrete
+            return concrete;
         } 
         else {
 
@@ -276,16 +278,25 @@ class IocContainer {
                 }
                 // caching reflection of the concrete for further usage
                 this.#metadata.reflections.set(concrete, reflection);
+
                 const args = this.#discoverParams(reflection.params);
         
-                return new concrete(...args);
+                const instance = new concrete(...args);
+
+                this.#notifyNewInstance(instance, concrete);
+
+                return instance;
             }
         }
         else {
 
             const args = this.#discoverParams(reflection.params);
 
-            return new concrete(...args);
+            const instance = new concrete(...args);
+
+            this.#notifyNewInstance(instance, concrete);
+
+            return instance;
         }
     }
     /**
@@ -314,17 +325,16 @@ class IocContainer {
         return result;
     }
 
-    // var instance = {
-    //     get: _get,
-    //     getByKey: _getByKey,
-    //     bind: _bind,
-    //     bindSingleton: _bindSingleton,
-    //     bindArbitrary: _bindArbitrary,
-    //     build: _build,
-    //     cacheReflection: _cacheReflection,
-    // }
+    #notifyResolvedComponent(_instance, _abstract, _concrete) {
 
-    // return instance;
+        this.emit('resolveComponets', _instance, _abstract, _concrete);
+    }
+
+    #notifyNewInstance(_instance, _concrete) {
+
+        this.emit('newInstance', _instance, _concrete);
+    }
+
 }
 
 module.exports = IocContainer;

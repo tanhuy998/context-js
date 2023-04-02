@@ -32,7 +32,7 @@ class Controller2 extends BaseController {
     @Endpoint.GET('/index')
     @responseBody
     index(a, b) {
-
+        
         return 'Hello on Admin section!';
     }
 
