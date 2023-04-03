@@ -128,7 +128,7 @@ class BaseController {
     //     this.#decoratedList.push(decoratedResult);
     // }
 
-    async resolveProperty() {
+    resolveProperty() {
 
         const props = Object.getOwnPropertyNames(this);
 
@@ -138,7 +138,7 @@ class BaseController {
 
             if (this[propName] instanceof PropertyDecorator) {
 
-                await this[propName].bind(this).resolve();
+                this[propName].bind(this).resolve();
             }
         }
         // for (const prop of this.#decoratedList) {

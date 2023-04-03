@@ -1,18 +1,16 @@
 const {EventEmitter} = require('node:events');
-const reflectFunction = require('../libs/reflectFunction.js');
-const NotAcceptAsyncFunctionError = require('./notAcceptAsyncFuncitonError.js');
 
-class PreInvokeFunction extends EventEmitter{
+module.exports = class PreInvokeFunctionAsync extends EventEmitter{
 
     #callback;
     #args;
     #context;
-    #functionMeta;
+    // #functionMeta;
 
-    get functionMeta() {
+    // get functionMeta() {
 
-        return this.#functionMeta;
-    }
+    //     return this.#functionMeta;
+    // }
 
     constructor(_callback, ...args) {
 
@@ -23,18 +21,20 @@ class PreInvokeFunction extends EventEmitter{
             throw new TypeError('invalid argument type passed to PreInvokeFunction\'s constructor');
         }
 
-        if (_callback.constructor.name == 'Function') {
 
-            this.#callback = _callback;
-        }
-        else {
+        this.#callback = _callback;
+        // if (_callback.constructor.name == 'AsyncFunction') {
 
-            throw new NotAcceptAsyncFunctionError();
-        }
+        //     this.#callback = _callback;
+        // }
+        // else {
+
+        //     throw new NotAcceptAsyncFunctionError();
+        // }
 
         this.#args = args;
 
-        this.#functionMeta = reflectFunction(_callback);
+        //this.#functionMeta = reflectFunction(_callback);
 
         // return new Proxy(this, {
         //     context: this.#context,
@@ -71,7 +71,7 @@ class PreInvokeFunction extends EventEmitter{
         return this;
     }
 
-    invoke() {
+    async invoke() {
 
         let targetFunction;
 
@@ -88,7 +88,7 @@ class PreInvokeFunction extends EventEmitter{
 
         let result;
 
-        result = targetFunction(...this.#args)
+        result = await targetFunction(...this.#args)
 
         // if (this.#functionMeta.isAsync) {
 
@@ -122,4 +122,3 @@ class PreInvokeFunction extends EventEmitter{
     }
 }
 
-module.exports = PreInvokeFunction;

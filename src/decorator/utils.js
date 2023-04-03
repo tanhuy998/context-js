@@ -1,5 +1,6 @@
-const {DecoratorType, DecoratorResult, MethodDecorator, PropertyDecorator, ClassDecorator} = require('./decoratorResult.js');
-const PreInvokeFunction = require('../callback/preInvokeFunction.js')
+const {DecoratorType, DecoratorResult, MethodDecorator, PropertyDecorator, ClassDecorator, MethodDecoratorAsync} = require('./decoratorResult.js');
+const PreInvokeFunction = require('../callback/preInvokeFunction.js');
+const PreInvokeFunctionAsync = require('../callback/preInvokeFunctionAsync.js');
       
 
 const ControllerContextFunctions = {
@@ -47,6 +48,39 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
 
     //console.log(descriptor)
 
+    function initializeDecoratorResultForFunction(_function) {
+
+        let transformedTarget;
+
+        const isSync = _function.constructor.name == 'Function';
+
+        let decoratorResult;
+
+        if (isSync) {
+
+            transformedTarget = new PreInvokeFunction(_function);
+            decoratorResult = new MethodDecorator(_targetObject, transformedTarget).bind(_targetObject);
+        }
+        else {
+
+            transformedTarget = new PreInvokeFunctionAsync(_function);
+            decoratorResult = new MethodDecoratorAsync(_targetObject, transformedTarget).bind(_targetObject);
+        }
+
+        decoratorResult._targetDescriptor = descriptor;
+
+        return decoratorResult;
+    }
+
+    function initializeDecoratorResultForProperty() {
+
+        const decoratorResult = new PropertyDecorator(_targetObject, propName).bind(_targetObject);
+
+        decoratorResult._targetDescriptor = descriptor;
+
+        return decoratorResult;
+    }
+
     if (decoratorType = DecoratorType.PROPERTY_DECORATOR) {
 
         const the_target_prop = descriptor.value;
@@ -59,21 +93,17 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
 
             if (typeof the_target_prop == 'function') {
 
-                the_transformed_prop = new PreInvokeFunction(the_target_prop);
-                
-                const decorator = new MethodDecorator(_targetObject, the_transformed_prop).bind(_targetObject);
-                decorator._targetDescriptor = descriptor;
+                return initializeDecoratorResultForFunction(the_target_prop);
                 //the_prop_is_function = true;
-                return decorator;
+                //return decorator;
             }
             else {
                 
-                the_transformed_prop = the_target_prop;
+                // the_transformed_prop = the_target_prop;
 
-                const decorator = new PropertyDecorator(_targetObject, propName).bind(_targetObject);
-                decorator._targetDescriptor = descriptor;  
+                // const decorator = 
 
-                return decorator;
+                return initializeDecoratorResultForProperty();
             }
             
         }

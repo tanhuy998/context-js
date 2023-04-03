@@ -226,7 +226,7 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
      * @param {*} _action 
      * @returns 
      */
-    async function handleRequest(_controllerObject, _action) {
+    function handleRequest(_controllerObject, _action) {
 
         const controllerAction = _controllerObject[_action];
         
@@ -246,21 +246,21 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
                 controllerAction.payload['handleRequest'] = '';
                 controllerAction.transform(passParameter, 'handleRequest');
     
-                return await controllerAction.bind(_controllerObject)
+                return controllerAction.bind(_controllerObject)
                     .resolve();
     
                 //return controllerAction.resolve();
             }
             else {
     
-                return await passParameter.bind(_controllerObject)(controllerAction).bind(_controllerObject).resolve();
+                return passParameter.bind(_controllerObject)(controllerAction).bind(_controllerObject).resolve();
             }
         }
         else {
 
             if (controllerAction instanceof DecoratorResult) {
                 
-                return await controllerAction.bind(_controllerObject)
+                return controllerAction.bind(_controllerObject)
                     .resolve();
             }
             else {
@@ -270,7 +270,7 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
         }
     }
 
-    async function Stage3_handleRequest(_controllerObject, _action) {
+    function Stage3_handleRequest(_controllerObject, _action) {
 
         let controllerAction = _controllerObject[_action];
         
@@ -296,7 +296,7 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
                 controllerAction.payload['handleRequest'] = '';
                 controllerAction.transform(passParameter, 'handleRequest');
     
-                return await controllerAction.bind(_controllerObject)
+                return controllerAction.bind(_controllerObject)
                     .resolve();
     
                 //return controllerAction.resolve();
@@ -305,14 +305,14 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
                 
                 const func = passParameter.bind(_controllerObject)(controllerAction);
                 
-                return await func.bind(_controllerObject).invoke();
+                return func.bind(_controllerObject).invoke();
             }
         }
         else {
 
             if (controllerAction instanceof DecoratorResult) {
                 
-                return await controllerAction.bind(_controllerObject)
+                return controllerAction.bind(_controllerObject)
                     .resolve();
             }
             else {
@@ -322,7 +322,7 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
         }
     }
 
-    return async function (req, res, next) {
+    return function (req, res, next) {
 
         // const context = {
 
@@ -360,7 +360,7 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
 
         controllerObject.setContext(context);
 
-        await controllerObject.resolveProperty();
+        controllerObject.resolveProperty();
         
         //handleRequest(controllerObject, _prop);
         Stage3_handleRequest(controllerObject, _prop);
