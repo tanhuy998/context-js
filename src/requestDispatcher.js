@@ -334,7 +334,7 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
         //     //routeContext: _router || undefined,
         // }
 
-        const context = new HttpContext(req, res, next);
+        
         //BaseController.httpContext = context;
         //HttpContextCatcher.newContext(context);
 
@@ -342,11 +342,15 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
         
         if (_appContext instanceof ApplicationContext && _appContext.supportIoc) {
             
-            controllerObject = _appContext.buildController(_controllerClass);
+            controllerObject = _appContext.buildController(_controllerClass, req, res, next);
         }
         else {
 
             controllerObject = new _controllerClass();
+
+            const context = new HttpContext(req, res, next);
+
+            controllerObject.setContext(context);
         }
 
         // if (BaseController.supportIoc) {
@@ -357,8 +361,6 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
 
         //     controllerObject = new _controllerClass();
         // }
-
-        controllerObject.setContext(context);
 
         controllerObject.resolveProperty();
         

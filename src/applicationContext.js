@@ -2,6 +2,10 @@ const express = require('express');
 const ControllerComponentManager = require('./controller/controllerComponentManager.js');
 const decoratorVersion = require('../decoratorVersion.js');
 const resolveProjectRootDir = require('./libs/dir.js');
+const HttpContext = require('./httpContext.js');
+const {request, response} = require('express');
+const ControllerState = require('./controller/controllerState.js');
+const ControllerConfiguration = require('./controller/controllerConfiguration.js')
 
 
 class ApplicationContext {
@@ -34,11 +38,11 @@ class ApplicationContext {
         return this.#componentManager;
     }
 
-    buildController(_concrete) {
+    buildController(_concrete , req = undefined, res = undefined, next = undefined) {
 
         if (this.#supportIoc) {
 
-            return this.#componentManager.buildController(_concrete);
+            return this.#componentManager.buildController(_concrete, req, res, next);
         }
 
         return new _concrete();
@@ -59,7 +63,25 @@ class ApplicationContext {
         this.#routeContext.setApplicationContext(this);
 
         this.#supportIoc = true;
+
+        this._initPresetComponents();
     };
+
+    _initPresetComponents() {
+
+        if (!this.#supportIoc) return;
+
+        console.log('ApplicationContext init preset components')
+
+        this.#componentManager.bindScope(HttpContext, HttpContext);
+
+        this.#componentManager.bindSingleton(ControllerConfiguration, ControllerConfiguration);
+        
+        const controllerConfig = this.#componentManager.configuration;
+        this.#componentManager.setDefaultInstanceFor(ControllerConfiguration, controllerConfig);
+
+        this.#componentManager.bind(ControllerState, ControllerState);
+    }
 
     constructor(_preset) {
         

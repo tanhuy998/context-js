@@ -7,14 +7,15 @@ const IocContainer = require('../ioc/iocContainer.js');
 const ControllerConfiguration = require('./controllerConfiguration.js');
 const {ReflectionBabelDecoratorClass_Stage_3} = require('../libs/babelDecoratorClassReflection.js');
 const {EventEmitter} = require('node:events');
+const { BaseController } = require('../controller/baseController.js');
 const HttpContext = require('../httpContext.js');
-
-
-
+const {request, response} = require('express'); 
+const ControlerState = require('./controllerState.js');
 
 class ControllerComponentManager extends IocContainer {
 
     #config;
+
 
     constructor(presetVersion = undefined) {
 
@@ -35,21 +36,51 @@ class ControllerComponentManager extends IocContainer {
         return this.#config;
     }
 
-    
-
     bindScope(abstract, concrete) {
+        //console.log('bind Scope', abstract);
+        
+        this.#checkForAutoBindController(abstract);
 
         this.#config.bindScope(abstract, concrete);
     }
 
     bind(abstract, concrete, override = false) {
+        //console.log('bind Transient', abstract)
+        
+        this.#checkForAutoBindController(abstract);
 
         super.bind(abstract, concrete, override);
     }
 
     bindSingleton(abstract, concrete, override = false) {
+        //console.log('bind Singleton', abstract)
+        
+        this.#checkForAutoBindController(abstract);
 
         super.bindSingleton(abstract, concrete, override);
+    }
+
+    #checkForAutoBindController(_component) {
+
+        if (!this.isAutoBindController(_component)) return;
+
+        const iocContainer = this;
+
+        function injectCoreComponentForController() {
+
+            const controllerState = new ControlerState(iocContainer.configuration);
+
+            this.setState(controllerState);
+        }
+
+        this.hook.add(_component, injectCoreComponentForController);
+    }
+
+    isAutoBindController(_concrete) {
+
+        if (!(_concrete.name == 'Component')) return;
+
+        if (!this._isParent(BaseController, _concrete)) return;
     }
 
     setConfig(config) {
@@ -60,21 +91,69 @@ class ControllerComponentManager extends IocContainer {
         }
     }
 
-    buildController(_concrete) {
+    buildController(_concrete, req, res, next) {
 
-        if (!this.#config) throw new Error('ControllerComponentManager Error: there is no configuration to handle.');
+        if (!req && !res && !next) {
+
+            throw new Error('can not build controller without context when Dependency Injection is enabled');
+        }
+
+        if (!this.#config) {
+
+            throw new Error('ControllerComponentManager Error: there is no configuration to handle.');
+        }
+
+        if (!this._isParent(BaseController, _concrete)) {
+
+            throw new TypeError('can not build the controller instance from class which is not inherits BaseController class');
+        }
         
-        const controllerState = new ControllerState(this.#config);
+        //const controllerState = new ControllerState(this.#config);
 
-        const instance = this.#analyzeConcrete(_concrete, controllerState);
+        // load HttpContext to scope
+        // controllerState.loadInstance(HttpContext, httpContext, this);
 
-        instance.setState(controllerState);
+        //const instance = this.#analyzeConcrete(_concrete, controllerState);
+
+        let instance;
+
+        const httpContext = new HttpContext(req, res, next);
+
+        if (this.isAutoBindController(_concrete)) {
+
+            instance = this.get(_concrete);
+
+            instance.state.loadInstance(HttpContext, httpContext, this);
+        }
+        else {
+
+            const controllerState = new ControlerState(this.#config);
+
+            controllerState.loadInstance(HttpContext, httpContext, this)
+
+            instance = this.#analyzeConcrete(_concrete, controllerState);  
+        }
+
+        
+        if (!instance) {
+
+             
+        }
+        else {
+
+            
+        }
+        //instance.setState(controllerState);
+
+        instance.setContext(httpContext);
 
         return instance;
     }
 
-    get(abstract, _controllerState) {
 
+
+    get(abstract, _controllerState) {
+        
         const instance = this.#_get(abstract, _controllerState);
 
         return instance;
@@ -85,7 +164,7 @@ class ControllerComponentManager extends IocContainer {
         if (!this.has(abstract)) return undefined;
 
         if (!_controllerState) {
-
+            
             return super.get(abstract);
         }
 
@@ -169,7 +248,7 @@ class ControllerComponentManager extends IocContainer {
 
             try {
                 
-                reflection = reflectClass(concrete);
+                reflection = reflecClass(concrete);
             }
             catch(error) {
 
@@ -225,13 +304,13 @@ class ControllerComponentManager extends IocContainer {
         const scopeConfig = this.#config;
 
         //const scope = scopeConfig.getScope();
-
+        
         const args = list.map(function(param) {
 
             const className = param.defaultValue;
-
-            if (param.defaultValueType == Type.UNIT && className) {
-
+            
+            if (param.defaultValueType == Type.UNIT) {
+                
                 if (this.#hasScope(className)) {
 
                     return this.getScopeComponent(className, _controllerState);

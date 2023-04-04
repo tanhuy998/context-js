@@ -43,15 +43,31 @@ Route.constraint()
     .group('/test')
     .before(log)
     .apply();
-
-@autoBind(BindType.SCOPE)
-class ComponentA {
+@autoBind()
+class Atom {
 
     static count = 0;
 
     constructor() {
 
+        this.number = ++(Atom.count);
+    }
+}
+
+@autoBind(BindType.SCOPE)
+class ComponentA {
+
+    @is(Atom)
+    prop
+
+    static count = 0;
+    static list = [];
+
+    constructor() {
+
         this.number = ++(ComponentA.count);
+
+        ComponentA.list.push(this);
     }
 
     number;
@@ -68,23 +84,24 @@ class ComponentA {
 @Middleware.before(log)
 //@Middleware.after(afterContorller)
 @routingContext()
-@autoBind()
+//@autoBind()
 class Controller1 extends BaseController {
 
-    @is(ComponentA)
+    //@is(ComponentA)
     #component;
     #prop;
 
-    @is(ComponentA)
+    //@is(ComponentA)
     component
 
-    constructor(_component = ComponentA, a = 'asdasd', b = ComponentA, c, d) {
+    constructor(_component = ComponentA, a = Atom, b = ComponentA, c = Atom, d) {
         
         super();
 
         this.#prop = a;
 
-        //console.log(_component instanceof ComponentA, b);
+        console.log('constructor', a, c);
+        
         
         //this.#component = _component;
     }

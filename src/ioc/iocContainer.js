@@ -12,6 +12,53 @@ class Empty {
     };
 }
 
+class IocContainerSetDefaultInstanceError extends Error {
+
+    constructor() {
+
+        super('can not set default to Transient Component');
+    }
+}
+
+class Hook extends EventEmitter{
+
+    #topics = new WeakMap();
+
+    constructor(_iocContainer) {
+
+        super();
+
+        _iocContainer.on('newInstance', (function (_instance, _concrete) {
+            
+            this.notify(_concrete, _instance);
+
+        }).bind(this))
+    }
+
+    add(_topic, ..._callback) {
+
+        if (!this.#topics.has(_topic)) {
+
+            this.#topics.set(_topic, []);
+        }
+
+        this.#topics.get(_topic).push(..._callback);
+    }
+
+    notify(_topic, _instance) {
+        
+        const hooks = this.#topics.get(_topic) || [];
+
+        for (const callback of hooks) {
+            
+            if (typeof callback == 'function') {
+                
+                callback.bind(_instance)();
+            }
+        }
+    }
+}
+
 class IocContainer extends EventEmitter {
 
     #container = new WeakMap();
@@ -19,8 +66,15 @@ class IocContainer extends EventEmitter {
     #stringKeys = new Map();
 
     #singleton = new WeakMap();
+    
+    #hook;
 
     #id = Date.now();
+
+    get hook() {
+
+        return this.#hook;
+    }
 
     #preset = {
         specialReflectionCase: [ReflectionBabelDecoratorClass_Stage_0],
@@ -35,6 +89,8 @@ class IocContainer extends EventEmitter {
     constructor() {
 
         super();
+
+        this.#hook = new Hook(this);
     }
 
     preset(_config) {
@@ -108,21 +164,27 @@ class IocContainer extends EventEmitter {
             throw new Error('IocContainer Error: abstract and concrete must have contructor')
         }
 
-        if (abstract == concrete) return;
+        if (!this._isParent(abstract, concrete)) {
 
-        let prototype = abstract.__proto__;
+            throw new Error('IocContainer Error: ' + concrete.constructor.name + ' did not inherit ' + abstract.constructor.name);
+        }
+    }
+
+    _isParent(base, derived) {
+
+        if (derived == base) return true;
+
+        let prototype = derived.__proto__;
 
         while(prototype !== null) {
+            
+            if (prototype === base) {
 
-            if (prototype === concrete) {
-
-                return;
+                return true;
             }
 
             prototype = prototype.__proto__;
         } 
-
-        throw new Error('IocContainer Error: cannot bind ' + abstract.constructor.name + ' with ' + concrete.constructor.name);
     }
 
     bindSingleton(abstract, concrete, override = false) {
@@ -180,7 +242,7 @@ class IocContainer extends EventEmitter {
         return this.#singleton.has(_abstract);
     }
 
-    get(abstract) {
+    get(abstract, _constructorArgs = {}) {
 
         if (!this.#container.has(abstract)) return undefined;
         
@@ -189,8 +251,6 @@ class IocContainer extends EventEmitter {
         let result;
 
         if (this.#singleton.has(abstract)) {
-
-            this.#notifyResolvedComponent(instance, abstract, concrete)
 
             const obj = this.#singleton.get(abstract);
 
@@ -207,6 +267,8 @@ class IocContainer extends EventEmitter {
 
                 result = obj;
             }
+
+            
         }
         else {
 
@@ -215,17 +277,42 @@ class IocContainer extends EventEmitter {
 
         }
 
+        this.#notifyResolvedComponent(result, abstract, concrete)
         //console.log(this.#id, 'build', result);
         return result;
     }
 
-    getByKey(key) {
+    // will overide the instantiated singleton instance
+    setDefaultInstanceFor(_abstract, _instance) {
+
+        if (!this.has(_abstract)) {
+
+            throw new Error('');
+        }
+
+        const instancePrototype = _instance.constructor;
+
+        this.checkType(_abstract, instancePrototype);
+
+        if (this.#singleton.has(_abstract)) {
+
+            this.#singleton.delete(_abstract);
+
+            this.#singleton.set(_abstract, _instance);
+        }
+        else {
+
+            throw new IocContainerSetDefaultInstanceError();
+        }
+    }
+
+    getByKey(key, _constructorArgs = {}) {
 
         if (!this.#stringKeys.has(key)) return undefined;
 
         const abstract = this.#stringKeys.get(key);
         
-        const concrete =  this.get(abstract);
+        const concrete =  this.get(abstract, _constructorArgs);
 
         if (concrete) {
 

@@ -1,3 +1,4 @@
+const { raw } = require('body-parser');
 const ReflectionParameter = require('./reflectionParameter.js');
 
 class NotBabelDecoratorClassError extends Error {
@@ -175,10 +176,14 @@ class ReflectionBabelDecoratorClass_Stage_3 {
         const matches = [...meta.matchAll(paramReg)];
 
         const name = 1, defaultValue = 4;
-
+        
         this.#params = matches.map((rawParam) => {
 
-            const parsedRawParam = `${rawParam[name]} = ${rawParam[defaultValue]}`
+            const rawDefaultValue = rawParam[defaultValue];
+
+            const handledDefaultValue = (typeof rawDefaultValue == 'string') ? rawDefaultValue.replace(/^_/, '') : rawDefaultValue;
+            
+            const parsedRawParam = `${rawParam[name]} = ${handledDefaultValue}`;
 
             return new ReflectionParameter(parsedRawParam , this.#target);
         }, this)

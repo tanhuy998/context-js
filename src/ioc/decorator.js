@@ -4,7 +4,8 @@ const {preprocessDescriptor} = require('../decorator/utils.js');
 const ControllerComponentManager = require('../controller/controllerComponentManager.js');
 const reflectClass = require('../libs/reflectClass.js');
 const {EventEmitter} = require('node:events');
-const { Console } = require('node:console');
+
+const { BaseController } = require('../controller/baseController.js');
 
 class BindType {
 
@@ -32,39 +33,6 @@ class IocContainerBindScopeInterfaceError extends Error {
     }
 }
 
-class Hook extends EventEmitter{
-
-    #topics = new WeakMap();
-
-    constructor() {
-
-        super();
-    }
-
-    add(_topic, ..._callback) {
-
-        if (!this.#topics.has(_topic)) {
-
-            this.#topics.set(_topic, []);
-        }
-
-        this.#topics.get(_topic).push(..._callback);
-    }
-
-    notify(_topic, _instance) {
-
-        const hooks = this.#topics[_topic] || [];
-
-        for (const callback of hooks) {
-
-            if (typeof callback == 'function') {
-
-                callback.bind(_instance)();
-            }
-        }
-    }
-}
-
 class BindingContext {
 
     static #currentIocContainer;
@@ -76,16 +44,9 @@ class BindingContext {
     static #bindingHooks = [];
     static #currentComponent;
 
-    static #hooks = new Hook();
-
     static getBindingHooks() {
 
         return this.#bindingHooks;
-    }
-
-    static get hooks() {
-
-        return this.#hooks;
     }
 
     static addHook(...hooks) {
@@ -138,6 +99,13 @@ class BindingContext {
 
         this.#componentMap.set(concrete, 1);
 
+        const bindingHooks = this.#bindingHooks;
+
+
+        if (Array.isArray(bindingHooks)) {
+
+            this.#currentIocContainer.hook.add(concrete, ...bindingHooks);
+        }
         //this.#hooks.add()
     }
 
@@ -216,7 +184,7 @@ class BindingContext {
     }
 }
 
-function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenIntantiate = true, _iocContainer) {
+function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenInstantiate = true, _iocContainer) {
 
     if (BindingContext.currentComponent) {
 
@@ -240,7 +208,7 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenIntantiate = t
     BindingContext.bindComponent(symbol);
 
     return function(_constructor) {
-
+        
         try {
 
             const bindingHooks = BindingContext.getBindingHooks() || [];
@@ -264,16 +232,16 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenIntantiate = t
 
                     super();
 
-                    const componentHooks = bindingHooks;
+                    // const componentHooks = bindingHooks;
 
-                    console.log(componentHooks);
+                    // for (const callback of componentHooks) {
 
-                    for (const callback of componentHooks) {
+                    //     callback.bind(this)();
+                    // }
 
-                        callback.bind(this)();
-                    }
-
-                    if (_resolvePropertyWhenIntantiate) {
+                    // some properties of BaseController need http context to be resolve properly
+                    // Controller only been resolve in by dispatchRequest()
+                    if (_resolvePropertyWhenInstantiate && !(_constructor instanceof BaseController)) {
 
                         this.resolveProperty();
                     }
@@ -285,11 +253,11 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenIntantiate = t
                     this.#hookedComponents.push(decoratedResult);
                 }
 
-                async resolveProperty() {
+                resolveProperty() {
 
                     if (super.resolveProperty) {
 
-                        await super.resolveProperty();
+                        super.resolveProperty();
                     }
 
                     if (!this.#hookedComponents) return;
@@ -298,7 +266,7 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenIntantiate = t
 
                         if (propertyDecorator instanceof PropertyDecorator) {
             
-                            await propertyDecorator.bind(this).resolve();
+                            propertyDecorator.bind(this).resolve();
                         }
                     }
 
@@ -307,15 +275,24 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenIntantiate = t
             }
 
             switch(_type) {
-
+                /**
+                 *  in this section
+                 *  we need to bind both the wrap Component and the exact class
+                 *  in order to implement constructor and method injection
+                 *  because *method injection base on reflection which works mostly with string
+                 *  therefore, bind the exact class helps detemining the component correctly
+                 */
                 case BindType.TRANSIENT:
                     _iocContainer.bind(Component, Component);
+                    _iocContainer.bind(_constructor, Component);
                     break;
                 case BindType.SCOPE:
                     _iocContainer.bindScope(Component, Component);
+                    _iocContainer.bindScope(_constructor, Component);
                     break;
                 case BindType.SINGLETON:
                     _iocContainer.bindSingleton(Component, Component);
+                    _iocContainer.bindSingleton(_constructor, Component);
                     break;
             } 
 
@@ -350,35 +327,7 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenIntantiate = t
     }
 }
 
-function injectComponent(_target, _component, _iocContainer, _setter) {
-
-    const state = this.state || undefined;
-
-    const {propName} = _target;
-    
-    const componentInstance = _iocContainer.get(_component, state);
-
-    if (componentInstance) {
-
-        if (_setter) {
-
-            console.log('is private', _setter)
-            return _setter(componentInstance);
-        }
-        
-        this[propName] = componentInstance;
-
-        return;
-    }
-    else {
-
-        const componetName = (typeof _component == 'string') ? _component : componentInstance.name;
-
-        throw new Error(`Binding Error: cannot find ${componetName}`)
-    }
-}
-
-function is(component) {
+function is(_component) {
 
     const iocContainer = BindingContext.currentContext();
 
@@ -394,7 +343,7 @@ function is(component) {
         throw new Error('Dependency injection error: You must @autoBind the class before use @is to inject properties');
     }
 
-    return function(target, prop, descriptor) {
+    return function(_target, _prop, descriptor) {
 
         const iocContainer = BindingContext.currentContext();
 
@@ -402,38 +351,59 @@ function is(component) {
 
         //const setter = (!target && descriptor.set) ? descriptor.set : undefined
 
-        const decoratorResult = preprocessDescriptor(target, prop, descriptor);
+        // const decoratorResult = preprocessDescriptor(target, prop, descriptor);
 
-        const payload = [component, iocContainer];
+        // const payload = [component, iocContainer];
 
-        //console.log(descriptor)
+        // //console.log(descriptor)
 
-        if (target.isPseudo && descriptor.private) {
+        let setter;
 
-            console.log('private');
+        if (_target.isPseudo && descriptor.private) {
 
             //const currentComponentSymbol = BindingContext.currentComponent;
 
-            payload.push(descriptor.set);
+            setter = descriptor.set;
         }
 
-        decoratorResult.payload['injectProperty'] = payload;
+        // decoratorResult.payload['injectProperty'] = payload;
 
-        decoratorResult.transform(injectComponent, 'injectProperty');
+        // decoratorResult.transform(injectComponent, 'injectProperty');
 
-        descriptor.initializer = () => decoratorResult;
+        // descriptor.initializer = () => decoratorResult;
 
-        BindingContext.addHook(function () {
+        //function injectProperty(_target, _component, _iocContainer, _setter) {
+        function injectProperty() {
 
-            console.log('push private decorator property')
+            const state = this.state || undefined;
+
+            const propName = _prop;
             
-            decoratorResult.bind(this).resolve();
-        });
+            const componentInstance = iocContainer.get(_component, state);
+        
+            if (componentInstance) {
+        
+                if (setter) {
+        
+                    return setter.call(this, componentInstance);
+                }
+                
+                this[propName] = componentInstance;
+        
+                return;
+            }
+            else {
+        
+                const componetName = (typeof _component == 'string') ? _component : componentInstance.name;
+        
+                throw new Error(`Binding Error: cannot find ${componetName}`)
+            }
+        }
 
-        console.log(BindingContext.getBindingHooks())
+        BindingContext.addHook(injectProperty);
 
         return descriptor;
     }
 }
 
-module.exports = {autoBind, BindType, is, BindingContext};
+module.exports = {autoBind, BindType, is, BindingContext, };
