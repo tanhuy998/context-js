@@ -4,6 +4,7 @@ const {ReflectionBabelDecoratorClass_Stage_0} = require('../libs/babelDecoratorC
 const { contentType } = require('../response/decorator.js');
 const { PropertyDecorator } = require('../decorator/decoratorResult.js');
 const {EventEmitter} = require('node:events');
+const {Type} = require('../libs/type.js');
 
 class Empty {
 
@@ -247,7 +248,7 @@ class IocContainer extends EventEmitter {
         if (!this.#container.has(abstract)) return undefined;
         
         const concrete = this.#container.get(abstract);
-
+        
         let result;
 
         if (this.#singleton.has(abstract)) {
@@ -278,7 +279,7 @@ class IocContainer extends EventEmitter {
         }
 
         this.#notifyResolvedComponent(result, abstract, concrete)
-        //console.log(this.#id, 'build', result);
+        
         return result;
     }
 
@@ -342,30 +343,27 @@ class IocContainer extends EventEmitter {
             catch(error) {
 
                 const specialReflectionCases = this.#preset.specialReflectionCase;
-
+                
                 for (const reflector of specialReflectionCases) {
 
                     try {
 
                         reflection = new reflector(concrete);
+
+                        if (reflection) break;
                     }
-                    catch(e) {
-
-
-                    }
-
-                    if (reflection) break;
+                    catch(e) {}
                 }
             }
             finally {
 
                 if (!reflection) {
-
+                    
                     reflection = reflectFunction(concrete);
                 }
                 // caching reflection of the concrete for further usage
                 this.#metadata.reflections.set(concrete, reflection);
-
+                
                 const args = this.#discoverParams(reflection.params);
         
                 const instance = new concrete(...args);
@@ -393,12 +391,10 @@ class IocContainer extends EventEmitter {
      */
     #discoverParams(list) {
 
-
-
         const result = list.map((param) => {
             
-            if (param.defaultValue != undefined && !param.isTypeOfString) {
-                //console.log(1, param.defaultValue != undefined)
+            if (param.defaultValue != undefined && param.defaultValueType == Type.UNIT) {
+                
                 const arg = this.getByKey(param.defaultValue);
 
                 return arg;

@@ -38,6 +38,14 @@ function reflectParameterType(_rawValue) {
         type: undefined 
     }
 
+    if (_rawValue == undefined) {
+
+        result.defaultValue = 'undefined';
+        result.type = Type.UN_IDENTIFIED;
+
+        return result;
+    }
+    
     // regex detect the type of parameter's default value
     const regex = /^((\'|\")|(\[)|(\{)|(\d+)|(\w+))/;
 

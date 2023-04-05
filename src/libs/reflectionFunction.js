@@ -129,6 +129,7 @@ class ReflectionFunction {
 
         this.#target = _targetFunction;
         
+        this.#Init();   
     }
 
     #Init() {
@@ -168,7 +169,7 @@ class ReflectionFunction {
         const name = 4, params = 6, isCommented = 2, isArrow = 10;
 
         let meta;
-        //console.log(_list)
+        
         if (!_isClass) {
 
             meta = _list[0];

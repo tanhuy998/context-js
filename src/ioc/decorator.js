@@ -181,10 +181,10 @@ function resovleConstructorArguments(_constructor, _iocContainer, _controllerSta
         // ControllerState is bound as Transient by default
         if (!(_controllerState instanceof ControlerState)) {
 
-            const config = _iocContainer.get(ControllerConfiguration);
+            //const config = _iocContainer.get(ControllerConfiguration);
 
-            //_controllerState = _iocContainer.get(ControlerState);
-            _controllerState = new ControlerState(config);
+            _controllerState = _iocContainer.get(ControlerState);
+            //_controllerState = new ControlerState(config);
         }
     }
 
@@ -214,7 +214,7 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenInstantiate = 
         _iocContainer = BindingContext.currentContext();
     }
 
-    const symbol = Symbol(Date.now);
+    const symbol = Symbol(Date.now());
 
     BindingContext.bindComponent(symbol);
 
@@ -260,7 +260,7 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenInstantiate = 
                     this.#handleIfController(controllerState);
 
                      // some properties of BaseController need http context to be resolve properly
-                    // Controller only been resolve in by dispatchRequest()
+                    // Controller only been resolve by dispatchRequest()
                     if (_resolvePropertyWhenInstantiate) {
 
                         this.resolveProperty();
@@ -326,16 +326,6 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenInstantiate = 
             } 
 
             BindingContext.assignComponent(symbol, Component);
-
-            // if (_iocContainer instanceof ControllerComponentManager) {
-
-            //     const componentHooks = BindingContext.getBindingHooks();
-
-            //     if (Array.isArray(componentHooks)) {
-                    
-            //         _iocContainer.hooks.add(Component, ...componentHooks);
-            //     }
-            // }
 
             BindingContext.endContext();
 
