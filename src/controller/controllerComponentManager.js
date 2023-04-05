@@ -37,7 +37,6 @@ class ControllerComponentManager extends IocContainer {
     }
 
     bindScope(abstract, concrete) {
-        //console.log('bind Scope', abstract);
         
         this.#checkForAutoBindController(abstract);
 
@@ -45,7 +44,6 @@ class ControllerComponentManager extends IocContainer {
     }
 
     bind(abstract, concrete, override = false) {
-        //console.log('bind Transient', abstract)
         
         this.#checkForAutoBindController(abstract);
 
@@ -53,7 +51,6 @@ class ControllerComponentManager extends IocContainer {
     }
 
     bindSingleton(abstract, concrete, override = false) {
-        //console.log('bind Singleton', abstract)
         
         this.#checkForAutoBindController(abstract);
 
@@ -61,9 +58,9 @@ class ControllerComponentManager extends IocContainer {
     }
 
     #checkForAutoBindController(_component) {
-
+        
         if (!this.isAutoBindController(_component)) return;
-
+ 
         const iocContainer = this;
 
         function injectCoreComponentForController() {
@@ -77,10 +74,10 @@ class ControllerComponentManager extends IocContainer {
     }
 
     isAutoBindController(_concrete) {
-
+        
         if (!(_concrete.name == 'Component')) return;
-
-        if (!this._isParent(BaseController, _concrete)) return;
+        
+        return this._isParent(BaseController, _concrete);
     }
 
     setConfig(config) {
@@ -107,13 +104,6 @@ class ControllerComponentManager extends IocContainer {
 
             throw new TypeError('can not build the controller instance from class which is not inherits BaseController class');
         }
-        
-        //const controllerState = new ControllerState(this.#config);
-
-        // load HttpContext to scope
-        // controllerState.loadInstance(HttpContext, httpContext, this);
-
-        //const instance = this.#analyzeConcrete(_concrete, controllerState);
 
         let instance;
 
@@ -133,17 +123,6 @@ class ControllerComponentManager extends IocContainer {
 
             instance = this.#analyzeConcrete(_concrete, controllerState);  
         }
-
-        
-        if (!instance) {
-
-             
-        }
-        else {
-
-            
-        }
-        //instance.setState(controllerState);
 
         instance.setContext(httpContext);
 
@@ -235,7 +214,7 @@ class ControllerComponentManager extends IocContainer {
         }
     }
 
-    #analyzeConcrete(concrete, _controllerState) {
+    #reflect(concrete) {
 
         let reflection = super.getReflectionOf(concrete);
         
@@ -273,13 +252,15 @@ class ControllerComponentManager extends IocContainer {
                 }
                 // caching reflection of the concrete for further usage
                 this.cacheReflection(concrete, reflection);
-
-                // const args = this.#discoverParamWithScope(reflection.params, _controller);
-        
-                // return new concrete(...args);
             }
         }
 
+        return reflection;
+    }
+
+    #analyzeConcrete(concrete, _controllerState) {
+
+        const reflection = this.#reflect(concrete);
 
         const args = this.#discoverParamWithScope(reflection.params, _controllerState);
         
@@ -298,6 +279,14 @@ class ControllerComponentManager extends IocContainer {
         return this.#config.getScope().has(abstract);
     }
 
+    resolveArgumentsOf(_concrete /*can be function or class*/, _controllerState) {
+
+        const reflection = this.#reflect(_concrete);
+
+        const args = this.#discoverParamWithScope(reflection.params, _controllerState);
+
+        return args;
+    }
 
     #discoverParamWithScope(list, _controllerState) {
 

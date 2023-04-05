@@ -4,8 +4,11 @@ const {preprocessDescriptor} = require('../decorator/utils.js');
 const ControllerComponentManager = require('../controller/controllerComponentManager.js');
 const reflectClass = require('../libs/reflectClass.js');
 const {EventEmitter} = require('node:events');
+const ControllerState = require('../controller/controllerState.js');
 
 const { BaseController } = require('../controller/baseController.js');
+const ControlerState = require('../controller/controllerState.js');
+const ControllerConfiguration = require('../controller/controllerConfiguration.js');
 
 class BindType {
 
@@ -150,19 +153,6 @@ class BindingContext {
 
     static endContext() {
 
-        // const currentComponentSymbol = this.currentComponent;
-
-        // const component = this.#Component[currentComponentSymbol];
-
-        // const currentIocContainer = this.#currentIocContainer;
-
-        // const hooks = currentIocContainer.hooks;
-
-        // if (hooks && this.#bindingHooks) {
-
-        //     hooks.add(component, ...this.#bindingHooks);
-        // }
-
         this.#currentComponent = undefined;
         this.#bindingHooks = undefined;
 
@@ -182,6 +172,27 @@ class BindingContext {
 
         return context
     }
+}
+
+function resovleConstructorArguments(_constructor, _iocContainer, _controllerState) {
+
+    if (_iocContainer._isParent(BaseController, _constructor)) {
+
+        // ControllerState is bound as Transient by default
+        if (!(_controllerState instanceof ControlerState)) {
+
+            const config = _iocContainer.get(ControllerConfiguration);
+
+            //_controllerState = _iocContainer.get(ControlerState);
+            _controllerState = new ControlerState(config);
+        }
+    }
+
+    const iocContainerHasResolveArgumentsMethod = _iocContainer.resolveArgumentsOf;
+
+    const constructorArgs = (iocContainerHasResolveArgumentsMethod) ? _iocContainer.resolveArgumentsOf(_constructor, _controllerState) : [undefined];
+
+    return [constructorArgs, _controllerState];
 }
 
 function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenInstantiate = true, _iocContainer) {
@@ -208,19 +219,31 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenInstantiate = 
     BindingContext.bindComponent(symbol);
 
     return function(_constructor) {
-        
+
         try {
 
             const bindingHooks = BindingContext.getBindingHooks() || [];
 
             const Component = class extends _constructor {
 
+                static #realName = _constructor.name;
+                #realClassName = _constructor.name;
                 #hookedComponents = [];
                 #constructorParams;
                 
                 get constructorParams() {
 
                     return this.#constructorParams;
+                }
+
+                static get realName() {
+
+                    return this.#realName;
+                }
+
+                get realClassName() {
+
+                    return this.#realClassName;
                 }
 
                 get isDecoratedComponent() {
@@ -230,21 +253,27 @@ function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenInstantiate = 
 
                 constructor() {
 
-                    super();
+                    const [constructorArgs, controllerState] = resovleConstructorArguments(_constructor, _iocContainer);
 
-                    // const componentHooks = bindingHooks;
+                    super(...constructorArgs);
 
-                    // for (const callback of componentHooks) {
+                    this.#handleIfController(controllerState);
 
-                    //     callback.bind(this)();
-                    // }
-
-                    // some properties of BaseController need http context to be resolve properly
+                     // some properties of BaseController need http context to be resolve properly
                     // Controller only been resolve in by dispatchRequest()
-                    if (_resolvePropertyWhenInstantiate && !(_constructor instanceof BaseController)) {
+                    if (_resolvePropertyWhenInstantiate) {
 
                         this.resolveProperty();
                     }
+                }
+
+                #handleIfController(_controllerState) {
+
+                    const thisClass = this.constructor;
+
+                    if (!_iocContainer._isParent(BaseController, thisClass)) return;
+
+                    super.setState(_controllerState);
                 }
 
 
@@ -344,35 +373,17 @@ function is(_component) {
     }
 
     return function(_target, _prop, descriptor) {
-
+        
         const iocContainer = BindingContext.currentContext();
-
-        //descriptor.initializer = () => iocContainer.get(component)
-
-        //const setter = (!target && descriptor.set) ? descriptor.set : undefined
-
-        // const decoratorResult = preprocessDescriptor(target, prop, descriptor);
-
-        // const payload = [component, iocContainer];
-
-        // //console.log(descriptor)
-
+        
         let setter;
 
         if (_target.isPseudo && descriptor.private) {
 
-            //const currentComponentSymbol = BindingContext.currentComponent;
 
             setter = descriptor.set;
         }
 
-        // decoratorResult.payload['injectProperty'] = payload;
-
-        // decoratorResult.transform(injectComponent, 'injectProperty');
-
-        // descriptor.initializer = () => decoratorResult;
-
-        //function injectProperty(_target, _component, _iocContainer, _setter) {
         function injectProperty() {
 
             const state = this.state || undefined;
@@ -380,7 +391,7 @@ function is(_component) {
             const propName = _prop;
             
             const componentInstance = iocContainer.get(_component, state);
-        
+
             if (componentInstance) {
         
                 if (setter) {

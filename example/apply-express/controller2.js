@@ -21,7 +21,7 @@ Route.constraint()
 @autoBind()
 class Controller2 extends BaseController {
 
-    @requestParam('userId')
+    //@requestParam('userId')
     id;
 
     constructor() {

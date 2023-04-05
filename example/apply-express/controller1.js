@@ -63,7 +63,9 @@ class ComponentA {
     static count = 0;
     static list = [];
 
-    constructor() {
+    constructor(a = Atom) {
+
+        console.log('constructor ComponentA',a)
 
         this.number = ++(ComponentA.count);
 
@@ -84,14 +86,14 @@ class ComponentA {
 @Middleware.before(log)
 //@Middleware.after(afterContorller)
 @routingContext()
-//@autoBind()
+@autoBind()
 class Controller1 extends BaseController {
 
     //@is(ComponentA)
     #component;
     #prop;
 
-    //@is(ComponentA)
+    @is(ComponentA)
     component
 
     constructor(_component = ComponentA, a = Atom, b = ComponentA, c = Atom, d) {
@@ -100,7 +102,7 @@ class Controller1 extends BaseController {
 
         this.#prop = a;
 
-        console.log('constructor', a, c);
+        console.log('constructor', _component, c);
         
         
         //this.#component = _component;
@@ -113,13 +115,14 @@ class Controller1 extends BaseController {
     @Middleware.after(afterContorller)
     //@contentType('application/json')
     @responseBody
-    index() {
+    index(a = Atom) {
 
         const res = this.httpContext.response;
 
         //res.send('test stage3')
         
         //res.send('Hello World!');
+        console.log('arg', a);
 
         //this.httpContext.nextMiddleware();
         console.log('component', this.#component, this.component);
