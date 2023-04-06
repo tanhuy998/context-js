@@ -1,7 +1,5 @@
 
 const ControllerState = require('./controllerState.js');
-const reflecClass = require('../libs/reflectClass.js');
-const reflectFunction = require('../libs/reflectFunction.js');
 const {Type} = require('../libs/type.js');
 const IocContainer = require('../ioc/iocContainer.js');
 const ControllerConfiguration = require('./controllerConfiguration.js');
@@ -9,8 +7,10 @@ const {ReflectionBabelDecoratorClass_Stage_3} = require('../libs/babelDecoratorC
 const {EventEmitter} = require('node:events');
 const { BaseController } = require('../controller/baseController.js');
 const HttpContext = require('../httpContext.js');
-const {request, response} = require('express'); 
 const ControlerState = require('./controllerState.js');
+const reflectFunction = require('../libs/reflectFunction.js');
+const reflectClass = require('../libs/reflectClass.js');
+const InvalidClassReflectionError = require('../libs/invalidClassReflectionError.js');
 
 class ControllerComponentManager extends IocContainer {
 
@@ -214,6 +214,68 @@ class ControllerComponentManager extends IocContainer {
         }
     }
 
+    #reflectAsFunction(_target) {
+
+        try {
+
+            // to check if the _target is class
+            const reflectionClass = reflectClass(_target);
+
+            this.cacheReflection(reflectionClass);
+
+            return reflectionClass;
+        }
+        catch(e) {
+
+            if (!(e instanceof InvalidClassReflectionError)) {
+
+                throw e;
+            }
+            
+            const regularReflection = reflectFunction(_target);
+
+            const hasRegularParams = (regularReflection.params.length > 0);
+
+            if (hasRegularParams) {
+
+                this.cacheReflection(_target, regularReflection);
+
+                return regularReflection;
+            }
+
+            let specialReflection;
+
+            const specialReflectors = this.getPreset().specialReflectionCase;
+
+            for (const reflector of specialReflectors) {
+
+                const temp = new reflector(_target, false);
+
+                if (temp.params.length > 0) {
+
+                    specialReflection = temp;
+
+                    break;
+                }
+            }
+
+            const hasSpecialParam = (specialReflection) ? (specialReflection.params.length > 0) : false;
+
+            if (hasSpecialParam) {
+
+                this.cacheReflection(_target, specialReflection);
+
+                return specialReflection;
+            }
+            else {
+
+                this.cacheReflection(_target, regularReflection);
+
+                return regularReflection;
+            }
+        }
+    }
+
     #reflect(concrete) {
 
         let reflection = super.getReflectionOf(concrete);
@@ -223,39 +285,41 @@ class ControllerComponentManager extends IocContainer {
             throw new Error(`IocContainer Error: cannot build ${concrete}`)
         }
         
-        if (!reflection) {
+        if (reflection) {
 
-            try {
+            return reflection;
+        }
+
+        try {
                 
-                reflection = reflecClass(concrete);
-            }
-            catch(error) {
+            reflection = reflecClass(concrete);
+        }
+        catch(error) {
 
-                const specialReflectionCases = this.getPreset().specialReflectionCase;
+            const specialReflectionCases = this.getPreset().specialReflectionCase;
 
-                for (const reflector of specialReflectionCases) {
+            for (const reflector of specialReflectionCases) {
 
-                    try {
+                try {
 
-                        reflection = new reflector(concrete);
-                    }
-                    catch(e) {}
+                    reflection = new reflector(concrete);
 
                     if (reflection) break;
                 }
-            }
-            finally {
-
-                if (!reflection) {
-
-                    reflection = reflectFunction(concrete);
-                }
-                // caching reflection of the concrete for further usage
-                this.cacheReflection(concrete, reflection);
+                catch(e) {}
             }
         }
+        finally {
 
-        return reflection;
+            if (!reflection) {
+
+                reflection = reflectFunction(concrete);
+            }
+            // caching reflection of the concrete for further usage
+            this.cacheReflection(concrete, reflection);
+
+            return reflection;
+        }
     }
 
     #analyzeConcrete(concrete, _controllerState) {
@@ -279,9 +343,18 @@ class ControllerComponentManager extends IocContainer {
         return this.#config.getScope().has(abstract);
     }
 
-    resolveArgumentsOf(_concrete /*can be function or class*/, _controllerState) {
+    resolveArgumentsOf(_concrete /*can be function or class*/, _controllerState, _asFunction = false) {
 
-        const reflection = this.#reflect(_concrete);
+        let reflection;
+
+        if (typeof _asFunction == 'boolean' && _asFunction === true) {
+
+            reflection = this.#reflectAsFunction(_concrete);
+        }
+        else {
+
+            reflection = this.#reflect(_concrete);
+        }
 
         const args = this.#discoverParamWithScope(reflection.params, _controllerState);
 

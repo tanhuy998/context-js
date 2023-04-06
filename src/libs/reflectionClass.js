@@ -1,12 +1,5 @@
 const ReflectionFunction = require('./reflectionFunction.js');
-
-class InvalidClassReflectionError extends Error {
-
-    constructor(_invalidClass) {
-
-        super(`${_invalidClass.name} is not defined as class`);
-    }
-}
+const InvalidClassReflectionError = require('./invalidClassReflectionError.js')
 
 class ReflectionClass extends ReflectionFunction {
 

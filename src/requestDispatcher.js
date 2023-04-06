@@ -7,11 +7,9 @@ const {BaseController} = require('./controller/baseController.js');
 const HttpContext = require('./httpContext.js');
 const ApplicationContext = require('./applicationContext.js');
 const reflectFunction = require('./libs/reflectFunction.js');
+const {Type} = require('./libs/type.js');
+const {ReflectionBabelDecoratorClass_Stage_3} = require('./libs/babelDecoratorClassReflection.js')
 
-
-// const ControllerContextFunctions = {
-//     //transformProperty
-// }
 
 function args(..._args) {
 
@@ -162,6 +160,7 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
 
     /**
      * 
+     * 
      * @param {PreinvokeFunction} _targetFunction 
      * @returns 
      */
@@ -170,25 +169,14 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
         // context of of 'this' here is the controller object
         const transformedFunction = (_targetFunction instanceof PreInvokeFunction) ? _targetFunction : new PreInvokeFunction(_targetFunction);
         const reflection = (_targetFunction instanceof PreInvokeFunction) ? _targetFunction.functionMeta : reflectFunction(_targetFunction);
+        
+        const theExactFunction = reflection.target;
 
-        const args = reflection.params.map(function(param) {
+        const controllerState = this.state;
 
-            const defaultValue = param.defaultValue;
+        const args =  _appContext.iocContainer.resolveArgumentsOf(theExactFunction, controllerState, true);
 
-            if (defaultValue) {
-
-                if (param.isTypeOfString) {
-
-                    return undefined;
-                }
-                else {
-    
-                    return this.components.get(defaultValue);
-                }
-            }
-        }, this)
-
-        transformedFunction.passArgs(args);
+        transformedFunction.passArgs(...args);
 
         return transformedFunction;
     }
@@ -324,20 +312,6 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
 
     return function (req, res, next) {
 
-        // const context = {
-
-        //     request: req,
-        //     response: res,
-        //     nextMiddleware: next,
-        //     currentRoute: req.path,
-        //     parentRoute: req.baseUrl,
-        //     //routeContext: _router || undefined,
-        // }
-
-        
-        //BaseController.httpContext = context;
-        //HttpContextCatcher.newContext(context);
-
         let controllerObject;
         
         if (_appContext instanceof ApplicationContext && _appContext.supportIoc) {
@@ -353,21 +327,9 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
             controllerObject.setContext(context);
         }
 
-        // if (BaseController.supportIoc) {
-            
-        //     controllerObject = BaseController.buildController(_controllerClass);
-        // }
-        // else {
-
-        //     controllerObject = new _controllerClass();
-        // }
-
         controllerObject.resolveProperty();
         
-        //handleRequest(controllerObject, _prop);
-        Stage3_handleRequest(controllerObject, _prop);
-
-        //controllerObject.setIocContainer(_IocContext);
+        return Stage3_handleRequest(controllerObject, _prop);
     }
 }
 

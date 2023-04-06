@@ -17,6 +17,7 @@ class ReflectionBabelDecoratorClass_Stage_0 {
     #isAsync;
     #name;
     #isAnnonymous;
+    #reflectStrict = true;
 
     get target() {
 
@@ -48,7 +49,14 @@ class ReflectionBabelDecoratorClass_Stage_0 {
         return this.#isAnnonymous;
     }
 
-    constructor(_targetFunction) {
+
+
+    constructor(_targetFunction, _strict = true) {
+
+        if (typeof _strict == 'boolean') {
+
+            this.#reflectStrict = _strict;
+        }
 
         if (typeof _targetFunction != 'function') throw new Error('ReflectionFunction Error: invalid instance');
 
@@ -70,7 +78,7 @@ class ReflectionBabelDecoratorClass_Stage_0 {
         
         const match = _function.match(test);
         
-        if (match != null) {
+        if (match != null || !this.#reflectStrict) {
 
             this.#reflectParams(_function);
         }
@@ -82,11 +90,11 @@ class ReflectionBabelDecoratorClass_Stage_0 {
 
     #reflectParams(meta) {
             
-        const paramReg = /var (\w+) \=( .+)*( (.+))\;/g;
+        //const paramReg = /var (\w+) \=( .+)*( (.+))\;/g;
+        const name = 1, defaultValue = 4;
+        const paramReg = /var (\w+) \= arguments(.+)*( (.+))\;/g
 
         const matches = [...meta.matchAll(paramReg)];
-
-        const name = 1, defaultValue = 4;
 
         this.#params = matches.map((rawParam) => {
         
@@ -106,6 +114,7 @@ class ReflectionBabelDecoratorClass_Stage_3 {
     #isAsync;
     #name;
     #isAnnonymous;
+    #reflectStrict = true;
 
     get target() {
 
@@ -137,7 +146,12 @@ class ReflectionBabelDecoratorClass_Stage_3 {
         return this.#isAnnonymous;
     }
 
-    constructor(_targetFunction) {
+    constructor(_targetFunction, _strict = true) {
+        
+        if (typeof _strict == 'boolean') {
+
+            this.#reflectStrict = _strict;
+        }
 
         if (typeof _targetFunction != 'function') throw new Error('ReflectionFunction Error: invalid instance');
 
@@ -159,7 +173,7 @@ class ReflectionBabelDecoratorClass_Stage_3 {
         
         const match = _function.match(test);
         
-        if (match != null) {
+        if (match != null || !this.#reflectStrict) {
 
             this.#reflectParams(_function);
         }
@@ -171,11 +185,13 @@ class ReflectionBabelDecoratorClass_Stage_3 {
 
     #reflectParams(meta) {
             
-        const paramReg = /var (\w+) \=( .+)*( (.+))\;/g;
+        //const paramReg = /var (\w+) \=( .+)*( (.+))\;/g;
+        const name = 1, defaultValue = 4;
+        const paramReg = /var (\w+) \= arguments(.+)*( (.+))\;/g;
 
         const matches = [...meta.matchAll(paramReg)];
 
-        const name = 1, defaultValue = 4;
+        
         
         this.#params = matches.map((rawParam) => {
 
