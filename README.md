@@ -1,7 +1,7 @@
 
 # Context-JS
 
-A Controller class that can interact with [Express](https://expressjs.com/) features inspired by the coding style of ASP.NET and Java Spring.
+Provide abstraction on controller base programming with [Express](https://expressjs.com/) inspired by ASP.NET and Java Spring and Laravel.
 
 
 
@@ -11,16 +11,13 @@ A Controller class that can interact with [Express](https://expressjs.com/) feat
 - Routing and register middleware in controller definition context using decorators.
 - Auto binding http context(such as request, response and next objects) to each controller object.
 - Access Express's methods via given decorators in different http context.
-
-#### New features:
-
-- Dependency Injection (since 1.x).
-- Route Group (since 1.x).
+- Dependency Injection.
+- Route Group.
 
 ## Acknowledgment
 
 This project codebase is implementing coding convention of `legacy` version of [@babel/plugin-decorator-proposal](https://babeljs.io/docs/en/babel-plugin-proposal-decorators) which is implementing stage 1 [tc39/proposal-decorators](https://github.com/wycats/javascript-decorators/blob/e1bf8d41bfa2591d949dd3bbf013514c8904b913/README.md).
-In case using this package with Typescript, we recommend using [@babel/preset-typescript](https://babeljs.io/docs/babel-preset-typescript) as transpiller instead of [tsc](https://www.npmjs.com/package/typescript) because this package is not compatible with Typescript.
+In case using this package with Typescript, we recommend using [@babel/preset-typescript](https://babeljs.io/docs/babel-preset-typescript) as transpiller instead of [tsc](https://www.npmjs.com/package/typescript) because this package is not compatible with Typescript experimental decorator.
 
 ## Usage
 
@@ -68,6 +65,7 @@ Merge one of the following methods with you babel configuration.
 
 #### *update
 
+
 To use decorator with class's private properties. Change the version of [@babel/plugin-decorator-proposal](https://babeljs.io/docs/en/babel-plugin-proposal-decorators) to "2022-03".
 Stage 3 of TC39-proposal-decorator supports applying decorator on private property that is not supported on Stage 1.
 
@@ -98,9 +96,9 @@ const Controller = require('Path/to/The/Controller/File');
 app.get('/path', dispatchRequest(...Controller.action.sendSomething));
 ```
 
-or you can transpile files first then import it. This reduce runtime latency (spend on transpilling the syntax).
+or you can transpile files before import it. This reduce runtime latency (spend on transpilling the syntax).
 
-This inconvience will no longer happen when Decorator officially been released.
+This inconvience will no longer happens when Decorator feature officially been released.
 
 ## Simple usage
 
@@ -161,15 +159,13 @@ A controller class which can be assigned to a route must extends BaseController 
 
 To access to the context, use `this.httpContext` (borrowing the concept of ASP.NET) inside *controllers.
 
-The `httpContext` object would looks like 
+The `httpContext` is an instance of HttpContext class that has regular properties
 
 ```js
 {
     request: req,               // the request object dispatched from express
     response: res,              // the response object dispatched from express
     nextMiddleware: next,       // the function that point to the next handler of the current route
-    currentRoute: req.path,
-    parentRoute: req.baseUrl,
 }
 ```
 
@@ -182,7 +178,7 @@ Firstly hit the codes:
 const express = require('express');
 const {ApplicationContext} = require('@tanhuy998/context-js');
 
-// Controller files must be imported be for ApplicationContext resolves routes
+// Controller files must be imported before ApplicationContext resolves routes
 const Controller = require('The/Controller/directory');
 
 const app = express();
@@ -273,7 +269,7 @@ This is the "index" method of Controller class
 ```
 
 
-It happens because the *SecondController* has no routing context, then the `@Route.get('/index')` mapping on *SecondController* class refers to the latest routing context (*FirstController*'s routing context). So, the endpoint `GET /index` will be mapped to `FirstController.index()` instead of `SecondController.index()`.
+It happens because the *SecondController* has no routing context, then the `@Route.get('/index')` mapping on *SecondController* class refers to the latest routing context (*FirstController*). So, the endpoint `GET /index` will be mapped to `FirstController.index()` instead of `SecondController.index()`.
 In case if the `FirstController` class did not define the `index()` method, requesting to `GET /index` would cause ***FirstController.index*** _is not a funtion_ error.
 
 
@@ -288,7 +284,7 @@ class Controller extends BaseController {}
 ```
 
 ```js
-const {Route, BaseController, dispatchable, routingContext} = require('@tanhuy998/context-js');
+const {Route, BaseController, routingContext} = require('@tanhuy998/context-js');
 
 /*
 * Route.prefix decorator affect on class.
@@ -333,7 +329,7 @@ class Controller extends BaseController {
       super();
     }
 
-    // the current route path will be 'get /multiple/send'
+    // the enpoint's path will be 'get /multiple/send'
     // the '/single' prefix is ovetwritten
     @Route.get('/send')
     sendSomthing() {
@@ -362,7 +358,7 @@ Syntax:
 example
 
 ```js
-const {Route, BaseController, dispatchable, Middleware} = require('@tanhuy998/context-js');
+const {Route, BaseController, Middleware} = require('@tanhuy998/context-js');
 
 const bodyParser = require('body-parser');
 
@@ -400,12 +396,12 @@ class Controller extends BaseController {
 
 ```
 
-***Note:** When controller's action that is not defining route, all middleware applied to that action is meaningless. 
+***Note:** When a controller's action has no endpoint defined on it, all middleware applied to that action is meaningless. 
 
 
 ***Best practice*** 
 
-Using `@Middleware` like the follwing example is not be adviced, it will be confusing to reading codes
+Using `@Middleware` like the follwing example is not be adviced, it will be confusing for reading.
 
 ```js
 @routingContext()
@@ -495,13 +491,13 @@ class Controller extends BaseController {
 
 #### @Route.group vs @Route.prefix 
 
-`@Route.prefix` is just the concaternation of the prefix and the endpoint's path. One prefix is accepted per controller.
+`@Route.prefix` is just the concaternation of the prefix and the endpoint's path. The latest prefix is the one accepted to the controller.
 On the other hand, group can be various on a single controller.
 
 
 ### Group Local Contraint
 
-Local constraint is middlewares that is registered on a controller. To add local constraint to a group, apply `@Middleware` on controller.
+Local constraint is middlewares that is registered to all endpoint what is declared inside a controller. To add local constraint to a group, apply `@Middleware` on controller.
 
 
 ```js
@@ -599,7 +595,7 @@ class UserController extends BaseController {
     @Route.get('/send')
     sendSomthing() {
 
-        this.httpContext.response.next();
+        this.httpContext.nextMiddleware();
     }
 }
 
@@ -839,18 +835,20 @@ The flow of Constraints is described below.
 ## Dependency Injection
 
 
-This package provides Dependency Injection by using an ioc container to help Javascript user on wiring dependencies between components.
+This package provides Dependency Injection by using an ioc container to help Javascript users on wiring dependencies between components.
 Dependency Injection in this package just support two types of injection is Constructor Injection and Property Injection.
-Borrowing the concept Dependency Injection of ASP.NET, Components has it's own lifecycle depends on which type of binding.
+Borrowing the concept Dependency Injection of ASP.NET and Larvel's Service Container, Components has it's own lifecycle depends on which type that a particular component is bound.
 
 
-### Binding components
+## Binding components
 
 Binding components is the way implementing the Dependency Inversion. Binding means telling the Ioc Container which component (concrete) should be injected as abstraction (base classes or interfaces).
 
- - Sington: The Ioc Container just resolve the component once and then reuse it over the application.
-  - Scope: Like Singleton. But the component is resolved when a httpContext arrive. This component will be reuse on context of a .
-  - Transient: Each time we need a component, the ioc container will resolve a new intance.
+There are three types of binding components (also called as component's lifecycle)
+
+ - Sington: The Ioc Container just resolve the component once and then reuse it over the Node global module.
+  - Scope: Like Singleton. But the component is resolved when a httpContext arrive. The component will be reuse if the context need it has controller state.
+  - Transient: Each time we need a component, the ioc container will build a new intance.
 
 ```js
 const {ApplicationContext} = require('express-controller-js');
@@ -886,27 +884,24 @@ class Scope {
     
 }
 
-@autoBind(BindType.SINGLETON) / bind itself as Singleton component
+@autoBind(BindType.SINGLETON) // bind itself as Singleton component
 class Singleton {
     
 }
 ```
 
 
-### Injecting dependencies
+## Injecting dependencies
 
-#### Constructor injection 
+### Constructor Injection (Method Injection)
 
-Assign the constructor's parameters default value as the component to annotate the Ioc Container the type of component you want to inject.
+Assign the constructor's (method's) parameters default value as the component to annotate the Ioc Container the type of component you want to inject.
 
 ```js
 const {autoBind, BaseController} = require('@tanhuy998/context-js')
 
 @autoBind()
-class ComponentA {
-
-  
-}
+class ComponentA {}
 
 @autoBind()
 class Controller extends BaseController {
@@ -923,7 +918,78 @@ class Controller extends BaseController {
 
 ```
 
-#### Property injection
+Inject components to endpoint's handler
+
+```js
+const {autoBind, BaseController, routingContext, Endpoint} = require('@tanhuy998/context-js')
+
+@autoBind()
+class ComponentA {
+
+  message = 'Hello World';
+}
+
+@routingContext()
+@autoBind()
+class Controller extends BaseController {
+    
+    prop;
+    
+    // inject a instance of ComponentA to the parameter
+  constructor(component = ComponentA) {
+    super();
+    
+    this.prop = component;
+  }
+
+  @Endpoint.GET('/')
+  index(component = ComponentA) {
+
+    console.log(component.message);
+  }
+}
+
+```
+
+*Note*: The ioc container could not inject components to async handler because Babel transforms async method into sync method that the ioc container could not read reflection to inject components correctly. Anyway, we have an alternative way to inject components to async method as the following.
+
+```js
+const {autoBind, BaseController, routingContext, Endpoint, args} = require('@tanhuy998/context-js')
+
+@autoBind()
+class ComponentA {
+
+  message = 'Hello World';
+}
+
+@routingContext()
+@autoBind()
+class Controller extends BaseController {
+    
+    prop;
+    
+    // inject a instance of ComponentA to the parameter
+  constructor(component = ComponentA) {
+    super();
+    
+    this.prop = component;
+  }
+
+  @Endpoint.GET('/')
+  @args(ComponentA)  // @args also effects on dependency injection
+  async asyncIndex(component) {
+    /**
+     *  Decorator @args pass argumments to the method
+     *  ioc container will lookup for possible components on @args
+     */
+    console.log(component.message);
+  }
+}
+
+```
+
+
+### Property injection
 
 Applying `@is(Component)` to the class annotated with `@autobind` to inject the exact component. The component which is injected must be register to the ioc container as a bound component. 
 
@@ -931,10 +997,7 @@ Applying `@is(Component)` to the class annotated with `@autobind` to inject the 
 const {autoBind, is, BaseController} = require('@tanhuy998/context-js')
 
 @autoBind()
-class ComponentA {
-
-  
-}
+class ComponentA {}
 
 @autoBind()
 class Controller extends BaseController {
@@ -952,7 +1015,7 @@ class Controller extends BaseController {
 
 ## Response decorator
 
-The `@Response` decorator represent the current *httpContext.response* of current http context. We can invoke all the method of the "response" object.
+The `@Response` decorator represent the current *httpContext.response* of current http context. We can invoke some methods of the "response" object.
 
 syntax:
 
@@ -994,7 +1057,7 @@ class Controller extends BaseController {
 ## Controller that return response's body
 
 
-We can annotate annotate a controller to return the response body
+We can annotate a controller to return the response body
 
 Syntax:
 
@@ -1035,7 +1098,7 @@ class Controller extends BaseController {
 
 ### @responseBody ActionResult
 
-`@responseBody` deals with IActionResult returned by the controller's action. This package provide 4 types of ActionResult.
+`@responseBody` deals with IActionResult returned by the controller's action. This package provide 4 types of ActionResult. Action result use the parameter template of Express's response object. Therefore, the following ActionResult use parameter list like standard Express's response parameter template.
 
 ```js
 const {BaseController, dispatchable, responseBody, view, redirect, file, download} = require('@tanhuy998/context-js');
@@ -1054,25 +1117,38 @@ class Controller extends BaseController {
         const data = {
             message: 'Hello world';
         }
-    
+      
+      /**
+       *  response a view to the client
+       *  view() depends on the template engine which we register to Express instance
+       */
        return view('index', data);
     }
     
     @responseBody
     file() {
         
+        /**
+         *  response a file to the client
+         */ 
         return file('pathToFile');
     }
     
     @responseBody
     redirect() {
         
+        /**
+         *  rediect to a specified destination
+         */ 
         return redirect('url/path');
     }
     
     @responseBody
     download() {
         
+        /**
+         *  response a file download to the client
+         */
         return download('filePath');
     }
 }
@@ -1107,7 +1183,7 @@ someMethod() {
 
 ## Utility Decorators
 
-#### @requestParam(...paramName : string) [Unstable] (works on both method and property)
+#### [Unstable] @requestParam(...paramName : string) (works on both method and property)
 
 Assign specific *request.param* to a specific instance (method and property).
 
@@ -1184,10 +1260,8 @@ The *@Endpoint* is a "http method" friendly to mapping route. *@Endpoint* just f
 @Endpoint.PATCH(path:string)
 ```
 
-### And more will be comming soon!
 
-
-## Authors
+## Author
 
 - [Huy Tran](https://www.github.com/tanhuy998)
 
