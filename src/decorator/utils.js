@@ -1,6 +1,7 @@
 const {DecoratorType, DecoratorResult, MethodDecorator, PropertyDecorator, ClassDecorator, MethodDecoratorAsync} = require('./decoratorResult.js');
 const PreInvokeFunction = require('../callback/preInvokeFunction.js');
 const PreInvokeFunctionAsync = require('../callback/preInvokeFunctionAsync.js');
+const decoratorVersion = require('../../decoratorVersion.js');
       
 
 const ControllerContextFunctions = {
@@ -48,14 +49,30 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
 
     //console.log(descriptor)
 
+    function checkForBabelTransformAsyncFunction(_function) {
+
+       if (!decoratorVersion) return;
+
+       const regex = /^function (.+)\(.*\)( *){(.*)(\s*)return _\1\.apply/;
+
+       const match = _function.toString()
+                            .match(regex);
+        
+        return (match != null);
+    }
+
     function initializeDecoratorResultForFunction(_function) {
+
+        //_function = checkForBabelTransformFunction(_function);
 
         let transformedTarget;
 
         const isSync = _function.constructor.name == 'Function';
 
-        let decoratorResult;
+        //const isAsync = checkForBabelTransformAsyncFunction(_function);
 
+        let decoratorResult;
+        
         if (isSync) {
 
             transformedTarget = new PreInvokeFunction(_function);
@@ -115,6 +132,26 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
             return decoratorResult;
         }
     }
+}
+
+function acceptMethod(descriptor, decoratorName) {
+
+    if (decoratorResult instanceof MethodDecorator) {
+
+        return;
+    }
+
+    throw new Error()
+}
+
+function acceptField(descriptor, decoratorName) {
+
+    if (decoratorResult instanceof PropertyDecorator) {
+
+        return;
+    }
+
+    throw new Error()
 }
 
 module.exports = {

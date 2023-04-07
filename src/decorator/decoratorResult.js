@@ -7,11 +7,6 @@ const DecoratorType =  {
     CLASS_DECORATOR: 0x1,
     PROPERTY_DECORATOR: 0x2,
 }
-
-function isPromise(promise) {  
-    return !!promise && typeof promise.then === 'function'
-}
-
 class DecoratorResult extends EventEmitter{
     
     #type;
@@ -96,7 +91,8 @@ class DecoratorResult extends EventEmitter{
 
             const payload = this.payload[decoratorName];
 
-            const args = (payload.constructor.name == 'Array') ? payload : [payload];
+            //const args = (payload.constructor.name == 'Array') ;
+            const args = (Array.isArray(payload)) ? payload : (payload) ? [payload] : [];
 
             if (this.needContext) {
 

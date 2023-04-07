@@ -2,9 +2,20 @@ const Response = require('./responseResult.js');
 const {preprocessDescriptor} = require('../decorator/utils.js');
 const IActionResult = require('./iActionResult.js');
 const AsyncActionResult = require('./asyncActionResult.js');
-
+const {MethodDecoratorAsync} = require('../decorator/decoratorResult.js');
+//const isPromise = require('../libs/isPromise.js');
 
 async function handleActionResult(returnValue, _controllerObject, _theControllerAction, descriptor, type) {
+    
+    /**
+     *  _theControllerAction param is type of PreInvokeFunction because when applying decorators on a method
+     *  the method will be wrapped in PreInvokeFunction for further transformations on the method. 
+     */
+    if (returnValue instanceof Promise) {
+
+        returnValue = await returnValue;
+    }
+
 
     if (returnValue instanceof IActionResult) {
 

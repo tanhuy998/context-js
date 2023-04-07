@@ -1,4 +1,4 @@
-const {BaseController, routingContext, Route, Endpoint, responseBody, Middleware, requestParam, autoBind} = require('../../index.js');
+const {BaseController, args, routingContext, BindType, Route, Endpoint, responseBody, Middleware, requestParam, autoBind} = require('../../index.js');
 //const { autoBind } = require('../../src/ioc/decorator.js');
 
 function log(req, res, next) {
@@ -11,8 +11,30 @@ function log(req, res, next) {
 Route.constraint()
     .group('/test')
     .before(log)
-    .apply()
+    .apply();
 
+
+@autoBind(BindType.SCOPE)
+class ComponentB {
+
+    //@is(Atom)
+    prop
+
+    static count = 0;
+    static list = [];
+
+    constructor(a = Atom) {
+
+        console.log('constructor ComponentA', a)
+
+        this.number = ++(ComponentB.count);
+
+        ComponentB.list.push(this);
+    }
+
+    number;
+    prop = Date.now()
+}
 @Middleware.after(log)
 @Route.group('/messure')
 @Route.group('/test')
@@ -31,8 +53,11 @@ class Controller2 extends BaseController {
 
     @Endpoint.GET('/index')
     @responseBody
-    index(a, b) {
+    @args(ComponentB)
+    async index(a = ComponentB, b) {
         
+        console.log(a)
+
         return 'Hello on Admin section!';
     }
 

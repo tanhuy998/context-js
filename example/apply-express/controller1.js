@@ -1,4 +1,4 @@
-let {BaseController, is, Route, Endpoint, routingContext, contentType, consumes, responseBody, Middleware, file, autoBind, BindType, redirect, download, view} = require('../../index.js');
+let {BaseController, args, is, Route, Endpoint, routingContext, contentType, consumes, responseBody, Middleware, file, autoBind, BindType, redirect, download, view} = require('../../index.js');
 const path = require('path');
 
 
@@ -115,14 +115,15 @@ class Controller1 extends BaseController {
     @Middleware.after(afterContorller)
     //@contentType('application/json')
     @responseBody
-    index(a = Atom) {
+    @args(Atom, 1, 'test')
+    async index(a = Atom) {
 
         const res = this.httpContext.response;
 
         //res.send('test stage3')
         
         //res.send('Hello World!');
-        console.log('arg', a);
+        console.log('arg', arguments);
 
         //this.httpContext.nextMiddleware();
         console.log('component', this.#component, this.component);
@@ -137,7 +138,7 @@ class Controller1 extends BaseController {
     @Middleware.after(afterContorller)
     @Endpoint.GET('/')
     @responseBody
-    postSomthing() {
+    async postSomthing() {
 
         const req = this.httpContext.request;
         const res = this.httpContext.response;
