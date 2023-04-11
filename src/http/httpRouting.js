@@ -77,33 +77,41 @@ const routeDecoratorHandler = {
         _initializeGroups: function (contextList) {
             
             const contextKeys = Reflect.ownKeys(contextList);
-            
-            const groupList = this.state.globalConstraints;
+
+            const groupGlobalConstraint = this.state.globalConstraints;
 
             const mainRouter = RouteContext.router;
 
-            for (const groupPath in groupList) {
-                
-                const globalConstraint = groupList[groupPath];
+            
+            for (const _context of contextKeys) {
 
-                const before = globalConstraint.middlewareBefore;
-                const after = globalConstraint.middlewareAfter;
+                const localConstraint = this.state.localConstraints[_context];
 
-                if (before.length > 0) mainRouter.use(groupPath, before);
+                const groupsOfContext = this.state.groupList.getByContext(_context) || new Set();
 
-                for (const _context of contextKeys) {
+                const groups = groupsOfContext.values();
+
+                for (const groupPath of groups) {
+
+                    if (groupPath == '/' && groupsOfContext.size > 1) continue;
                     
-                    const localConstraint = this.state.localConstraints[_context]
+                    const globalConstraint = groupGlobalConstraint[groupPath];
 
-                    const groupsOfContext  = this.state.groupList.getByContext(_context);
+                    /**
+                    *  Merge group instance with global constraint
+                    */
+                    if (globalConstraint) {
 
-                    if (groupsOfContext.has(groupPath)) {
+                        const before = globalConstraint.middlewareBefore || [];
+                        const after = globalConstraint.middlewareAfter || [];
+
+                        mainRouter.use(groupPath, [...before, localConstraint.groupInstance, ...after]);
+                    }
+                    else {
 
                         mainRouter.use(groupPath, localConstraint.groupInstance);
                     }
                 }
-
-                if (after.length > 0) mainRouter.use(groupPath, after);
             }
         },
         prefix: function(_path) {
@@ -337,8 +345,7 @@ class RouteContext {
             const groupManager = routeDecoratorHandler.additionMethod.state.groupList; 
 
             //const groupPath = (localConstraint) ? localConstraint.path : _routePrefix;
-            const groupInContext = groupManager.getByContext(_routingContext).values();
-
+            let groupInContext  = (groupManager.getByContext(_routingContext) || new Set()).values();
 
             let iteration = groupInContext.next();
 
@@ -354,7 +361,7 @@ class RouteContext {
 
                     groupPath = _routePrefix;
                 }
-
+                
                 groupManager.save(_routingContext, groupPath, {
                     method: _routeMethod,
                     path: _childPath,

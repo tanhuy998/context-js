@@ -25,7 +25,7 @@ const Controller2 = require('./controller2.js');
 
 
 console.time('init')
-const port = 3000;
+const port = 2000;
 const app = express();
 
 app.set('views', path.join(__dirname, './view'));

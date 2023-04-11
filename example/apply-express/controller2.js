@@ -8,10 +8,10 @@ function log(req, res, next) {
     next();
 }
 
-Route.constraint()
-    .group('/test')
-    .before(log)
-    .apply();
+// Route.constraint()
+//     .group('/test')
+//     //.before(log)
+//     .apply();
 
 
 @autoBind(BindType.SCOPE)
@@ -38,7 +38,7 @@ class ComponentB {
 @Middleware.after(log)
 @Route.group('/messure')
 @Route.group('/test')
-//@Route.group('/new')
+// @Route.group('/user')
 @routingContext()
 @autoBind()
 class Controller2 extends BaseController {
