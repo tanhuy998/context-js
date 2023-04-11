@@ -1,6 +1,6 @@
 {
   "name": "@tanhuy998/context-js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Controller management for Express.js",
   "main": "index.js",
   "repository": {
