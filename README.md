@@ -7,12 +7,9 @@ Provide abstraction on controller base programming with [Express](https://expres
 
 ## Features
 
-
-- Routing and register middleware in controller definition context using decorators.
-- Auto binding http context(such as request, response and next objects) to each controller object.
-- Access Express's methods via given decorators in different http context.
+- Handling request by using controller classes.
+- Routing with controller.
 - Dependency Injection.
-- Route Group.
 
 ## Acknowledgment
 
