@@ -165,10 +165,61 @@ function initContext(arg) {
 
 
 
+function Stage3_handleRequest(_controllerObject, _action, _appContext) {
 
+    let controllerAction = _controllerObject[_action];
+    
+    if (!controllerAction) {
 
-//function dispatchRequest(controllerObject, controllerAction, _controllerClass) {
-function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
+        throw new Error(`Dispatch Error: ${_controllerObject.constructor.name}.${_action} is not defined`);
+    }
+    else if (!(controllerAction instanceof DecoratorResult) && typeof controllerAction != 'function') {
+
+        throw new Error(`Dispatch Error: ${_controllerObject.constructor.name}.${_action} is not invocable`);
+    }
+
+    if (controllerAction.name == 'stage3WrapperFunction') {
+
+        controllerAction = controllerAction();
+    }
+    
+    if (_appContext instanceof ApplicationContext && _appContext.supportIoc) {
+    //if (BaseController.supportIoc) {
+
+        if (controllerAction instanceof DecoratorResult) {
+            
+
+            //controllerAction.payload['handleRequest'] = '';
+
+            // passArgument transformation using payload of @args to determine what arguments
+            // should or what arguments should be inject
+            controllerAction.transform(passArguments, 'passedArguments');
+
+            return controllerAction.bind(_controllerObject)
+                .resolve();
+
+            //return controllerAction.resolve();
+        }
+        else {
+            
+            const func = passParameter.bind(_controllerObject)(controllerAction);
+            
+            return func.bind(_controllerObject).invoke();
+        }
+    }
+    else {
+
+        if (controllerAction instanceof DecoratorResult) {
+            
+            return controllerAction.bind(_controllerObject)
+                .resolve();
+        }
+        else {
+
+            return controllerAction.bind(_controllerObject)();
+        }
+    }
+
 
     /**
      * 
@@ -184,7 +235,7 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
         if (typeof _targetFunction == 'function') {
 
             if (_targetFunction.constructor.name == 'AsyncFunction') {
-                
+
                 transformedFunction = new PreInvokeFunctionAsync(_targetFunction);
             }
             else {
@@ -215,9 +266,9 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
 
     function resolveComponents(_list, _iocContainer, _controllerState) {
 
-        return _list.map(function(value) {
+        return _list.map(function (value) {
 
-            const type = typeof value ;
+            const type = typeof value;
 
             if (type == 'object' || type == 'function') {
 
@@ -227,6 +278,10 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
             return value;
         })
     }
+}
+
+//function dispatchRequest(controllerObject, controllerAction, _controllerClass) {
+function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
 
     function passParameterForStage3(_targetFunction) {
 
@@ -323,62 +378,6 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
     //     }
     // }
 
-    function Stage3_handleRequest(_controllerObject, _action) {
-
-        let controllerAction = _controllerObject[_action];
-        
-        if (!controllerAction) {
-
-            throw new Error(`Dispatch Error: ${_controllerObject.constructor.name}.${_action} is not defined`);
-        }
-        else if (!(controllerAction instanceof DecoratorResult) && typeof controllerAction != 'function') {
-
-            throw new Error(`Dispatch Error: ${_controllerObject.constructor.name}.${_action} is not invocable`);
-        }
-
-        if (controllerAction.name == 'stage3WrapperFunction') {
-
-            controllerAction = controllerAction();
-        }
-        
-        if (_appContext instanceof ApplicationContext && _appContext.supportIoc) {
-        //if (BaseController.supportIoc) {
-
-            if (controllerAction instanceof DecoratorResult) {
-                
-
-                //controllerAction.payload['handleRequest'] = '';
-
-                // passArgument transformation using payload of @args to determine what arguments
-                // should or what arguments should be inject
-                controllerAction.transform(passArguments, 'passedArguments');
-    
-                return controllerAction.bind(_controllerObject)
-                    .resolve();
-    
-                //return controllerAction.resolve();
-            }
-            else {
-                
-                const func = passParameter.bind(_controllerObject)(controllerAction);
-                
-                return func.bind(_controllerObject).invoke();
-            }
-        }
-        else {
-
-            if (controllerAction instanceof DecoratorResult) {
-                
-                return controllerAction.bind(_controllerObject)
-                    .resolve();
-            }
-            else {
-
-                return controllerAction.bind(_controllerObject)();
-            }
-        }
-    }
-
     return function (req, res, next) {
 
         let controllerObject;
@@ -398,11 +397,12 @@ function dispatchRequest(_controllerClass, _prop, _appContext = undefined) {
 
         controllerObject.resolveProperty();
         
-        return Stage3_handleRequest(controllerObject, _prop);
+        return Stage3_handleRequest(controllerObject, _prop, _appContext);
     }
 }
 
 module.exports = {
+    Stage3_handleRequest,
     dispatchRequest,
     requestParam,
     args

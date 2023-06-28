@@ -58,4 +58,6 @@ for (const name in legacy) {
     exportContent[name] = new Proxy(legacy[name], stage_0_To_Stage_3_Adapter);
 }
 
-module.exports = exportContent;
+websocketContent = require('./src/websocket/index.js');
+
+module.exports = {...exportContent, ...websocketContent};
