@@ -15,6 +15,7 @@ class ApplicationContext {
     #rootDir;
 
     #routeContext;
+    #websocketContext;
     #bindingContext;
 
     #componentsConfig;
@@ -62,6 +63,8 @@ class ApplicationContext {
 
         this.#routeContext.setApplicationContext(this);
 
+        this.#websocketContext.setApplicationContext(this);
+
         this.#supportIoc = true;
 
         this._initPresetComponents();
@@ -104,6 +107,8 @@ class ApplicationContext {
     #initPreset() {
 
         this.#routeContext = this.#preset.RouteContext;
+
+        this.#websocketContext = this.#preset.WebsocketContext;
 
         this.#bindingContext = this.#preset.ioc.BindingContext;
     }

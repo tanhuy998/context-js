@@ -1,8 +1,6 @@
 const WebsocketContext = require('../websocketContext.js');
 const {METADATA} = require('../../constants.js');
 
-const SOCKET_NAMESPACE = Symbol(Date.now());
-
 module.exports = function namespace(..._nsp) {
 
     if (_nsp.length == 0) {
@@ -16,9 +14,9 @@ module.exports = function namespace(..._nsp) {
 
         //WebsocketContext.assignContext(currentContext, _controllerClass);
 
-        if (!_controllerClass.metadata) {
+        if (!_controllerClass[METADATA]) {
 
-            _controllerClass.metadata = {};
+            _controllerClass[METADATA] = {};
         }
 
         if (!_controllerClass[METADATA].socketNamespaces) {
@@ -27,6 +25,8 @@ module.exports = function namespace(..._nsp) {
         }
 
         for (const nsp of _nsp) {
+
+            WebsocketContext.namespaceManager.addNamespace(nsp);
 
             _controllerClass[METADATA].socketNamespaces.add(nsp);
         }

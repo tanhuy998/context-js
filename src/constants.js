@@ -1,4 +1,5 @@
+const METADATA = Symbol(Date.now());
 
-module.exports = {
-    METADATA: Symbol(Date.now()),
+module.exports = {  
+    METADATA
 }

@@ -2,11 +2,11 @@ const WebsocketContext = require('../websocketContext.js');
 const {METADATA} = require('../../constants.js');
 const namespace = require('./namespace.js');
 
-module.exports = function wsController(..._nsp) {
-
-    const initNamespace = namespace(..._nsp);
+module.exports = function InitContext(..._nsp) {
 
     const context = WebsocketContext.newContext();
+
+    const initNamespace = namespace(..._nsp);
 
     return function(_controllerClass) {
 
@@ -14,7 +14,12 @@ module.exports = function wsController(..._nsp) {
 
         WebsocketContext.assignContext(context, _controllerClass);
 
-        const namespaces = _controllerClass[METADATA].socketNamespaces;
+        WebsocketContext.manage(context);
+
+        // Object.defineProperty(_controllerClass.prototype, 'server', {
+        //     writable: false,
+        //     value: 
+        // })
 
         return _controllerClass;
     }

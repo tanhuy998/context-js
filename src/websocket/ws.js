@@ -1,5 +1,5 @@
 const WebsocketContext = require('./websocketContext.js');
-const wsController = require('./decorators/wsController.js');
+const context = require('./decorators/context.js');
 const channel = require('./decorators/channel.js');
 const namespace = require('./decorators/namespace.js');
 
@@ -13,7 +13,7 @@ const WS = new Proxy({
         WebsocketContext.setServer(_io);
     },
     namespace: namespace,
-    WSController: wsController,
+    context: context,
     channel: channel
 }, {
     get: function(target, prop) {

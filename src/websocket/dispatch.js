@@ -3,7 +3,7 @@ const ApplicationContext = require('../applicationContext.js');
 const {Stage3_handleRequest} = require('../requestDispatcher.js');
 const { isConstructorDeclaration } = require('typescript');
 const ControlerState = require('../controller/controllerState.js');
-const WSContext = require('./wsContext.js');
+const ClientContext = require('./clientContext.js');
 
 module.exports = function dispatch(controller, action, appContext = undefined) {
 
@@ -14,7 +14,7 @@ module.exports = function dispatch(controller, action, appContext = undefined) {
 
         if (appContext instanceof ApplicationContext && appContext.supportIoc) {
 
-            controllerObject = appContext.buildController(controller);
+            controllerObject = appContext.buildController(controller, event, response, next);
         }
         else {
 
@@ -25,10 +25,7 @@ module.exports = function dispatch(controller, action, appContext = undefined) {
 
         controllerObject.resolveProperty();
 
-        const wsContext = new WSContext({
-            handshake: event.sender.handshake,
-            args: event.args
-        })
+        const wsContext = new ClientContext(event, response, next);
 
         controllerObject.setContext(wsContext);
 

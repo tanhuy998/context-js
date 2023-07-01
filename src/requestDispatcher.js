@@ -208,7 +208,7 @@ function Stage3_handleRequest(_controllerObject, _action, _appContext) {
         }
     }
     else {
-
+        
         if (controllerAction instanceof DecoratorResult) {
             
             return controllerAction.bind(_controllerObject)
@@ -256,6 +256,8 @@ function Stage3_handleRequest(_controllerObject, _action, _appContext) {
         const theExactFunction = reflection.target;
 
         const controllerState = this.state;
+
+        console.log('argument list', argsList);
 
         const args = (argsList.length > 0) ? resolveComponents(argsList, _appContext.iocContainer, controllerState) : _appContext.iocContainer.resolveArgumentsOf(theExactFunction, controllerState, true);
 

@@ -1,7 +1,7 @@
 const WSRouter = require('./router/wsRouter.js');
 const dispatch = require('./dispatch.js');
 const {METADATA} = require('../constants.js');
-
+const NamespaceManager = require('./namespaceManager.js');
 class WebsocketContext {
 
     //static #router = new WSRouter();
@@ -14,6 +14,21 @@ class WebsocketContext {
     static #contexts = new Map();
 
     static #currentContext;
+
+    static #namespaceManager = new NamespaceManager();
+
+    static get namespaceManager() {
+
+        return this.#namespaceManager;
+    }
+
+    static setApplicationContext(_context) {
+
+        if (typeof _context == 'object' && _context.constructor.name == 'ApplicationContext') {
+
+            this.#appContext = _context;
+        }
+    }
 
     static manage(_contextSymbol) {
 
@@ -31,24 +46,36 @@ class WebsocketContext {
             return;
         }
 
+        let prefix = controllerClass[METADATA].channelPrefix;
+
+        prefix = prefix ? prefix + ':' : '';
+
         const {router, channels} = context;
 
-        for (const channel of channels) {
+        // typeof channels = Map
+        for (const channel of channels.entries()) {
 
-            const {event, action} = channel;
+            const [event, action] = channel;
 
-            router.channel(event, dispatch(controllerClass, action), this.#appContext);
+            const fullEventChannel = prefix + event;
+            
+            fullEventChannel.replace(/(\:{2,})/g, ':');
+
+            router.channel(fullEventChannel, dispatch(controllerClass, action, this.#appContext));
         }
     }
 
     static assignContext(_contextSymbol, _class) {
 
-        if (this.#contexts.has(_contextSymbol)) {
+        if (!this.#contexts.has(_contextSymbol)) {
 
-            throw new Error('internal error: websocket context is already been setted');
+            console.log(1)
+            return;
         }
 
-        this.#contexts.set(_contextSymbol, _class);
+        const context = this.#contexts.get(_contextSymbol);
+
+        context.target = _class;
     }
 
     /**
@@ -67,10 +94,17 @@ class WebsocketContext {
 
         const contextMetadata = this.#contexts.get(currentContext);
 
-        contextMetadata.channels.push({
-            event: _channel,
-            action: _controllerAction,
-        })
+        // contextMetadata.channels.push({
+        //     event: _channel,
+        //     action: _controllerAction,
+        // })
+
+        if (contextMetadata.channels.has(_channel)) {
+
+            throw new Error('cannot duplicate a channel on a single context');
+        }
+
+        contextMetadata.channels.set(_channel, _controllerAction);
     }
 
 
@@ -83,7 +117,7 @@ class WebsocketContext {
         this.#contexts.set(contextSymbol, {
             target: null,
             //namspaces: new Set(),  //namespaces is metadata is stored on controller class
-            channels: new Array(),
+            channels: new Map(),
             router: new WSRouter(),
         })
 
@@ -98,11 +132,6 @@ class WebsocketContext {
     static currentNamspaceContext() {
 
         return this.#currentContext;
-    }
-
-    static assignContext(_namspaceContext) {
-
-
     }
 
     // static addHandshakeMiddleware(_fn) {
@@ -139,15 +168,15 @@ class WebsocketContext {
             throw new Error('cannot resolve the websocket server');
         }
 
-        for (const context of this.#contexts) {
+        for (const context of this.#contexts.values()) {
 
             const {target, router} = context;
 
-            const namespaces = target[METADATA].namespaces;
+            const namespaces = target[METADATA].socketNamespaces;
 
-            for (const iterator of namespaces) {
+            for (const iterator of namespaces.values() || []) {
 
-                const nsp = iterator.value;
+                const nsp = iterator;
 
                 ioServer.of(nsp).use(router);
             }

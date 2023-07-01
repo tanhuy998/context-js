@@ -114,7 +114,7 @@ class WSRouter extends Function {
 
         let handler = this.#channelList.get(_event) || this.#channelList.get(firstPart) || this.#tryRegexPattern(_event);
 
-        console.log('through handlers', _event, handler)
+        console.log('router handle', _event, handler)
 
         if (!handler) {
 

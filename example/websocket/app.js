@@ -12,13 +12,17 @@ const {Server} = require('socket.io');
 const httpServer = http.createServer();
 const io = new Server(httpServer);
 
-const {WS} = require('../../index.js');
+const {WS, ApplicationContext} = require('../../index.js');
+
+ApplicationContext.useIoc();
+
+const Controller1 = require('./controller1.js');
 
 WS.server(io);
 
 WS.resolve();
 
-const Controller1 = require('./controller1.js');
+
 
 io.on('connection', (socket) => {
 
@@ -33,12 +37,12 @@ io.on('connection', (socket) => {
 })
 
 
-io.engine.use((req, res, next) => {
+// io.engine.use((req, res, next) => {
     
-    console.log('hhtp middleware');
+//     console.log('hhtp middleware');
 
-    next();
-})
+//     next();
+// })
 
 // io.engine.on('headers', (headers, req) => {
 

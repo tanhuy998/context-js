@@ -46,6 +46,7 @@ const ApplicationContext = require('./src/applicationContext.js');
 
 const appContextPreset = {
     RouteContext: modules.RouteContext,
+    WebsocketContext: require('./src/websocket/websocketContext.js'),
     ioc: {
         BindingContext: modules.BindingContext,
     }

@@ -1,5 +1,5 @@
 const {BaseController} = require('../../controller/baseController.js');
-const WSContext = require('../wsContext.js')
+const ClientContext = require('../clientContext.js')
 
 
 class WSController extends BaseController {
@@ -9,6 +9,8 @@ class WSController extends BaseController {
     #rooms;
     #data;
     #socketId;
+
+    #server;
 
     #context;
 
@@ -20,6 +22,14 @@ class WSController extends BaseController {
     get handshake() {
 
         return this.#handshake;
+    }
+
+    get server() {
+
+        if (!this.#server) {
+
+            //this.#server = 
+        }
     }
 
     constructor() {
@@ -47,7 +57,7 @@ class WSController extends BaseController {
 
     setContext(_context) {
 
-        if (_context instanceof WSContext) {
+        if (_context instanceof ClientContext) {
 
             this.#context = _context;
         }

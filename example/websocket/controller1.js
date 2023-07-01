@@ -1,6 +1,13 @@
 const {WS, WSController} = require('../../index.js');
+const {args, autoBind, ApplicationContext} = require('../../index.js');
 
-@WSController()
+@autoBind()
+class Component {
+
+    prop = '1';
+}
+
+@WS.context()
 class Controller1 extends WSController{
 
     constructor() {
@@ -9,12 +16,25 @@ class Controller1 extends WSController{
     }
 
 
-    @WS.channel('message')
-    handle() {
+    @WS.channel('test')
+    @args(Component)
+    async handle(component) {
 
-        const args = this.
+        console.log(component);
 
-        console.log('')
+        const args = this.context.eventArguments;
+
+        console.log(this.server);
+
+        return ['ok'];
+    }
+
+    //@WS.channel('test') 
+    func() {
+
+        console.log('second handler')
+
+        return 'ok2';
     }
 }
 
