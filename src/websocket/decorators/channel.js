@@ -14,12 +14,9 @@ module.exports = function channel(event) {
             throw new Error('@ws.channel just affect on method');
         }
 
-        //const decoratorResult = new MethodDecorator(undefined, _value);
-
         WebsocketContext.initChannel(event, name);
 
-        //return _value;
-
+        // when a legacy decorator is inoked before
         if (_method.name === 'stage3WrapperFunction') {
 
             _method = _method();
@@ -35,22 +32,12 @@ module.exports = function channel(event) {
             }
         }
 
-        return async function () {
+        // when there is no legacy invoke before
+        return function () {
 
-            try {
+            const result = _method.call(this, ...arguments);
 
-                // unbox the wrapper function to get the decoratorResult
-                const result = _method.call(this, ...arguments);
-
-                sendMessageBack(result, this, _method);
-
-                this.context.next();
-
-            }
-            catch(error) {
-    
-                this.context.next(error);
-            } 
+            sendMessageBack(result, this, _method);
         }
     }
 }
@@ -65,9 +52,9 @@ async function sendMessageBack() {
 
             result = await result;
         }
-
+    
         _this.context.response(result);
-
+    
         _this.context.next();
     }
     catch (error) {

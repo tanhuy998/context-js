@@ -1,15 +1,22 @@
 //const Controller = require('../controller/baseController.js').proxy;
 const PreInvokeFunction = require('./callback/preInvokeFunction.js');
-const {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, ClassDecorator} = require('./decorator/decoratorResult.js');
-//const BaseController = require('./controller/baseController.js');
+const DecoratorResult = require('./decorator/decoratorResult.js');
+const AbstractMethodDecorator = require('./decorator/abstractMethodDecorator.js');
 const {preprocessDescriptor} = require('./decorator/utils.js');
-const {BaseController} = require('./controller/baseController.js');
 const HttpContext = require('./httpContext.js');
 const ApplicationContext = require('./applicationContext.js');
 const reflectFunction = require('./libs/reflectFunction.js');
-const {Type} = require('./libs/type.js');
-const {ReflectionBabelDecoratorClass_Stage_3} = require('./libs/babelDecoratorClassReflection.js');
 const PreInvokeFunctionAsync = require('./callback/preInvokeFunctionAsync.js');
+const Callable = require('./callback/abstractPreInvokeFunction.js');
+const AbstractPreInvokeFunction = require('./callback/abstractPreInvokeFunction.js');
+//const AbstractMethodDecorator = require('./decorator/abstractMethodDecorator.js');
+// const MethodDecoratorAsync = require('./decorator/methodDecoratorAsync.js');
+// const MethodDecorator = require('./decorator/methodDecorator.js');
+// const PropertyDecorator = require('./decorator/propertyDecorator.js');
+// const DecoratorType = require('./decorator/decoratorType.js');
+//const BaseController = require('./controller/baseController.js');
+//const {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, ClassDecorator, MethodDecoratorAsync} = require('./decorator/decoratorResult.js');
+//const {BaseController} = require('./controller/baseController.js');
 
 
 function args(..._args) {
@@ -18,7 +25,9 @@ function args(..._args) {
 
         const decoratorResult = preprocessDescriptor(target, method, descriptor);
 
-        if (!(decoratorResult instanceof MethodDecorator)) {
+        const isMethodDecorator = decoratorResult instanceof AbstractMethodDecorator;
+
+        if (!(isMethodDecorator)) {
 
             throw new Error('decorator @args just applied on method');
         }
@@ -232,9 +241,9 @@ function Stage3_handleRequest(_controllerObject, _action, _appContext) {
 
         let transformedFunction;
 
-        if (typeof _targetFunction == 'function') {
+        if (typeof _targetFunction === 'function') {
 
-            if (_targetFunction.constructor.name == 'AsyncFunction') {
+            if (_targetFunction.constructor.name === 'AsyncFunction') {
 
                 transformedFunction = new PreInvokeFunctionAsync(_targetFunction);
             }
@@ -243,21 +252,21 @@ function Stage3_handleRequest(_controllerObject, _action, _appContext) {
                 transformedFunction = new PreInvokeFunction(_targetFunction);
             }
         }
-        else if (_targetFunction instanceof PreInvokeFunction) {
+        else if (_targetFunction instanceof AbstractPreInvokeFunction) {
 
             transformedFunction = _targetFunction;
         }
+        else {
 
-        //const transformedFunction = (_targetFunction instanceof PreInvokeFunction) ? _targetFunction : new PreInvokeFunction(_targetFunction);
-        //const reflection = (_targetFunction instanceof PreInvokeFunction) ? _targetFunction.functionMeta : reflectFunction(_targetFunction);
+            throw new TypeError('cannot pass arguments to object whose prototype is not');
+        }
+
 
         const reflection = transformedFunction.functionMeta;
 
         const theExactFunction = reflection.target;
 
         const controllerState = this.state;
-
-        console.log('argument list', argsList);
 
         const args = (argsList.length > 0) ? resolveComponents(argsList, _appContext.iocContainer, controllerState) : _appContext.iocContainer.resolveArgumentsOf(theExactFunction, controllerState, true);
 

@@ -16,15 +16,14 @@ class Controller1 extends WSController{
     }
 
 
-    @WS.channel('test')
+    
     @args(Component)
+    @WS.channel('test')
     async handle(component) {
 
         console.log(component);
 
         const args = this.context.eventArguments;
-
-        console.log(this.server);
 
         return ['ok'];
     }

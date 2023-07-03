@@ -39,6 +39,11 @@ const stage_0_To_Stage_3_Adapter =  {
 		// })
 
 		//console.log(context.access.get())
+		
+
+		descriptor.get = context?.access?.get;
+		descriptor.set = context?.access?.set;
+		descriptor.private = context?.private;
 
 		switch(kind) {
 
@@ -47,12 +52,9 @@ const stage_0_To_Stage_3_Adapter =  {
 				break;
 			case 'method':
 				descriptor.value = (value.name == 'stage3WrapperFunction') ? value() : value;
+				break;
 			case 'field':
 				descriptor.initializer = () => value;
-			default:
-				descriptor.get = context.access.get;
-				descriptor.set = context.access.set;
-				descriptor.private = context.private;
 				break;
 		}
 

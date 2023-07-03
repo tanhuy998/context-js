@@ -1,4 +1,8 @@
-const {DecoratorType, DecoratorResult, MethodDecorator, PropertyDecorator, ClassDecorator, MethodDecoratorAsync} = require('./decoratorResult.js');
+const DecoratorResult = require('./decoratorResult.js');
+const DecoratorType = require('./decoratorType.js');
+const PropertyDecorator = require('./propertyDecorator.js');
+const MethodDecorator = require('./methodDecorator.js');
+const MethodDecoratorAsync = require('./methodDecoratorAsync.js');
 const PreInvokeFunction = require('../callback/preInvokeFunction.js');
 const PreInvokeFunctionAsync = require('../callback/preInvokeFunctionAsync.js');
 const decoratorVersion = require('../../decoratorVersion.js');
@@ -105,11 +109,12 @@ function preprocessDescriptor(_targetObject, propName, descriptor, decoratorType
         let decoratorResult;
         let the_transformed_prop;
         
+        
 
         if (!(the_target_prop instanceof DecoratorResult)) {
-
-            if (typeof the_target_prop == 'function') {
-
+            
+            if (typeof the_target_prop === 'function') {
+                
                 return initializeDecoratorResultForFunction(the_target_prop);
                 //the_prop_is_function = true;
                 //return decorator;

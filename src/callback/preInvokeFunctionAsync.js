@@ -1,10 +1,9 @@
-const {EventEmitter} = require('node:events');
+const AbstractPreInvokeFunction = require('./abstractPreInvokeFunction.js');
+module.exports = class PreInvokeFunctionAsync extends AbstractPreInvokeFunction {
 
-module.exports = class PreInvokeFunctionAsync extends EventEmitter{
-
-    #callback;
-    #args;
-    #context;
+    // #callback;
+    // #args;
+    // #context;
     // #functionMeta;
 
     // get functionMeta() {
@@ -14,15 +13,14 @@ module.exports = class PreInvokeFunctionAsync extends EventEmitter{
 
     constructor(_callback, ...args) {
 
-        super();
-
         if (typeof _callback != 'function') {
 
             throw new TypeError('invalid argument type passed to PreInvokeFunction\'s constructor');
         }
 
+        super(_callback, ...args);
 
-        this.#callback = _callback;
+        // this.#callback = _callback;
         // if (_callback.constructor.name == 'AsyncFunction') {
 
         //     this.#callback = _callback;
@@ -32,7 +30,7 @@ module.exports = class PreInvokeFunctionAsync extends EventEmitter{
         //     throw new NotAcceptAsyncFunctionError();
         // }
 
-        this.#args = args;
+        // this.#args = args;
 
         //this.#functionMeta = reflectFunction(_callback);
 
@@ -64,61 +62,61 @@ module.exports = class PreInvokeFunctionAsync extends EventEmitter{
         this.on('fulfill', (_result, target, method) => {});
     }
 
-    bind(object) {
-
-        this.#context = object;
-
-        return this;
-    }
-
     async invoke() {
 
         let targetFunction;
 
-        if (!this.#context) {
+        if (!this.context) {
 
-            targetFunction =  this.#callback;
+            targetFunction =  this.callback;
         }
         else {
 
-            targetFunction = this.#callback.bind(this.#context);
+            targetFunction = this.callback.bind(this.context);
         }
 
-        //const result = this.#callback.call(this.#context, ...this.#args)
+        //const result = this.callback.call(this.context, ...this.args)
 
         let result;
 
-        result = await targetFunction(...this.#args)
+        result = await targetFunction(...this.args)
 
-        // if (this.#functionMeta.isAsync) {
+        // if (this.functionMeta.isAsync) {
 
-        //     result = targetFunction(...this.#args);
+        //     result = targetFunction(...this.args);
         // }
         // else {
 
-        //     result = targetFunction(...this.#args)
+        //     result = targetFunction(...this.args)
         // }
 
-        this.emit('fulfill', result, this.#callback ,this.#context);
+        this.emit('fulfill', result, this.callback ,this.context);
 
         return result;
     }
+
+    // bind(object) {
+
+    //     this.context = object;
+
+    //     return this;
+    // }
     
-    whenFulfill(_callback) {
+    // whenFulfill(_callback) {
 
-        this.on('fulfill', _callback);
-    }
+    //     this.on('fulfill', _callback);
+    // }
 
-    passArgs(..._args) {
+    // passArgs(..._args) {
 
-        this.#args = _args;
+    //     this.args = _args;
 
-        return this;
-    }
+    //     return this;
+    // }
 
-    get args() {
+    // get args() {
 
-        return this.#args;
-    }
+    //     return this.#args;
+    // }
 }
 

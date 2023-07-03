@@ -1,12 +1,7 @@
 const PreInvokeFunction = require('../callback/preInvokeFunction.js');
 const PreInvokeFunctionAsync = require('../callback/preInvokeFunctionAsync.js');
 const {EventEmitter} = require('node:events');
-//const reflectFunction = require('../libs/reflectFunction.js')
-
-const DecoratorType =  {
-    CLASS_DECORATOR: 0x1,
-    PROPERTY_DECORATOR: 0x2,
-}
+const DecoratorType = require('./decoratorType.js');
 class DecoratorResult extends EventEmitter{
     
     #type;
@@ -218,161 +213,7 @@ class DecoratorResult extends EventEmitter{
     }
 }
 
-class PropertyDecorator extends DecoratorResult {
 
-
-    constructor(target, propName) {
-
-        const obj = {
-            target, propName
-        }
-
-        super(DecoratorType.PROPERTY_DECORATOR, obj);
-    }
-
-    resolve() {
-        
-        // if (this.needContext && !this._context) throw new Error('PropertyDecorator error: property decorator need context to be resolved');
-        
-        // for (const meta of this._actionQueue) {
-
-        //     let {action, decoratorName} = meta;
-            
-        //     if (this.needContext) {
-
-        //         action = action.bind(this._context);
-        //     }
-
-        //     //const {target, propName} = super._target;
- 
-        //     if (action instanceof PreInvokeFunction) {
-                
-        //         return await action.passArgs(this._target, ...this.payload[decoratorName]).invoke();
-        //     }
-        //     else {
-
-        //         const functionMeta = reflectFunction(action);
-
-        //         if (functionMeta.isAsync) {
-
-        //             return await action(this._target, ...this.payload[decoratorName])
-        //         }
-        //         else {
-
-        //             return action(this._target, ...this.payload[decoratorName]);
-        //         }   
-        //     }
-        // }
-
-        //return super.resolve();
-
-        super._resolveContext();
-
-        super._applyTransformation();
-
-        this.emit('afterResolve', undefined, this._context, this._target, this._targetDescriptor, this.type);
-    }
-}
-
-class MethodDecorator extends DecoratorResult {
-
-   // #hooks;
-
-    constructor(target, prop) {
-
-        if ((typeof prop != 'function') && !(prop instanceof PreInvokeFunction)) {
-
-            throw new Error('the target passed to Method Decorator is not type of function');
-        }
-
-        if (prop.constructor.name == 'AsyncFunction') {
-
-            throw new Error('MethodDecorator does not allow async function');1
-        }
-
-        super(DecoratorType.PROPERTY_DECORATOR, prop);
-
-        //this.#hooks = [];
-        this.bind(target);
-    }
-
-    resolve() {
-
-        // return super.resolve();
-
-        // function handleAfterTransformedTheMethod() {
-            
-        //     if (this._target instanceof PreInvokeFunction) {
-                
-        //         const result = this._target.invoke();
-                
-        //         return result;
-        //     }
-        //     else {
-    
-        //         // const functionMeta = reflectFunction(this._target);
-
-        //         // if (functionMeta.isAsync) {
-
-        //         //     return await this._target.bind(this._context)();
-        //         // }
-        //         // else {
-
-        //         //     return this._target.bind(this._context)();
-        //         // }
-
-        //         return this._target.bind(this._context)();
-        //     }
-        // }
-
-        super._resolveContext();
-
-        super._applyTransformation();
-
-        super._resolveTarget();
-    }
-}
-
-class MethodDecoratorAsync extends DecoratorResult {
-
-    constructor(target, prop) {
-
-        if ((typeof prop != 'funtion') && !(prop instanceof PreInvokeFunctionAsync)) {
-
-            throw new Error('the target passed to Method Decorator is not type of function');
-        }
-
-        if (prop.constructor.name == 'AsyncFunction') {
-
-            throw new Error('MethodDecorator does not allow async function');1
-        }
-
-        super(DecoratorType.PROPERTY_DECORATOR, prop);
-
-        //this.#hooks = [];
-        this.bind(target);
-    }
-
-    async resolve() {
-
-        super._resolveContext();
-
-        super._applyTransformation();
-
-        let result;
-
-        if (this._target instanceof PreInvokeFunctionAsync) {
-
-            result = await this._target.invoke();
-        }
-        else {
-
-            result = await this._target.bind(this._context)();
-        }
-
-        this.emit('afterResolve', result, this._context, this._target, this._targetDescriptor, this.type);
-    }
-}
 
 class ClassDecorator extends DecoratorResult {
 
@@ -383,4 +224,4 @@ class ClassDecorator extends DecoratorResult {
 }
 
 
-module.exports = {DecoratorResult, DecoratorType, MethodDecorator, PropertyDecorator, ClassDecorator, MethodDecoratorAsync};
+module.exports = DecoratorResult;
