@@ -1,4 +1,6 @@
-const {DecoratorResult, MethodDecorator} = require('../../decorator/decoratorResult.js');
+//const {DecoratorResult, MethodDecorator} = require('../../decorator/decoratorResult.js');
+const AbstractMethodDecorator = require('../../decorator/abstractMethodDecorator.js');
+const ResponseError = require('../../error/responseError.js');
 const WebsocketContext = require('../websocketContext.js');
 //const {preprocessDescriptor} = require('../../decorator/utils.js')
 
@@ -21,9 +23,9 @@ module.exports = function channel(event) {
 
             _method = _method();
 
-            if (_method instanceof MethodDecorator) {
+            if (_method instanceof AbstractMethodDecorator) {
 
-                _method.on('afterResolve', sendMessageBack);
+                _method.on('afterResolve', detectAndSendMessageBack);
 
                 return function stage3WrapperFunction() {
                     
@@ -35,30 +37,62 @@ module.exports = function channel(event) {
         // when there is no legacy invoke before
         return function () {
 
-            const result = _method.call(this, ...arguments);
+            const result = _method.call(this, ...arguments)
 
-            sendMessageBack(result, this, _method);
+            detectAndSendMessageBack(result, this);
+
+            return result;
         }
     }
 }
 
-async function sendMessageBack() {
 
-    [result, _this, func] = arguments;
+/**
+ * 
+ * @returns void
+ */
+function detectAndSendMessageBack() {
 
-    try {
+    const [result, _this, func] = arguments;
 
-        if (result instanceof Promise) {
+    console.log('do response');
 
-            result = await result;
-        }
-    
-        _this.context.response(result);
-    
-        _this.context.next();
+    if (result instanceof Error) {
+
+        _this.context.next(result);
+
+        return;
     }
-    catch (error) {
 
-        _this.context.next(error);
+    if (result instanceof Promise) {
+        // return back the promise to router for catching error
+        return result.then((value) => {
+
+            if (result) {
+
+                _this.context.response(value);
+            }
+
+            _this.context.next();
+
+            return value;
+        }).catch(error => {
+
+            if (error instanceof ResponseError) {
+
+                return error;
+            }
+
+            return new ResponseError(error.data);
+        })
+    }
+
+    if (result) {
+
+        _this.context.response(result);
+
+        _this.context.next();
+
+        return;
     }
 }

@@ -138,6 +138,8 @@ class DecoratorResult extends EventEmitter{
         }
 
         this.emit('afterResolve', result, this._context, this._target, this._targetDescriptor, this.type);
+
+        return result;
     }
     
     resolve() {
@@ -146,7 +148,7 @@ class DecoratorResult extends EventEmitter{
 
         this._applyTransformation();
 
-        this._resolveTarget();
+        return this._resolveTarget();
         
         // let result;
         

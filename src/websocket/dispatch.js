@@ -27,6 +27,6 @@ module.exports = function dispatch(controller, action, appContext = undefined) {
 
         controllerObject.setContext(wsContext);
 
-        Stage3_handleRequest(controllerObject, action, appContext);
+        return Stage3_handleRequest(controllerObject, action, appContext);
     }
 }

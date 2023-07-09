@@ -12,15 +12,15 @@ const {Server} = require('socket.io');
 const httpServer = http.createServer();
 const io = new Server(httpServer);
 
-const {WS, ApplicationContext} = require('../../index.js');
+const {WS, ApplicationContext, Router} = require('../../index.js');
 
-ApplicationContext.useIoc();
+//ApplicationContext.useIoc();
 
-const Controller1 = require('./controller1.js');
+//const Controller1 = require('./controller1.js');
 
-WS.server(io);
+//WS.server(io);
 
-WS.resolve();
+//WS.resolve();
 
 
 
@@ -85,6 +85,32 @@ io.use((socket, next) => {
 
     next();
 })
+
+const router = new Router();
+
+router.channel('test', (_event, response, next) => {
+    console.log(1);
+    next();
+
+    console.log(-1);
+},
+async (_event, response, next) => {
+
+    console.log(2);
+
+    next(new Error('throw error on the second handler'))
+
+    console.log(-2);
+}, (_e, res, next) => {
+
+    console.log(3);
+
+    next()
+
+    console.log(-3);
+})
+
+io.use(router);
 
 io.on('connection', (socket) => {
 

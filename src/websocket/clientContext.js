@@ -4,6 +4,13 @@ module.exports = class ClientContext extends HttpContext{
     #eventArgs;
     #handshake;
 
+    #state;
+
+    get state() {
+
+        return this.#state;
+    }
+
     get handshake() {
 
         return this.#handshake;
@@ -25,6 +32,7 @@ module.exports = class ClientContext extends HttpContext{
 
         super(sender.request, _response, _next);
 
+        this.#state = _wsEvent;
         this.#eventArgs = _wsEvent.args;
         this.#handshake = sender.handshake;
     }

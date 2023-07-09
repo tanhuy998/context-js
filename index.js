@@ -53,3 +53,4 @@ const appContextPreset = {
 }
 
 module.exports.ApplicationContext = new ApplicationContext(appContextPreset);
+//module.exports.enableRuntimeError = require('./src/error/expressErrorHanler.js');

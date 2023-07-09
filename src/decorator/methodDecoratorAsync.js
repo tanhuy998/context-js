@@ -40,5 +40,7 @@ module.exports = class MethodDecoratorAsync extends AbstractMethodDecorator {
         }
 
         this.emit('afterResolve', result, this._context, this._target, this._targetDescriptor, this.type);
+
+        return result;
     }
 }

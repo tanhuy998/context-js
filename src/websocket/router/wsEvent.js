@@ -5,6 +5,12 @@ module.exports = class WSEvent {
     #sender;
     #args;
     #response;
+    #isAborted = false;
+
+    get isAborted() {
+
+        return this.#isAborted;
+    }
 
     get sender() {
 
@@ -38,5 +44,10 @@ module.exports = class WSEvent {
         this.#args = args;
         this.#server = server;
         this.#response = response;
+    }
+
+    abort() {
+
+        this.#isAborted = true;
     }
 }

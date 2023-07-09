@@ -1,6 +1,7 @@
 const WSEvent = require('./wsEvent.js');
 const RouteHandler = require('./routeHandler.js');
-
+const RuntimeError = require('../../error/rumtimeError.js');
+const ResponseError = require('../../error/responseError.js');
 /**
  *  WSRouter mananages events for each incomming socket connection
  */
@@ -17,7 +18,7 @@ class WSRouter extends Function {
 
     #currentEventError;
 
-    #errorHandlers = [];
+    #errorHandler;
 
     constructor() {
 
@@ -61,15 +62,6 @@ class WSRouter extends Function {
 
             const calleeArgsLength = arguments.length;
 
-            // if (calleeArgsLength === 1) {
-
-            //     const next = _firstArg;
-
-            //     next();
-
-            //     return;
-            // }
-            // else 
             if (calleeArgsLength === 2) {
 
                 const [event, ...args] = _firstArg;
@@ -80,20 +72,6 @@ class WSRouter extends Function {
 
                 return;
             }
-            // else {
-
-            //     const event = _firstArg;
-
-            //     const next = rest[rest.length - 1];
-
-            //     const eventArgs = rest.slice(0, rest.length - 2);
-
-            //     this.#handle(event, _socket, eventArgs, next);
-
-            //     //next();
-
-            //     return;
-            // }
         }
 
         _socket.use(validateAndResolve.bind(this));
@@ -114,28 +92,75 @@ class WSRouter extends Function {
 
         let handler = this.#channelList.get(_event) || this.#channelList.get(firstPart) || this.#tryRegexPattern(_event);
 
-        console.log('router handle', _event, handler)
-
         if (!handler) {
 
             socketNextfunction();
             return;
         }
-        
-        try {  
 
-            const eventObj = this.#preparePayload(_event, _socket, args);
+        const eventObj = this.#preparePayload(_event, _socket, args);
 
-            handler.handle(eventObj);
+        const eventPack = {
+            handlerArguments: [eventObj, eventObj.response],
+            lastNextFunction: socketNextfunction
+        };
 
-            socketNextfunction();
-        }  
-        catch(error) {
+        //handler.handle(0, eventObj, eventObj.response, socketNextfunction);
+        handler.handle(0, eventPack);
 
-            console.log('has error')
+        console.log('router handled', _event, handler);
+    }
 
-            socketNextfunction(error);
+    #handleError(_error, _event, socketNextfunction) {
+
+        const errorHandler = this.#errorHandler;
+
+        if (_error instanceof ResponseError) {
+
+            return socketNextfunction(_error.data);
         }
+
+        if (!errorHandler) {
+            console.log('no error handler')
+            return socketNextfunction(_error.origin || _error);
+        }
+
+        const errorHandlingPack = {
+            handlerArguments: [_error, _event, _event.response],
+            lastNextFunction: function(error) {
+
+                if (error) {
+
+                    socketNextfunction(error);
+                }
+            }
+        }
+
+        errorHandler.handle(0, errorHandlingPack);
+
+        // if (_error instanceof RuntimeError) {
+
+        //     try {
+
+        //         errorHandler.handle(0, _error.origin, _event, _event.response);
+        //     }
+        //     catch (error) {
+
+        //         socketNextfunction(error.origin || error);
+
+        //         return;
+        //     }
+        // }
+        // else {
+
+        //     return socketNextfunction(_error.origin || _error)
+        // }
+    }
+
+    // for async functions to push error back to router to handle
+    pushError(_error, {eventObject, lastNextFunction}) {
+        console.log('push error')
+        this.#handleError(_error, eventObject, lastNextFunction);
     }
 
     #preparePayload(_event, _socket, args) {
@@ -227,7 +252,19 @@ class WSRouter extends Function {
 
         for (const callback of _handlers) {
 
-            const node = new RouteHandler(callback);
+            if (typeof callback !== 'function') {
+
+                throw new TypeError('_handler must be a function');
+            }
+
+            if (callback.length > 3) {
+
+                this.#pushErrorHandler(callback);
+
+                continue;
+            }
+
+            const node = new RouteHandler(callback, this);
 
             if (!newHandlersChain) {
 
@@ -250,7 +287,41 @@ class WSRouter extends Function {
             this.#channelList.set(_pattern, newHandlersChain);
         }
     }
-    
+
+    #pushErrorHandler(_func) {
+
+        /**
+         *  the error handler funciton is wrapped in order to catch error thrown 
+         *  by the Routehandler and then return it back to the next handler         
+         */
+        const errorFunction = async function () {
+
+            try {
+
+                await _func(...arguments);
+            }
+            catch(error) {
+
+                if (error instanceof RuntimeError) {
+
+                    error.breakpoint.resume();
+                }
+                else {
+
+                    throw error;
+                }
+            }
+        }
+
+        if (!this.#errorHandler) {
+
+            this.#errorHandler = new RouteHandler(errorFunction, this);
+        }
+        else {
+
+            this.#errorHandler.pushBack(new RouteHandler(errorFunction, this));
+        }
+    }
 }
 
 module.exports = WSRouter;

@@ -14,7 +14,7 @@ const WS = new Proxy({
     },
     namespace: namespace,
     context: context,
-    channel: channel
+    channel: channel,
 }, {
     get: function(target, prop) {
 

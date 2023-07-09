@@ -23,7 +23,7 @@ module.exports = class MethodDecorator extends AbstractMethodDecorator {
          this.bind(target);
      }
  
-     resolve() {
+    resolve() {
  
          // return super.resolve();
  
@@ -52,10 +52,10 @@ module.exports = class MethodDecorator extends AbstractMethodDecorator {
          //     }
          // }
  
-         super._resolveContext();
+        super._resolveContext();
  
-         super._applyTransformation();
+        super._applyTransformation();
  
-         super._resolveTarget();
+        return super._resolveTarget();
      }
  }

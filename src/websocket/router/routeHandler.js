@@ -1,103 +1,205 @@
-/**
- *  
- * 
- */
-module.exports = class RouteHandler {
+const RouteError = require('./routeError.js');
+const BreakPoint = require('./breakPoint.js');
+const {T_WeakTypeNode} = require('../../libs/linkedList.js');
+const RuntimeError = require('../../error/rumtimeError.js');
+const {EventEmitter} = require('node:events');
+const {types} = require('node:util');
 
-    #next;
+const {ProgressTracker, ProgressState} = require('../../libs/progressTracker.js');
+const { type } = require('node:os');
 
-    #callback;
+module.exports = class RouteHandler extends T_WeakTypeNode{
 
-    //#error;
+    /**
+     *  RouteHandler original type is linked list
+     *  the event context is passed through each node of the linked list 
+     *  errors are collected on each node and then dispatch back to the router for handling error
+     */
 
 
-    get next() {
+    static get MAX_SYNC_TASK() {
 
-        return this.#next;
+        return 100;
     }
 
-    get callback() {
 
-        return this.#callback;
+    #tempContext;
+    #router;
+
+    #errorCatcher = new EventEmitter();
+
+    // #progression;
+
+    // #currentProgress;
+
+    // get progression() {
+
+    //     return this.#progression;
+    // }
+
+    get callbackFunction() {
+
+        return this.data;
+    }
+
+    get router() {
+
+        return this.#router;
+    }
+
+    constructor(_callback, _router) {
+
+        if (typeof _callback !== 'function') {
+
+            throw new TypeError('_callback is not type of function');
+        } 
+
+        super(_callback);
+
+        //this.#progression = new ProgressTracker('next');
+
+        this.#router = _router;
+
+        this.#Init();
+    }
+
+    #Init() {
+
+        const _this = this;
+
+        // const currentProgress = new ProgressTracker('current');
+
+        // this.#progression.track(currentProgress);
+
+        // this.#currentProgress = currentProgress;
+
+        this.#errorCatcher.on('error', function(error) {
+
+
+        })
+    }
+
+    #checkIfCallable(_value) {
+
+        const isFunction = typeof _value !== 'function';
+        const isProxy = types.isProxy(_value);
+
+        if (!isFunction && !isProxy) {
+
+            throw new TypeError('handler must be function ${typeof}');
+        }
     }
 
     setNext(_node) {
 
-        if (_node instanceof RouteHandler) {
+        this.#checkIfCallable(_node._value);
 
-            if (_node.next) {
-
-                _node.pushBack(this.next);
-            }
-            
-            this.#next = _node;
-
-            return;
-        }
-
-        throw new TypeError('_node is not type of RouteHandler');
+        super.setNext(_node);
     }
 
-    constructor(_callback) {
+    // /**
+    //  *  @override
+    //  */
+    // pushBack(_node) {
 
-        if (typeof _callback !== 'function') {
+    //     const next = this.next;
 
-            throw new TypeError('_callback is not a function');
-        }
+    //     if (!next) {
 
-        this.#callback = _callback;
-    }
+    //         this.#progression.track(_node.progression);
+    //     }
 
-    pushBack(_handler) {
+    //     super.pushBack(_node);
+    // }
 
-        const nextNode = this.#next;
+    
+    handle(_taskCount = 0, _eventPack) {
 
-        if (nextNode) {
+        const _this = this;
 
-            nextNode.pushBack(_handler);
-        }
-        else {
+        const {handlerArguments, lastNextFunction} = _eventPack;
 
-            this.setNext(_handler);
-        }
-    }
-
-    traverse(_destination = undefined) {
-
-
-    }
-
-    //handle(_event, _socket, _args) {
-    handle(_wsEvent) {
-        
         const nextHandler = this.next;
 
-        const nextFunction = function(error) {
+        /**
+         *  Handler will catches error that throwns by next function 
+         */
+        try {
+
+            const theHandlerFunction = this.callbackFunction;
+
+            console.log('route handler chain', theHandlerFunction.constructor.name)
+
+            const next = nextFunction;
+
+            const handlerResult = theHandlerFunction(...handlerArguments, next);
+
+
+            if (handlerResult instanceof Promise) {
+
+                const router = this.#router;
+
+                handlerResult.catch((error) => {
+
+                    console.log('route handler catch async error')
+                    router.pushError(error, _eventPack);
+                });
+            }
+        }
+        catch (error) {
+
+            this.#router.pushError(error, _eventPack);
+        }
+
+
+
+        function nextFunction(error) {
+
+            console.log('next called', (error)? 'error' : '');
 
             if (error) {
 
-                // this.#error = error
-
-                // return;
-
+                // throwing error here in order to interupt the functionality of the current handler
                 throw error;
             }
 
             if (!nextHandler) {
 
+                lastNextFunction();
+
                 return;
             }
 
-            nextHandler.handle(_wsEvent);
+            if (++_taskCount === RouteHandler.MAX_SYNC_TASK) {
+
+                //setImmediate(nextHandler.handle.bind(nextHandler), 0, _eventPack);
+
+                setImmediate((_eventPack) => {
+
+                    nextHandler.handle(0, _eventPack);
+
+                }, _eventPack);
+            }
+            else {
+
+                nextHandler.handle(_taskCount, _eventPack);
+            }
         }
-
-        const {response} = _wsEvent;
-
-        this.#callback(_wsEvent, response, nextFunction.bind(this));
     }
 
-    // #refresh() {
+    #throwRuntimeError(error) {
 
-    //     this.#error = undefined;
-    // }
+        const breakpoint = new BreakPoint(this, ...this.#tempContext);
+        const runtimeError = new RouteError(error, {breakpoint: breakpoint});
+
+        throw runtimeError;
+    }
+
+    #prepareRuntimeError(error) {
+
+        const breakpoint = new BreakPoint(this, ...this.#tempContext);
+        const runtimeError = new RouteError(error, {breakpoint: breakpoint});
+
+        return runtimeError;
+    }
 }
