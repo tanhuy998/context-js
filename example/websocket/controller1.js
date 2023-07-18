@@ -16,35 +16,35 @@ class Controller1 extends WSController{
         super();
     }
 
+    // @WS.channel('test')
+    // before() {
+
+    //     const label = this.context.state.args;
+
+    //     this.context.state.sender.label = label;
+
+    //     //console.time(label);
+    // }
 
     @WS.channel('test')
     @args(Component)
     async handle(component) {
 
-        console.log(component);
+        
 
-        const args = this.context.eventArguments;
-
-        //this.context.next(new Error('test throwing error'))
-
-        //throw new Error('throw error')
-
-        throw new ResponseError(1)
-
-        console.log('inside controller')
-
-        //return new Error('response error back');
-
-        return new ResponseError(1);
+        return 1;
     }
 
-    //@WS.channel('test') 
-    func() {
+    // @WS.channel('test') 
+    // after() {
 
-        console.log('second handler')
 
-        return 'ok2';
-    }
+    //     const label = this.context.state.sender.label;
+
+    //     //console.log(args[0] || undefined);
+    //     //console.timeEnd(label);
+    //     //return 'ok2';
+    // }
 }
 
 module.exports = Controller1;

@@ -4,9 +4,10 @@ const {T_WeakTypeNode} = require('../../libs/linkedList.js');
 const RuntimeError = require('../../error/rumtimeError.js');
 const {EventEmitter} = require('node:events');
 const {types} = require('node:util');
-
+const {METADATA} = require('../../constants.js');
 const {ProgressTracker, ProgressState} = require('../../libs/progressTracker.js');
 const { type } = require('node:os');
+//const WSRouter = require('./wsRouter.js');
 
 module.exports = class RouteHandler extends T_WeakTypeNode{
 
@@ -16,7 +17,6 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
      *  errors are collected on each node and then dispatch back to the router for handling error
      */
 
-
     static get MAX_SYNC_TASK() {
 
         return 100;
@@ -25,6 +25,8 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
 
     #tempContext;
     #router;
+
+    #maxSyncTask;
 
     #errorCatcher = new EventEmitter();
 
@@ -47,7 +49,13 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
         return this.#router;
     }
 
-    constructor(_callback, _router) {
+    get maxSyncTask() {
+
+        return this.#maxSyncTask || RouteHandler.MAX_SYNC_TASK;
+    }
+
+
+    constructor(_callback, {router, maxSyncTask}) {
 
         if (typeof _callback !== 'function') {
 
@@ -58,7 +66,8 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
 
         //this.#progression = new ProgressTracker('next');
 
-        this.#router = _router;
+        this.#maxSyncTask = maxSyncTask || RouteHandler.MAX_SYNC_TASK;
+        this.#router = router;
 
         this.#Init();
     }
@@ -117,45 +126,65 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
 
         const _this = this;
 
-        const {handlerArguments, lastNextFunction} = _eventPack;
+        const {handlerArguments, lastNextFunction, pushError} = _eventPack;
 
         const nextHandler = this.next;
+
+        const maxSyncTask  = this.#maxSyncTask;
 
         /**
          *  Handler will catches error that throwns by next function 
          */
         try {
 
-            const theHandlerFunction = this.callbackFunction;
+            const theHandler = this.callbackFunction;
 
-            console.log('route handler chain', theHandlerFunction.constructor.name)
+            //console.log('route handler chain', theHandlerFunction.constructor.name)
 
             const next = nextFunction;
 
-            const handlerResult = theHandlerFunction(...handlerArguments, next);
+            const [event, res, preprocessdChannel] = handlerArguments;
+
+            let handlerResult;
+
+            //console.log('handle', preprocessdChannel);
+
+            if (theHandler[METADATA] && theHandler[METADATA].isRouter) {
+                // use METADATA property in order to get rid of circular denpendency
+                // in checking if the handler is a router
+
+                handlerResult = theHandler.handleIncomingEvent(preprocessdChannel, event, next);
+            }
+            else {
+
+                handlerResult = theHandler(event, res, next);
+            }
 
 
             if (handlerResult instanceof Promise) {
 
-                const router = this.#router;
+                //const router = this.#router;
 
                 handlerResult.catch((error) => {
 
-                    console.log('route handler catch async error')
-                    router.pushError(error, _eventPack);
+                    //console.log('route handler catch async error')
+                    //router.pushError(error, _eventPack);
+
+                    pushError(error);
                 });
             }
         }
         catch (error) {
 
-            this.#router.pushError(error, _eventPack);
+            //this.#router.pushError(error, _eventPack);
+            pushError(error);
         }
 
 
 
         function nextFunction(error) {
 
-            console.log('next called', (error)? 'error' : '');
+            //console.log('next called', (error)? 'error' : '');
 
             if (error) {
 
@@ -170,7 +199,7 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
                 return;
             }
 
-            if (++_taskCount === RouteHandler.MAX_SYNC_TASK) {
+            if (++_taskCount > maxSyncTask) {
 
                 //setImmediate(nextHandler.handle.bind(nextHandler), 0, _eventPack);
 

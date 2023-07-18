@@ -55,8 +55,6 @@ function detectAndSendMessageBack() {
 
     const [result, _this, func] = arguments;
 
-    console.log('do response');
-
     if (result instanceof Error) {
 
         _this.context.next(result);
@@ -94,5 +92,9 @@ function detectAndSendMessageBack() {
         _this.context.next();
 
         return;
+    }
+    else {
+
+        _this.context.next();
     }
 }

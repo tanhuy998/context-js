@@ -2,23 +2,51 @@ const WSEvent = require('./wsEvent.js');
 const RouteHandler = require('./routeHandler.js');
 const RuntimeError = require('../../error/rumtimeError.js');
 const ResponseError = require('../../error/responseError.js');
+//const { types } = require('@babel/core');
+const {METADATA} = require('../../constants.js');
 /**
  *  WSRouter mananages events for each incomming socket connection
  */
 class WSRouter extends Function {
 
+    static get DEFAULT_CHANNEL() {
+
+        return '\u03A9';
+    }
+
+    #maxSyncTask = 100;
+
+    [METADATA] = {
+        isRouter: true,
+    }
+
+    maxSyncTask(_number) {
+
+        if (typeof _number !== 'number') {
+
+            throw new TypeError('_number must be type of number');
+        }
+
+        if (_number == 0) {
+
+            throw new Error('number of sync task must be greater than 0');
+        }
+
+        this.#maxSyncTask = Math.floor(_number);
+    }
+
     #channelList = new Map();
 
-    // #wsServerNextFunction;
-
-    // set nextFunction(_callback) {
-
-    //     this.#wsServerNextFunction = _callback;
-    // }
+    #layeredChannel;
 
     #currentEventError;
 
     #errorHandler;
+
+    #genericHandler;
+
+    #prefix;
+
 
     constructor() {
 
@@ -33,7 +61,23 @@ class WSRouter extends Function {
 
                     
                 }
-                else {
+                else if (_args.length >= 3) {
+
+                    // const [event, response, next, currentChannel] = _args;
+
+                    // // (currentChannel);
+
+                    // if (currentChannel) {
+
+                    //     target.handleIncomingEvent(currentChannel, event, next);
+                    // }
+                    // else {
+
+                    //     target.handleIncomingEvent(event.channel, event, next);
+                    // }
+
+                }
+                else if (_args.length === 2) {
 
                     //target.nextFunction = next;
                     target.manage(..._args);
@@ -49,6 +93,17 @@ class WSRouter extends Function {
         });
     }
 
+
+    prefix(_str) {
+
+        if (!_str) {
+
+            throw new TypeError('_str is not type of string');
+        }
+
+        this.#prefix = _str;
+    }
+
     /**
      *  Manage each incomming packet
      * 
@@ -58,7 +113,7 @@ class WSRouter extends Function {
 
         const validateAndResolve = function (_firstArg, _next) {
 
-            //console.log('validate');
+            ////// ('validate');
 
             const calleeArgsLength = arguments.length;
 
@@ -66,7 +121,9 @@ class WSRouter extends Function {
 
                 const [event, ...args] = _firstArg;
 
-                this.handleIncomingEvent(event, _socket, args, _next);
+                const eventObject = this.#preparePayload(event, _socket, args);
+
+                this.handleIncomingEvent(event, eventObject, _next);
 
                 //next();
 
@@ -78,40 +135,171 @@ class WSRouter extends Function {
         //_socket.use(this);
     }
 
+    handleDispatchedEvent(wsEvent, response, next) {
+
+
+    }
+
+    // /**
+    //  * 
+    //  * @param {string} _event 
+    //  */
+    // #resolveHandler(_event) {
+
+    //     const prefix = this.#prefix ? this.#prefix + ':' : '';
+        
+    //     if (prefix) {
+
+    //        _event = this.#resolveCurrentChannelOf(_event);
+    //     }
+
+    //     // ('resolve handler', _event);
+    //     //return this.#channelList.get(_event);
+
+    //     return this.#resolveChannel(_event);
+    // }
+
+
+    /**
+     * 
+     * @param {string} _str 
+     * @param {string} _prefix 
+     * @returns 
+     */
+    #replacePrefix(_str, _prefix) {
+
+        if (typeof _prefix !== 'string') {
+
+            throw new TypeError(`_prefix must be type of string`);
+        }
+
+        const prefix = new RegExp(`^${_prefix}(:+)`)
+
+        return _str.replace(prefix, '');
+    }
+
+    #resolveCurrentChannelOf(_channel) {
+
+        // ('channel', _channel)
+
+        if (this.#prefix) {
+
+            return this.#replacePrefix(_channel, this.#prefix);
+        }
+        else {
+
+
+        }
+
+        // (_channel, '-', result);
+
+        return result;
+    }
+
+    /**
+     * 
+     * @param {string} _requestChannel 
+     * @returns {Array} 
+     */
+    #resolveChannel(_requestChannel) {
+
+        const key = 0, value = 1;
+
+        if (this.#layeredChannel) {
+
+            for (const entry of this.#layeredChannel.entries()) {
+
+                const entryKey = entry[key];
+    
+                const pattern = new RegExp(`^${entryKey}(.*)`);
+    
+                if (_requestChannel.match(pattern)) {
+    
+                    return [...entry];
+                }
+            }
+        }   
+        
+        const handler = this.#channelList.get(_requestChannel);
+
+        return [_requestChannel, handler];
+    }
+
     /**
      * hanndle for each incomming event from the client
      * 
-     * @param {string} _event 
-     * @param {Socket} _socket
-     * @param {Array} args 
+     * @param {string} _channel 
+     * @param {WSEvent} _event
      * @param {Function} serverNextfunction the 'next' function refer to next middleware of the server
      */
-    handleIncomingEvent(_event, _socket, args = [], socketNextfunction) {
+    //handleIncomingEvent(_channel, _socket, args = [], socketNextfunction) {
+    handleIncomingEvent(_channel, _event, socketNextfunction) {
 
-        const [firstPart] = _event.split(':', 1);
+        const [firstPart] = _channel.split(':', 1);
 
-        let handler = this.#channelList.get(_event) || this.#channelList.get(firstPart) || this.#tryRegexPattern(_event);
+        //let handler = this.#channelList.get(_channel) || this.#channelList.get(firstPart) || this.#tryRegexPattern(_channel);
 
-        if (!handler) {
+        const defaultHandler = this.#channelList.get(WSRouter.DEFAULT_CHANNEL);
 
-            socketNextfunction();
-            return;
-        }
+        const [currentChannel, routeHandler] = this.#resolveChannel(_channel);
 
-        const eventObj = this.#preparePayload(_event, _socket, args);
+        const _this = this;
+
+        const handlerArgs = [_event, _event.response, this.#replacePrefix(_channel, currentChannel)];
 
         const eventPack = {
-            handlerArguments: [eventObj, eventObj.response],
+            handlerArguments: handlerArgs,
+            pushError,
             lastNextFunction: socketNextfunction
         };
 
-        //handler.handle(0, eventObj, eventObj.response, socketNextfunction);
-        handler.handle(0, eventPack);
+        if (defaultHandler) {
 
-        console.log('router handled', _event, handler);
+            //const currentChannel = this.#resolveCurrentChannelOf()
+
+            return defaultHandler.handle(0, {
+                handlerArguments: handlerArgs,
+                pushError,
+                lastNextFunction: handleRoute
+            })
+        }
+        else {
+
+            return handleRoute();
+        }
+
+        //const eventObj = this.#preparePayload(_channel, _socket, args);
+
+        //handler.handle(0, eventObj, eventObj.response, socketNextfunction);
+
+        //// ('router handled', _event, handler);
+
+        function handleRoute() {
+
+
+            if (!routeHandler) {
+
+                return socketNextfunction();
+            }
+
+            return routeHandler.handle(0, eventPack);
+        }
+
+        function pushError(error) {
+
+            const router = _this;
+
+            router.pushError(error, {
+                eventObject: _event,
+                //lastNextFunction: socketNextfunction,
+                globalErrorHandler: socketNextfunction
+            });
+        }
     }
 
-    #handleError(_error, _event, socketNextfunction) {
+
+
+    #handleError(_error, _event, globalErrorHandler) {
 
         const errorHandler = this.#errorHandler;
 
@@ -121,8 +309,8 @@ class WSRouter extends Function {
         }
 
         if (!errorHandler) {
-            console.log('no error handler')
-            return socketNextfunction(_error.origin || _error);
+            //// ('no error handler')
+            return globalErrorHandler(_error.origin || _error);
         }
 
         const errorHandlingPack = {
@@ -131,36 +319,18 @@ class WSRouter extends Function {
 
                 if (error) {
 
-                    socketNextfunction(error);
+                    globalErrorHandler(error);
                 }
             }
         }
 
         errorHandler.handle(0, errorHandlingPack);
-
-        // if (_error instanceof RuntimeError) {
-
-        //     try {
-
-        //         errorHandler.handle(0, _error.origin, _event, _event.response);
-        //     }
-        //     catch (error) {
-
-        //         socketNextfunction(error.origin || error);
-
-        //         return;
-        //     }
-        // }
-        // else {
-
-        //     return socketNextfunction(_error.origin || _error)
-        // }
     }
 
     // for async functions to push error back to router to handle
-    pushError(_error, {eventObject, lastNextFunction}) {
-        console.log('push error')
-        this.#handleError(_error, eventObject, lastNextFunction);
+    pushError(_error, {eventObject, globalErrorHandler}) {
+        ////// ('push error')
+        this.#handleError(_error, eventObject, globalErrorHandler);
     }
 
     #preparePayload(_event, _socket, args) {
@@ -177,66 +347,59 @@ class WSRouter extends Function {
             response: lastElement,
         })
     }
-
-    // #generateHandlersChain(_event, _socket, _args, _handlers) {
-
-    //     let refFunction = () => {};
-
-    //     for (const i = _handlers.length -1; i >= 0; --i) {
-
-    //         const handler = _handlers[i];
-
-    //         refFunction = this.#generateNextFunction(_event, _socket, _args, {handler, next: refFunction});
-
-    //         if (refFunction.error) {
-
-    //             const theError = _theFunction.error
-    
-    //             this.#pushError(theError);
-
-    //             break;
-    //         }
-    //     }
-
-    //     return refFunction;
-    // }
-
-    // #generateNextFunction(_event, _socket, _args, {handler, next}) {
-
-    //     const ressult = function(error = undefined) {
-
-    //         if (error) {
-
-    //             this.#hanleError(error);
-
-    //             return;
-    //         }
-
-    //         if (typeof handler !== 'function') {
-
-    //             return new TypeError('_handler is not a function');
-    //         }
-
-    //         if (handler instanceof WSRouter) {
-
-    //             handler.handleIncomingEvent(splittedEvent, _socket, _args, next);
-
-    //         }
-    //         else {
-
-    //             handler(_socket, _args, next);
-    //         }
-    //     }
-
-    //     return ressult.bind(this);
-    // }
  
-    #tryRegexPattern(_event) {
+    #getFromLayeredChannels(_event) {
+
+        const channlList = this.#layeredChannel;
+
+        const key = 0, value = 1;
+
+        // ('check regex');
+
+        for (const entry of channlList.entries()) {
+
+            const channel = entry[key];
+
+            const regex = new RegExp(`^${channel}`);
+
+            if (_event.match(regex)) {
+
+                // ('regex match', channel);
+                return entry;
+            }
+        }
 
         return undefined;
     }
 
+    use(..._handlers) {
+
+        if (_handlers.length == 0) {
+
+            throw new TypeError('_handlers must be type of function, undefined given');
+        }
+
+
+        const [firstArg, ...rest] = arguments;
+
+        if (typeof firstArg === 'string') {
+
+            this.channel(firstArg, ...rest);
+        }
+        else {
+
+            this.channel(WSRouter.DEFAULT_CHANNEL, ...arguments);
+        }
+    }
+
+    #pushHandler(_targetSet, ..._handler) {
+
+
+    }
+
     channel(_pattern, ..._handlers) {
+
+        // (_pattern);
 
         if (typeof _pattern !== 'string') {
 
@@ -248,23 +411,59 @@ class WSRouter extends Function {
             throw new TypeError('_handlers must be type of function, undefined given');
         }
 
+        
+        const newHandlersChain = this.#combineHandlers(_pattern, _handlers);
+
+        const currentHandlersChain = this.#channelList.get(_pattern);
+
+        if (currentHandlersChain) {
+            
+            currentHandlersChain.pushBack(newHandlersChain);
+        }
+        else {
+
+            this.#channelList.set(_pattern, newHandlersChain);
+        }
+    }
+
+    /**
+     * 
+     * @param {Array} _handlers 
+     */
+    #combineHandlers(_pattern, _handlers) {
+
         let newHandlersChain;
 
-        for (const callback of _handlers) {
+        let isLayerChannel = false;
+
+        for (let callback of _handlers) {
 
             if (typeof callback !== 'function') {
 
                 throw new TypeError('_handler must be a function');
             }
 
-            if (callback.length > 3) {
+            if (typeof callback === 'function' && callback.length > 3) {
 
                 this.#pushErrorHandler(callback);
 
                 continue;
             }
 
-            const node = new RouteHandler(callback, this);
+            const node = new RouteHandler(callback, {
+                router: this,
+                maxSyncTask: this.#maxSyncTask
+            });
+
+            if (callback instanceof WSRouter) {
+
+                const router = callback;
+
+                router.prefix(_pattern);
+
+                isLayerChannel = true;
+            }
+
 
             if (!newHandlersChain) {
 
@@ -276,16 +475,27 @@ class WSRouter extends Function {
             }
         }
 
-        const currentHandlersChain = this.#channelList.get(_pattern);
+        if (isLayerChannel) {
 
-        if (currentHandlersChain) {
-
-            currentHandlersChain.pushBack(newHandlersChain);
+            this.#markLayeredChannel(_pattern, newHandlersChain);
         }
-        else {
 
-            this.#channelList.set(_pattern, newHandlersChain);
+        return newHandlersChain;
+    }
+
+    #markLayeredChannel(_pattern, _handler) {
+
+        if (!this.#layeredChannel) {
+
+            this.#layeredChannel = new Map();
         }
+
+        if (this.#layeredChannel.has(_pattern)) {
+
+            return;
+        }
+
+        this.#layeredChannel.set(_pattern, _handler);
     }
 
     #pushErrorHandler(_func) {
@@ -313,13 +523,18 @@ class WSRouter extends Function {
             }
         }
 
+        const newNode = new RouteHandler(errorFunction, {
+            router: this,
+            maxSyncTask: this.#maxSyncTask
+        });
+
         if (!this.#errorHandler) {
 
-            this.#errorHandler = new RouteHandler(errorFunction, this);
+            this.#errorHandler = newNode;
         }
         else {
 
-            this.#errorHandler.pushBack(new RouteHandler(errorFunction, this));
+            this.#errorHandler.pushBack(newNode);
         }
     }
 }

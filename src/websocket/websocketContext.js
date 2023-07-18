@@ -69,7 +69,6 @@ class WebsocketContext {
 
         if (!this.#contexts.has(_contextSymbol)) {
 
-            console.log(1)
             return;
         }
 
@@ -101,7 +100,7 @@ class WebsocketContext {
 
         if (contextMetadata.channels.has(_channel)) {
 
-            throw new Error('cannot duplicate a channel on a single context');
+            //throw new Error('cannot duplicate a channel on a single context');
         }
 
         contextMetadata.channels.set(_channel, _controllerAction);

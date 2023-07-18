@@ -211,7 +211,7 @@ function Stage3_handleRequest(_controllerObject, _action, _appContext) {
         }
         else {
             
-            const func = passParameter.bind(_controllerObject)(controllerAction);
+            const func = passArguments.bind(_controllerObject)(controllerAction);
             
             return func.bind(_controllerObject).invoke();
         }
