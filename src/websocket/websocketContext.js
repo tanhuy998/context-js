@@ -17,6 +17,13 @@ class WebsocketContext {
 
     static #namespaceManager = new NamespaceManager();
 
+    static #globalRouter;
+
+    static get globalRouter() {
+
+        return this.#globalRouter;
+    }
+
     static get namespaceManager() {
 
         return this.#namespaceManager;
@@ -30,6 +37,13 @@ class WebsocketContext {
         }
     }
 
+
+    /**
+     *  Manage channel that is registered on a specific context
+     * 
+     * @param {Symbol} _contextSymbol 
+     * @returns 
+     */
     static manage(_contextSymbol) {
 
         const context = this.#contexts.get(_contextSymbol);
@@ -153,6 +167,16 @@ class WebsocketContext {
     //     this.#socketMiddleware.push(_fn);
     // }
 
+    // static setupGlobalRouter(_context) {
+
+    //     if (!this.#globalRouter) {
+
+    //         this.#globalRouter = ;
+    //     }
+
+    //     return this.#globalRouter;
+    // }
+
     static setServer(_ioServer) {
 
         this.#ioServer = _ioServer;
@@ -167,19 +191,51 @@ class WebsocketContext {
             throw new Error('cannot resolve the websocket server');
         }
 
+
+
         for (const context of this.#contexts.values()) {
 
             const {target, router} = context;
 
             const namespaces = target[METADATA].socketNamespaces;
 
+            const classMeta = target[METADATA];
+
+            const finalRouter = this.#initContextRouter(classMeta?.channelPrefixes?.values(), router) || router;
+
             for (const iterator of namespaces.values() || []) {
 
                 const nsp = iterator;
 
-                ioServer.of(nsp).use(router);
+                // channelPrefixes instanceof Set
+                
+
+                ioServer.of(nsp).use(finalRouter);
             }
         }
+    }
+    
+    /**
+     *  init class base router whether a context was define class base channel prefixes
+     * 
+     * @param {Set.entries | Array} _prefixes 
+     * @returns {Array}
+     */
+    static #initContextRouter(_prefixes = [], _subChannelRouter) {
+
+        if (_prefixes?.size === 0 || _prefixes.length === 0) {
+
+            return undefined;
+        }
+
+        const classRouter = new WSRouter();
+
+        for (const prefix of _prefixes) {
+
+            classRouter.use(prefix, _subChannelRouter);
+        }
+
+        return classRouter;
     }
 }
 

@@ -8,6 +8,7 @@ class Component {
     prop = '1';
 }
 
+@WS.channel('prefix')
 @WS.context()
 class Controller1 extends WSController{
 
@@ -30,7 +31,7 @@ class Controller1 extends WSController{
     @args(Component)
     async handle(component) {
 
-        
+        console.log('test event')
 
         return 1;
     }

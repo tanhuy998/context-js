@@ -2,21 +2,71 @@
 const AbstractMethodDecorator = require('../../decorator/abstractMethodDecorator.js');
 const ResponseError = require('../../error/responseError.js');
 const WebsocketContext = require('../websocketContext.js');
+const {METADATA} = require('../../constants.js');
 //const {preprocessDescriptor} = require('../../decorator/utils.js')
 
 
-module.exports = function channel(event) {
+module.exports = function channel(_channelName) {
 
-    return function(_method, context) {
+    if (typeof _channelName !== 'string') {
+
+        throw new TypeError('_channelName must be type of string');
+    }
+
+    return function(_value, context) {
 
         const {kind, name} = context;
 
-        if (kind !== 'method') {
+        if (kind === 'method') {
+
+            return caseMethod(_value, context, _channelName);
+        }
+        else if (kind === 'class') {
+
+            return caseClass(_value, context, _channelName);
+        }
+        else {
 
             throw new Error('@ws.channel just affect on method');
         }
+    }
+}
 
-        WebsocketContext.initChannel(event, name);
+/**
+ *  A Controller class holds the metadata about namespace it's defining activities 
+ * 
+ * 
+ * @param {*} _class 
+ * @param {*} context 
+ * @param {*} event 
+ */
+function caseClass(_class, context, event) {
+
+    if (!_class[METADATA]) {
+
+        _class[METADATA] = {
+            channelPrefixes: new Set()
+        }
+    }
+    
+    if (!_class[METADATA].channelPrefixes) {
+
+        _class[METADATA].channelPrefixes = new Set();
+    }
+
+    const metadata = _class[METADATA];
+
+    if (!metadata.channelPrefixes.has(event)) {
+
+        metadata.channelPrefixes.add(event);
+    }
+}
+
+function caseMethod(_method, context, event) {
+
+    const {name} = context;
+
+    WebsocketContext.initChannel(event, name);
 
         // when a legacy decorator is inoked before
         if (_method.name === 'stage3WrapperFunction') {
@@ -43,9 +93,7 @@ module.exports = function channel(event) {
 
             return result;
         }
-    }
 }
-
 
 /**
  * 
