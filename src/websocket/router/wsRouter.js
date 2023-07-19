@@ -436,6 +436,8 @@ class WSRouter extends Function {
 
         let isLayerChannel = false;
 
+        _handlers = _handlers.flat();
+
         for (let callback of _handlers) {
 
             if (typeof callback !== 'function') {

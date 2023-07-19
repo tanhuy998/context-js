@@ -1,6 +1,7 @@
 require('@babel/register')({
     only: [
-        './controller1.js'
+        './controller1.js',
+        './controller2.js'
     ]
 });
 
@@ -19,6 +20,7 @@ const {WS, ApplicationContext, Router} = require('../../index.js');
 ApplicationContext.useIoc();
 
 const Controller1 = require('./controller1.js');
+const Controller2 = require('./controller2.js');
 const { count } = require('console');
 
 const router = new Router();
