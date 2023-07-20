@@ -5,6 +5,14 @@ const WebsocketContext = require('../websocketContext.js');
 const {METADATA} = require('../../constants.js');
 //const {preprocessDescriptor} = require('../../decorator/utils.js')
 
+/**
+ *  @channel decorator
+ *  initialize channel for the websocket server that using a controller's method as a handler
+ *  each channel is just registered with one handler in order to keep codes in track easily
+ *  and to avoid confusion between controller.
+ */
+
+
 
 module.exports = function channel(_channelName) {
 
@@ -61,6 +69,7 @@ function caseClass(_class, context, event) {
         metadata.channelPrefixes.add(event);
     }
 }
+
 
 function caseMethod(_method, context, event) {
 

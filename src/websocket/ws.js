@@ -1,6 +1,7 @@
 const WebsocketContext = require('./websocketContext.js');
 const context = require('./decorators/context.js');
 const channel = require('./decorators/channel.js');
+const filter = require('./decorators/filter.js');
 const namespace = require('./decorators/namespace.js');
 
 const WS = new Proxy({
@@ -15,6 +16,7 @@ const WS = new Proxy({
     namespace: namespace,
     context: context,
     channel: channel,
+    addFilter: filter
 }, {
     get: function(target, prop) {
 

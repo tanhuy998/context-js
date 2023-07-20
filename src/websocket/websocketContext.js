@@ -2,6 +2,7 @@ const WSRouter = require('./router/wsRouter.js');
 const dispatch = require('./dispatch.js');
 const {METADATA} = require('../constants.js');
 const NamespaceManager = require('./namespaceManager.js');
+const filter = require('./decorators/filter.js');
 class WebsocketContext {
 
     //static #router = new WSRouter();
@@ -120,6 +121,28 @@ class WebsocketContext {
         contextMetadata.channels.set(_channel, _controllerAction);
     }
 
+    static initFilers(_channel, filters = []) {
+
+        if (!filters.length || filters.length === 0) return;
+
+        const currentContext = this.#currentContext;
+
+        if (!currentContext) {
+
+            throw new Error('cannot init channel for controller whose context didn\'t been setted');
+        }
+
+        const contextMetadata = this.#contexts.get(currentContext);
+
+        const contextFilters = contextMetadata.filters;
+
+        if (!contextFilters.has(_channel)) {
+
+            contextFilters.set(_channel, []);
+        }
+
+        contextFilters.get(_channel).push(filters);
+    }
 
     static newContext() {
 
@@ -131,6 +154,7 @@ class WebsocketContext {
             target: null,
             //namspaces: new Set(),  //namespaces is metadata is stored on controller class
             channels: new Map(),
+            filters: new Map(),
             router: new WSRouter(),
         })
 
@@ -201,11 +225,13 @@ class WebsocketContext {
 
             const classMeta = target[METADATA];
 
-            const finalRouter = this.#initContextRouter(classMeta?.channelPrefixes?.values(), router) || router;
+            const classFilters = classMeta.filters || [];
 
-            for (const iterator of namespaces.values() || []) {
+            const channelPrefixes = classMeta?.channelPrefixes?.values();
 
-                const nsp = iterator;
+            const finalRouter = this.#initContextRouter(channelPrefixes, {_subChannelRouter: router, _classFilters: classFilters}) || router;
+
+            for (const nsp of namespaces.values() || []) {
 
                 // channelPrefixes instanceof Set
                 
@@ -221,19 +247,41 @@ class WebsocketContext {
      * @param {Set.entries | Array} _prefixes 
      * @returns {Array}
      */
-    static #initContextRouter(_prefixes = [], _subChannelRouter) {
+    static #initContextRouter(_prefixes = [], {_subChannelRouter, _classFilters}) {
 
-        if (_prefixes?.size === 0 || _prefixes.length === 0) {
+        if ((_prefixes?.size === 0 || _prefixes.length === 0) && _classFilters?.length === 0) {
 
             return undefined;
         }
 
         const classRouter = new WSRouter();
 
-        for (const prefix of _prefixes) {
+        if (_prefixes.length === 0) {
+
+            classRouter.use(_classFilters, _subChannelRouter);
+        }
+
+
+        // if _prefixes contains nothing, this loop never happens
+        for (const prefix of _prefixes || []) {
+
+            if (_classFilters.length > 0) {
+
+                classRouter.use(prefix, _classFilters);
+            }
 
             classRouter.use(prefix, _subChannelRouter);
         }
+        
+        // let t = classRouter.channelList.get('prefix');
+
+        // console.log('router id:', classRouter.id);
+        // while (t) {
+
+        //     console.log(t.id);
+
+        //     t = t.next;
+        // }
 
         return classRouter;
     }

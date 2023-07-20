@@ -8,7 +8,7 @@ class Component {
     prop = '1';
 }
 
-@WS.channel('prefix')
+//@WS.channel('prefix')
 @WS.context()
 class Controller1 extends WSController{
 
@@ -35,6 +35,8 @@ class Controller1 extends WSController{
 
         return 1;
     }
+
+
 
     // @WS.channel('test') 
     // after() {

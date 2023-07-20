@@ -22,7 +22,6 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
         return 100;
     }
 
-
     #tempContext;
     #router;
 
@@ -54,6 +53,12 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
         return this.#maxSyncTask || RouteHandler.MAX_SYNC_TASK;
     }
 
+    static count = 0;
+    #id;
+    get id() {
+
+        return this.#id;
+    }
 
     constructor(_callback, {router, maxSyncTask}) {
 
@@ -70,6 +75,8 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
         this.#router = router;
 
         this.#Init();
+
+        this.#id = RouteHandler.count++;
     }
 
     #Init() {
@@ -138,8 +145,6 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
         try {
 
             const theHandler = this.callbackFunction;
-
-            //console.log('route handler chain', theHandlerFunction.constructor.name)
 
             const next = nextFunction;
 

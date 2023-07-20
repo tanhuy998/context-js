@@ -47,11 +47,28 @@ class WSRouter extends Function {
 
     #prefix;
 
+    get channelList() {
+
+        return this.#channelList;
+    }
+
+    get defaultChannel() {
+
+        return this.#channelList.get(WSRouter.DEFAULT_CHANNEL);
+    }
+
+    static count = 0;
+    #id;
+    get id() {
+
+        return this.#id;
+    }
 
     constructor() {
 
         super();
 
+        this.#id = WSRouter.count++;
         return new Proxy(this, {
             apply: function(target, _this, _args) {
 
@@ -204,17 +221,17 @@ class WSRouter extends Function {
     #resolveChannel(_requestChannel) {
 
         const key = 0, value = 1;
-
+        //console.log('ís layered', this.#layeredChannel)
         if (this.#layeredChannel) {
 
             for (const entry of this.#layeredChannel.entries()) {
 
                 const entryKey = entry[key];
     
-                const pattern = new RegExp(`^${entryKey}(.*)`);
+                const pattern = new RegExp(`^${entryKey}(\:.+)*`);
     
                 if (_requestChannel.match(pattern)) {
-    
+                    //console.log('match', entryKey)
                     return [...entry];
                 }
             }
@@ -235,6 +252,8 @@ class WSRouter extends Function {
     //handleIncomingEvent(_channel, _socket, args = [], socketNextfunction) {
     handleIncomingEvent(_channel, _event, socketNextfunction) {
 
+        //console.log('router id:', this.#id, 'handle channel:', _channel);
+
         const [firstPart] = _channel.split(':', 1);
 
         //let handler = this.#channelList.get(_channel) || this.#channelList.get(firstPart) || this.#tryRegexPattern(_channel);
@@ -242,6 +261,29 @@ class WSRouter extends Function {
         const defaultHandler = this.#channelList.get(WSRouter.DEFAULT_CHANNEL);
 
         const [currentChannel, routeHandler] = this.#resolveChannel(_channel);
+
+        // let t = this.#channelList.get('prefix');
+
+        // console.log('check')
+        // while (t) {
+
+        //     console.log(t.id);
+
+        //     t = t.next;
+        // }
+
+        // console.log('route')
+        // t = routeHandler
+
+        // while (t) {
+
+        //     console.log(t.id);
+
+        //     t = t.next;
+        // }
+
+        // console.log('----------router id:', this.#id);
+
 
         const _this = this;
 
@@ -424,6 +466,16 @@ class WSRouter extends Function {
 
             this.#channelList.set(_pattern, newHandlersChain);
         }
+
+        const isLayerChannel = this.#layeredChannel?.get(_pattern);
+
+        // update the layerChannel 
+        if (isLayerChannel === true) {
+
+            const updatedHandlerChain = this.#channelList.get(_pattern);
+
+            this.#layeredChannel.set(_pattern, updatedHandlerChain);
+        }
     }
 
     /**
@@ -436,9 +488,11 @@ class WSRouter extends Function {
 
         let isLayerChannel = false;
 
-        _handlers = _handlers.flat();
+        //_handlers = _handlers.flat();
 
-        for (let callback of _handlers) {
+        const flattened = _handlers.flat(Infinity);
+
+        for (let callback of flattened) {
 
             if (typeof callback !== 'function') {
 
@@ -479,25 +533,25 @@ class WSRouter extends Function {
 
         if (isLayerChannel) {
 
-            this.#markLayeredChannel(_pattern, newHandlersChain);
+            this.#markLayeredChannel(_pattern);
         }
 
         return newHandlersChain;
     }
 
-    #markLayeredChannel(_pattern, _handler) {
+    /**
+     * set Flag on to layered channel
+     * 
+     * @param {string} _pattern 
+     */
+    #markLayeredChannel(_pattern) {
 
         if (!this.#layeredChannel) {
 
             this.#layeredChannel = new Map();
         }
 
-        if (this.#layeredChannel.has(_pattern)) {
-
-            return;
-        }
-
-        this.#layeredChannel.set(_pattern, _handler);
+        this.#layeredChannel.set(_pattern, true);
     }
 
     #pushErrorHandler(_func) {

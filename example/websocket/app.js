@@ -65,7 +65,7 @@ router.channel('test', (_event, response, next) => {
     //_event.sender.label = label;
 
     //console.time(label);
-
+    response({test: 'error'});
     next();
 })
 
@@ -107,7 +107,18 @@ routerA.channel('A', (e, res, next) => {
     next();
 })
 
-router.channel('testmain', routerA);
+router.channel('testmain', (_event, response, next) => {
+
+    const label = _event.args;
+
+    ++counter;
+
+    //_event.sender.label = label;
+
+    //console.time(label);
+    response({test: 'error'});
+    next();
+}, routerA);
 // async (_event, response, next) => {
 
 //     next()
