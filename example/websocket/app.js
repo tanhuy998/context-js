@@ -105,6 +105,9 @@ routerA.channel('A', (e, res, next) => {
 
     console.log('A 1');
     next();
+}, (e, _e, res, next) => {
+
+    console.log(e);
 })
 
 router.channel('testmain', (_event, response, next) => {
@@ -117,7 +120,7 @@ router.channel('testmain', (_event, response, next) => {
 
     //console.time(label);
     response({test: 'error'});
-    next();
+    next(new Error('test error handler'));
 }, routerA);
 // async (_event, response, next) => {
 

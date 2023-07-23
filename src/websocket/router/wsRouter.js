@@ -4,6 +4,7 @@ const RuntimeError = require('../../error/rumtimeError.js');
 const ResponseError = require('../../error/responseError.js');
 //const { types } = require('@babel/core');
 const {METADATA} = require('../../constants.js');
+const ErrorHandler = require('./errorHandler.js');
 /**
  *  WSRouter mananages events for each incomming socket connection
  */
@@ -343,29 +344,39 @@ class WSRouter extends Function {
 
     #handleError(_error, _event, globalErrorHandler) {
 
+        // false is the abort signal to end channel handler sequence
+        if (_error === false) {
+    
+            return;
+        }
+    
         const errorHandler = this.#errorHandler;
-
+    
         if (_error instanceof ResponseError) {
-
+    
             return socketNextfunction(_error.data);
         }
-
+    
         if (!errorHandler) {
             //// ('no error handler')
             return globalErrorHandler(_error.origin || _error);
         }
-
+    
+        const theExacError = _error.origin || _error;
+    
         const errorHandlingPack = {
-            handlerArguments: [_error, _event, _event.response],
+            handlerArguments: [theExacError, _event, _event.response],
+            event: _event,
+            error: theExacError,
             lastNextFunction: function(error) {
-
+    
                 if (error) {
-
+    
                     globalErrorHandler(error);
                 }
             }
         }
-
+    
         errorHandler.handle(0, errorHandlingPack);
     }
 
@@ -517,6 +528,8 @@ class WSRouter extends Function {
 
                 router.prefix(_pattern);
 
+                router.mergeHigherOrderConfig(currentConfig);
+
                 isLayerChannel = true;
             }
 
@@ -554,44 +567,105 @@ class WSRouter extends Function {
         this.#layeredChannel.set(_pattern, true);
     }
 
+    mergeHigherOrderConfig({maxSyncTask, errorHandler}) {
+
+        this.maxSyncTask(maxSyncTask);
+        
+        this.#appendErrorHandler(errorHandler);
+    }
+
+    exportConfig() {
+
+        return {
+            maxSyncTask: this.#maxSyncTask,
+            errorHandlers: this.#errorHandler
+        }
+    }
+
+    /**
+     * 
+     * @param {ErrorHandler} _errorHandler 
+     */
+    #appendErrorHandler(_errorHandler) {
+
+        if (!(_errorHandler instanceof ErrorHandler)) {
+
+            throw new TypeError('_errorHandler must be type of ErrorHandler');
+        }
+
+        const thisErrorHandlerChain = this.#errorHandler;
+
+        this.#errorHandler = _errorHandler;
+
+        if (thisErrorHandlerChain) {
+
+            _errorHandler.pushBack(thisErrorHandlerChain);
+        }
+    }
+
     #pushErrorHandler(_func) {
 
         /**
          *  the error handler funciton is wrapped in order to catch error thrown 
          *  by the Routehandler and then return it back to the next handler         
          */
-        const errorFunction = async function () {
-
-            try {
-
-                await _func(...arguments);
-            }
-            catch(error) {
-
-                if (error instanceof RuntimeError) {
-
-                    error.breakpoint.resume();
-                }
-                else {
-
-                    throw error;
-                }
-            }
-        }
-
-        const newNode = new RouteHandler(errorFunction, {
+    
+        // const errorFunction = async function () {
+    
+        //     const [error, event, response, next] = arguments;
+    
+        //     const breakPointContext = {
+        //         event, response
+        //     }
+    
+        //     try {
+    
+        //         await _func(error, event, resposne, cb.bind(breakPointContext));
+        //     }
+        //     catch(error) {
+    
+        //         if (error instanceof RuntimeError) {
+    
+        //             error.breakpoint.resume();
+        //         }
+        //         else {
+    
+        //             throw error;
+        //         }
+        //     }
+        // }
+    
+        const newNode = new ErrorHandler(_func, {
             router: this,
             maxSyncTask: this.#maxSyncTask
         });
-
+    
         if (!this.#errorHandler) {
-
+    
             this.#errorHandler = newNode;
         }
         else {
-
+    
             this.#errorHandler.pushBack(newNode);
         }
+    
+        // function cb(error) {
+    
+        //     if (error) {
+    
+        //         const args = [
+        //             error,
+        //             this.event,
+        //             this.response
+        //         ]
+    
+        //         const breakPoint = new BreakPoint(newNode, ...args);
+    
+        //         const error = new RouteError(error, {breakpoint: breakPoint});
+    
+        //         throw(error);
+        //     }
+        // }
     }
 }
 
