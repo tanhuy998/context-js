@@ -5,6 +5,8 @@ const ResponseError = require('../../error/responseError.js');
 //const { types } = require('@babel/core');
 const {METADATA} = require('../../constants.js');
 const ErrorHandler = require('./errorHandler.js');
+
+
 /**
  *  WSRouter mananages events for each incomming socket connection
  */
@@ -13,6 +15,11 @@ class WSRouter extends Function {
     static get DEFAULT_CHANNEL() {
 
         return '\u03A9';
+    }
+
+    static get ERROR_CHANNEL() {
+
+        return '\u20AC';
     }
 
     #maxSyncTask = 100;
@@ -48,6 +55,8 @@ class WSRouter extends Function {
 
     #prefix;
 
+    #errorHandlerStack;
+
     get channelList() {
 
         return this.#channelList;
@@ -68,8 +77,9 @@ class WSRouter extends Function {
     constructor() {
 
         super();
-
+        
         this.#id = WSRouter.count++;
+
         return new Proxy(this, {
             apply: function(target, _this, _args) {
 
@@ -141,7 +151,13 @@ class WSRouter extends Function {
 
                 const eventObject = this.#preparePayload(event, _socket, args);
 
-                this.handleIncomingEvent(event, eventObject, _next);
+                const footPrint = {
+                    event: eventObject,            // WSEvent
+                    eventDispatcher: this,         // type of WSRouter
+                    dispatchError: null       // typeof Function
+                }
+
+                this.handleIncomingEvent(event, footPrint, _next);
 
                 //next();
 
@@ -222,7 +238,7 @@ class WSRouter extends Function {
     #resolveChannel(_requestChannel) {
 
         const key = 0, value = 1;
-        //console.log('ís layered', this.#layeredChannel)
+  
         if (this.#layeredChannel) {
 
             for (const entry of this.#layeredChannel.entries()) {
@@ -232,7 +248,7 @@ class WSRouter extends Function {
                 const pattern = new RegExp(`^${entryKey}(\:.+)*`);
     
                 if (_requestChannel.match(pattern)) {
-                    //console.log('match', entryKey)
+                    
                     return [...entry];
                 }
             }
@@ -251,9 +267,7 @@ class WSRouter extends Function {
      * @param {Function} serverNextfunction the 'next' function refer to next middleware of the server
      */
     //handleIncomingEvent(_channel, _socket, args = [], socketNextfunction) {
-    handleIncomingEvent(_channel, _event, socketNextfunction) {
-
-        //console.log('router id:', this.#id, 'handle channel:', _channel);
+    handleIncomingEvent(_channel, { event, eventDispatcher, dispatchError}, socketNextfunction) {
 
         const [firstPart] = _channel.split(':', 1);
 
@@ -263,42 +277,18 @@ class WSRouter extends Function {
 
         const [currentChannel, routeHandler] = this.#resolveChannel(_channel);
 
-        // let t = this.#channelList.get('prefix');
-
-        // console.log('check')
-        // while (t) {
-
-        //     console.log(t.id);
-
-        //     t = t.next;
-        // }
-
-        // console.log('route')
-        // t = routeHandler
-
-        // while (t) {
-
-        //     console.log(t.id);
-
-        //     t = t.next;
-        // }
-
-        // console.log('----------router id:', this.#id);
-
-
         const _this = this;
 
-        const handlerArgs = [_event, _event.response, this.#replacePrefix(_channel, currentChannel)];
+        const handlerArgs = [event, event.response, this.#replacePrefix(_channel, currentChannel)];
 
         const eventPack = {
             handlerArguments: handlerArgs,
             pushError,
-            lastNextFunction: socketNextfunction
+            lastNextFunction: socketNextfunction,
+            eventDispatcher: eventDispatcher
         };
 
         if (defaultHandler) {
-
-            //const currentChannel = this.#resolveCurrentChannelOf()
 
             return defaultHandler.handle(0, {
                 handlerArguments: handlerArgs,
@@ -311,11 +301,6 @@ class WSRouter extends Function {
             return handleRoute();
         }
 
-        //const eventObj = this.#preparePayload(_channel, _socket, args);
-
-        //handler.handle(0, eventObj, eventObj.response, socketNextfunction);
-
-        //// ('router handled', _event, handler);
 
         function handleRoute() {
 
@@ -329,13 +314,12 @@ class WSRouter extends Function {
         }
 
         function pushError(error) {
-
             const router = _this;
 
             router.pushError(error, {
-                eventObject: _event,
+                eventObject: event,
                 //lastNextFunction: socketNextfunction,
-                globalErrorHandler: socketNextfunction
+                globalErrorHandler: dispatchError || socketNextfunction
             });
         }
     }
@@ -376,7 +360,7 @@ class WSRouter extends Function {
                 }
             }
         }
-    
+        
         errorHandler.handle(0, errorHandlingPack);
     }
 
@@ -407,8 +391,6 @@ class WSRouter extends Function {
 
         const key = 0, value = 1;
 
-        // ('check regex');
-
         for (const entry of channlList.entries()) {
 
             const channel = entry[key];
@@ -417,7 +399,6 @@ class WSRouter extends Function {
 
             if (_event.match(regex)) {
 
-                // ('regex match', channel);
                 return entry;
             }
         }
@@ -452,8 +433,6 @@ class WSRouter extends Function {
 
     channel(_pattern, ..._handlers) {
 
-        // (_pattern);
-
         if (typeof _pattern !== 'string') {
 
             throw new TypeError('channel pattern must be a type of string');
@@ -468,6 +447,12 @@ class WSRouter extends Function {
         const newHandlersChain = this.#combineHandlers(_pattern, _handlers);
 
         const currentHandlersChain = this.#channelList.get(_pattern);
+        
+        if (!newHandlersChain) {
+            // if there is no RouteHandler is mapped
+            // it's mean the current mapping just push ErrorHandler(s)
+            return;
+        }
 
         if (currentHandlersChain) {
             
@@ -495,13 +480,16 @@ class WSRouter extends Function {
      */
     #combineHandlers(_pattern, _handlers) {
 
-        let newHandlersChain;
+        const flattened = _handlers.flat(Infinity);
+
+        const routeHandlerConfig = {
+            router: this,
+            maxSyncTask: this.#maxSyncTask
+        };
+
+        let handler;
 
         let isLayerChannel = false;
-
-        //_handlers = _handlers.flat();
-
-        const flattened = _handlers.flat(Infinity);
 
         for (let callback of flattened) {
 
@@ -511,16 +499,11 @@ class WSRouter extends Function {
             }
 
             if (typeof callback === 'function' && callback.length > 3) {
-
+                
                 this.#pushErrorHandler(callback);
 
                 continue;
             }
-
-            const node = new RouteHandler(callback, {
-                router: this,
-                maxSyncTask: this.#maxSyncTask
-            });
 
             if (callback instanceof WSRouter) {
 
@@ -528,19 +511,20 @@ class WSRouter extends Function {
 
                 router.prefix(_pattern);
 
-                router.mergeHigherOrderConfig(currentConfig);
+                //router.mergeWithHigherOrderConfig(currentConfig);
 
                 isLayerChannel = true;
             }
 
+            const node = new RouteHandler(callback, routeHandlerConfig);
 
-            if (!newHandlersChain) {
-
-                newHandlersChain = node;
+            if (!handler) {
+                
+                handler = node;
             }
             else {
 
-                newHandlersChain.pushBack(node);
+                handler.pushBack(node);
             }
         }
 
@@ -549,7 +533,7 @@ class WSRouter extends Function {
             this.#markLayeredChannel(_pattern);
         }
 
-        return newHandlersChain;
+        return handler;
     }
 
     /**
@@ -567,18 +551,23 @@ class WSRouter extends Function {
         this.#layeredChannel.set(_pattern, true);
     }
 
-    mergeHigherOrderConfig({maxSyncTask, errorHandler}) {
+    mergeWithHigherOrderConfig({maxSyncTask, errorHandler}) {
 
         this.maxSyncTask(maxSyncTask);
-        
-        this.#appendErrorHandler(errorHandler);
+
+        if (errorHandler) {
+
+            this.#appendErrorHandler(errorHandler);
+        }
     }
 
     exportConfig() {
 
+        const ERROR_CHANNEL = WSRouter.ERROR_CHANNEL;
+
         return {
             maxSyncTask: this.#maxSyncTask,
-            errorHandlers: this.#errorHandler
+            errorHandlers: this.#channelList.get(ERROR_CHANNEL),
         }
     }
 
@@ -604,68 +593,20 @@ class WSRouter extends Function {
     }
 
     #pushErrorHandler(_func) {
-
-        /**
-         *  the error handler funciton is wrapped in order to catch error thrown 
-         *  by the Routehandler and then return it back to the next handler         
-         */
-    
-        // const errorFunction = async function () {
-    
-        //     const [error, event, response, next] = arguments;
-    
-        //     const breakPointContext = {
-        //         event, response
-        //     }
-    
-        //     try {
-    
-        //         await _func(error, event, resposne, cb.bind(breakPointContext));
-        //     }
-        //     catch(error) {
-    
-        //         if (error instanceof RuntimeError) {
-    
-        //             error.breakpoint.resume();
-        //         }
-        //         else {
-    
-        //             throw error;
-        //         }
-        //     }
-        // }
-    
+        
         const newNode = new ErrorHandler(_func, {
             router: this,
             maxSyncTask: this.#maxSyncTask
         });
-    
+
         if (!this.#errorHandler) {
-    
+        
             this.#errorHandler = newNode;
         }
         else {
-    
+            
             this.#errorHandler.pushBack(newNode);
         }
-    
-        // function cb(error) {
-    
-        //     if (error) {
-    
-        //         const args = [
-        //             error,
-        //             this.event,
-        //             this.response
-        //         ]
-    
-        //         const breakPoint = new BreakPoint(newNode, ...args);
-    
-        //         const error = new RouteError(error, {breakpoint: breakPoint});
-    
-        //         throw(error);
-        //     }
-        // }
     }
 }
 

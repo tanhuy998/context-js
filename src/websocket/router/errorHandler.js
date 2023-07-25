@@ -19,7 +19,7 @@ module.exports = class ErrorHandler extends RouteHandler {
 
         try {
 
-            const handlerResult = cb(handlerArguments, next);
+            const handlerResult = cb(...handlerArguments, next);
 
             if (handlerResult instanceof Promise) {
 
@@ -39,6 +39,11 @@ module.exports = class ErrorHandler extends RouteHandler {
             if (!error) {
 
                 return;       
+            }
+
+            if (!nextHandler) {
+
+                return lastNextFunction(error);
             }
 
             if (++_taskCount > maxSyncTask) {

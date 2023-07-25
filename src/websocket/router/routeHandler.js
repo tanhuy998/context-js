@@ -1,13 +1,9 @@
 const RouteError = require('./routeError.js');
 const BreakPoint = require('./breakPoint.js');
 const {T_WeakTypeNode} = require('../../libs/linkedList.js');
-const RuntimeError = require('../../error/rumtimeError.js');
 const {EventEmitter} = require('node:events');
 const {types} = require('node:util');
 const {METADATA} = require('../../constants.js');
-const {ProgressTracker, ProgressState} = require('../../libs/progressTracker.js');
-const { type } = require('node:os');
-//const WSRouter = require('./wsRouter.js');
 
 module.exports = class RouteHandler extends T_WeakTypeNode{
 
@@ -28,15 +24,6 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
     #maxSyncTask;
 
     #errorCatcher = new EventEmitter();
-
-    // #progression;
-
-    // #currentProgress;
-
-    // get progression() {
-
-    //     return this.#progression;
-    // }
 
     get callbackFunction() {
 
@@ -83,12 +70,6 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
 
         const _this = this;
 
-        // const currentProgress = new ProgressTracker('current');
-
-        // this.#progression.track(currentProgress);
-
-        // this.#currentProgress = currentProgress;
-
         this.#errorCatcher.on('error', function(error) {
 
 
@@ -107,8 +88,8 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
     }
 
     setNext(_node) {
-
-        this.#checkIfCallable(_node._value);
+        
+        this.#checkIfCallable(_node.value);
 
         super.setNext(_node);
     }
@@ -133,7 +114,7 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
 
         const _this = this;
 
-        const {handlerArguments, lastNextFunction, pushError} = _eventPack;
+        const {handlerArguments, lastNextFunction, pushError, eventDispatcher} = _eventPack;
 
         const nextHandler = this.next;
 
@@ -152,13 +133,17 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
 
             let handlerResult;
 
-            //console.log('handle', preprocessdChannel);
-
             if (theHandler[METADATA] && theHandler[METADATA].isRouter) {
                 // use METADATA property in order to get rid of circular denpendency
                 // in checking if the handler is a router
 
-                handlerResult = theHandler.handleIncomingEvent(preprocessdChannel, event, next);
+                const footPrint = {
+                    event,                      // WSEvent
+                    eventDispatcher,            // type of WSRouter
+                    dispatchError: pushError    // typeof Function
+                }
+
+                handlerResult = theHandler.handleIncomingEvent(preprocessdChannel, footPrint, next);
             }
             else {
 
@@ -171,9 +156,6 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
                 //const router = this.#router;
 
                 handlerResult.catch((error) => {
-
-                    //console.log('route handler catch async error')
-                    //router.pushError(error, _eventPack);
 
                     pushError(error);
                 });
@@ -188,8 +170,6 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
 
 
         function nextFunction(error) {
-
-            //console.log('next called', (error)? 'error' : '');
 
             if (error) {
 

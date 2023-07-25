@@ -19,9 +19,10 @@ const {WS, ApplicationContext, Router} = require('../../index.js');
 
 ApplicationContext.useIoc();
 
-const Controller1 = require('./controller1.js');
-const Controller2 = require('./controller2.js');
+// const Controller1 = require('./controller1.js');
+// const Controller2 = require('./controller2.js');
 const { count } = require('console');
+const { nextTick } = require('process');
 
 const router = new Router();
 router.maxSyncTask(2)
@@ -91,7 +92,17 @@ routerB.channel('B1', (e, res, next) => {
 
     console.log('B1');
 
-    next();
+
+    next(new Error('test error'));
+})
+
+routerB.use((e, _e, res, next) => {
+
+    console.log(e);
+
+    console.log('B error')
+
+    next(e);
 })
 
 routerA.channel('A', (e, res, next) => {
@@ -103,11 +114,17 @@ routerA.channel('A', (e, res, next) => {
 
 routerA.channel('A', (e, res, next) => {
 
+    
+
     console.log('A 1');
-    next();
+    next(1);
 }, (e, _e, res, next) => {
 
     console.log(e);
+
+    console.log('A error')
+
+    next(e);
 })
 
 router.channel('testmain', (_event, response, next) => {
@@ -116,12 +133,15 @@ router.channel('testmain', (_event, response, next) => {
 
     ++counter;
 
-    //_event.sender.label = label;
-
-    //console.time(label);
-    response({test: 'error'});
-    next(new Error('test error handler'));
+    next();
 }, routerA);
+
+router.use((e, _e, res, next) => {
+
+    console.log('testmain error');
+
+    next(e);
+})
 // async (_event, response, next) => {
 
 //     next()
@@ -269,7 +289,6 @@ io.on('connection', (socket) => {
 // // });
 
 // io.use(router);
-
 
 httpServer.listen(3000, () => {
 
