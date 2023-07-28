@@ -17,7 +17,7 @@ class DecoratorResult extends EventEmitter{
 
     constructor(type, targetProp, action = undefined) {
 
-        super();
+        super({captureRejections: true});
 
         this._target = targetProp;
         this.#type = type;

@@ -6,8 +6,11 @@ module.exports = class ControlerState {
     #keys = new Map();
     #scope;
 
+    #overriddenScope;
+
     constructor(controllerConfiguration = ControllerConfiguration) {
-        
+    // default argument is for dependencies injection, not for passing argument
+
         this.#scope = controllerConfiguration.getScope();
     }
 
@@ -41,7 +44,68 @@ module.exports = class ControlerState {
         this.#keys.set(component.name, instance);
     }
 
-    
+    override(_abstract, _concrete, {defaultInstance, componentKey, iocContainer}) {
+
+        const isValidBinding = iocContainer ? iocContainer._isParent(_abstract, _concrete) : ControlerState._isParent(_abstract, _concrete);
+
+        if (!isValidBinding) {
+
+            throw new Error('binding error, _concrete not inherited _abstract');
+        }
+
+        if (!this.#overriddenScope) {
+
+            this.#overriddenScope = new WeakMap();
+        }
+
+        this.#overriddenScope.set(_abstract, _concrete);
+
+        let key;
+        
+        if (componentKey && typeof componentKey === 'string') {
+
+            key = componentKey;
+        }
+        else {
+
+            key = _abstract.realName || _abstract.name;
+        }
+       
+        if (defaultInstance && defaultInstance instanceof _concrete) {
+
+            if (this.#components.has(_abstract)) {
+
+                this.#components.delete(_abstract);
+            }
+
+            this.#components.set(_abstract, defaultInstance);
+
+            if (this.#keys.has(key)) {
+
+                this.#keys.delete(key);
+            }
+
+            this.#keys.set(key, defaultInstance);
+        }
+
+    }
+
+    static _isParent(base, derived) {
+
+        if (derived === base) return true;
+
+        let prototype = derived.__proto__;
+
+        while(prototype !== null) {
+            
+            if (prototype === base) {
+
+                return true;
+            }
+
+            prototype = prototype.__proto__;
+        } 
+    }
 
     loadInstance(_component, _instance, _container) {
         // this method need the third parameter as an instance of IocContainer
@@ -77,7 +141,7 @@ module.exports = class ControlerState {
     }
 
     get(component) {
-
+        
         return this.#components.get(component);
     }
 }

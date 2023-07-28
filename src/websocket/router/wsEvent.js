@@ -6,6 +6,9 @@ module.exports = class WSEvent {
     #args;
     #response;
     #isAborted = false;
+    #state;
+
+    #controller;
 
     get isAborted() {
 
@@ -37,13 +40,38 @@ module.exports = class WSEvent {
         return this.#server;
     }
 
-    constructor(_channel, _sender, {args, response, server}) {
+    get state() {
+
+        return this.#state;
+    }
+
+    get controller() {
+
+        return this.#controller;
+    }
+
+    constructor(_channel, _sender, {args, response, server, state}) {
 
         this.#channel = _channel;
         this.#sender = _sender;
         this.#args = args;
         this.#server = server;
         this.#response = response;
+        this.#state = state;
+    }
+
+    /**
+     * 
+     * @param {any} _state 
+     */
+    setState(_state) {
+
+        this.#state = _state;
+    }
+
+    setController(_controller) {
+
+        this.#controller = _controller;
     }
 
     abort() {

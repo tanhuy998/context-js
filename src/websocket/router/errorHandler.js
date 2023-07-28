@@ -46,13 +46,11 @@ module.exports = class ErrorHandler extends RouteHandler {
                 return lastNextFunction(error);
             }
 
+            _handlingPack.error = error;
+
+            handlerArguments[0] = error;
+
             if (++_taskCount > maxSyncTask) {
-
-                //setImmediate(nextHandler.handle.bind(nextHandler), 0, _eventPack);
-
-                _handlingPack.error = error;
-
-                handlerArguments[0] = error;
 
                 setImmediate((_handlingPack) => {
 

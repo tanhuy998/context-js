@@ -19,8 +19,8 @@ const {WS, ApplicationContext, Router} = require('../../index.js');
 
 ApplicationContext.useIoc();
 
-// const Controller1 = require('./controller1.js');
-// const Controller2 = require('./controller2.js');
+const Controller1 = require('./controller1.js');
+const Controller2 = require('./controller2.js');
 const { count } = require('console');
 const { nextTick } = require('process');
 

@@ -30,7 +30,7 @@ module.exports = class AbstractPreInvokeFunction extends EventEmitter {
 
     constructor(_callback, ...args) {
 
-        super();
+        super({captureRejections: true});
 
         this.#callback = _callback;
 

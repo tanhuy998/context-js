@@ -37,5 +37,4 @@ module.exports = class ClientContext extends HttpContext{
         this.#handshake = sender.handshake;
     }
 
-
 }

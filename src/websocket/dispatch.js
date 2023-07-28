@@ -19,6 +19,12 @@ module.exports = function dispatch(controller, action, appContext = undefined) {
             controllerObject = new controller();
         }
 
+        event.setController(controllerObject); 
+
+        const clientState = event.sender.data.controllerState;
+
+        controllerObject.setState(clientState);
+
         controllerObject.setSocket(event.sender);
 
         controllerObject.resolveProperty();
