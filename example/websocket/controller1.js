@@ -44,16 +44,16 @@ class Controller1 extends WSController{
     @args(Error)
     onError(error) {
 
-        console.log('default error handler', this.error);
+        console.log('default error handler', error.message);
 
         throw new Error('passed through default error handler');
     }
 
     @WS.handleError
-    @args(Component)
-    handleError(component) {
+    @args(Component, Error)
+    handleError(component, e) {
 
-        console.log(component)
+        console.log(component, e.message)
 
         const error = this.error;
 

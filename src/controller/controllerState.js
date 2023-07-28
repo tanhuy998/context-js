@@ -20,7 +20,7 @@ module.exports = class ControlerState {
 
     isLoaded(key) {
 
-        if (typeof key == 'string') {
+        if (typeof key === 'string') {
 
             return this.#keys.has(key);
         }
@@ -88,6 +88,11 @@ module.exports = class ControlerState {
             this.#keys.set(key, defaultInstance);
         }
 
+    }
+
+    has(_abstract) {
+
+        return this.#overriddenScope?.has(_abstract) || this.#scope.has(_abstract);
     }
 
     static _isParent(base, derived) {

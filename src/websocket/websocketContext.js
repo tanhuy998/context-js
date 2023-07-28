@@ -6,6 +6,7 @@ const filter = require('./decorators/filter.js');
 const {Stage3_handleRequest} = require('../requestDispatcher.js');
 const {once} = require('node:events');
 const { error } = require('node:console');
+const ClientContext = require('./clientContext.js');
 class WebsocketContext {
 
     static #iocContainer;
@@ -292,6 +293,10 @@ class WebsocketContext {
             _router.use(async function (error, event, response, next) {
                 
                 const controller = event.controller;
+
+                const newControllerContext = new ClientContext(event, response, next);
+
+                controller.setContext(newControllerContext);
 
                 controller.next = next;
 

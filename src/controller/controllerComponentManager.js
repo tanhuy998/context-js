@@ -140,29 +140,28 @@ class ControllerComponentManager extends IocContainer {
 
     #_get(abstract, _controllerState) {
 
-        if (!this.has(abstract)) return undefined;
-
         if (!_controllerState) {
             
             return super.get(abstract);
         }
 
-        const scope = this.#config.getScope();
-
+        //const scope = this.#config.getScope();
+        const scope = _controllerState instanceof ControlerState ? _controllerState : this.#config.getScope();
+        
         if (scope.has(abstract)) {
-
+            
             return this.getScopeComponent(abstract, _controllerState);
         }
-        else {
+        
+        if (!this.has(abstract)) return undefined;
 
-            if (super.hasSingleton(abstract)) {
+        if (super.hasSingleton(abstract)) {
 
-                return super.get(abstract);
-            }
-            
-            const concrete = this.getConcreteOf(abstract);
-            return this.#analyzeConcrete(concrete, _controllerState);
+            return super.get(abstract);
         }
+
+        const concrete = this.getConcreteOf(abstract);
+        return this.#analyzeConcrete(concrete, _controllerState);
     }
 
     getScopeComponent(abstract, _controllerState) {
@@ -175,7 +174,7 @@ class ControllerComponentManager extends IocContainer {
 
             component = this.getConcreteByKey(abstract);
         }
-
+        
         if (component) {
 
             if (!controllerState.isLoaded(component)) {
@@ -184,7 +183,7 @@ class ControllerComponentManager extends IocContainer {
             }
 
             const instance = controllerState.get(component);
-
+            
             return instance;
         }
         else {
