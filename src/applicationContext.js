@@ -5,7 +5,8 @@ const resolveProjectRootDir = require('./libs/dir.js');
 const HttpContext = require('./httpContext.js');
 const {request, response} = require('express');
 const ControllerState = require('./controller/controllerState.js');
-const ControllerConfiguration = require('./controller/controllerConfiguration.js')
+const ControllerConfiguration = require('./controller/controllerConfiguration.js');
+//const WS = require('./websocket/ws.js');
 
 
 class ApplicationContext {
@@ -22,7 +23,20 @@ class ApplicationContext {
     #iocContainer;
     #supportIoc = false;
     #componentManager;
-    
+
+    #maxSyncTask = 50;
+
+    #wsHandler;
+
+    get wsHandler() {
+
+        return this.#wsHandler;
+    }
+
+    get maxSyncTask() {
+
+        return this.#maxSyncTask;
+    }
 
     get components() {
 
@@ -136,6 +150,26 @@ class ApplicationContext {
     resolveRoutes() {
 
         return this.#routeContext.resolve();
+    }
+
+    maxSyncTask(_number) {
+
+        if (typeof _number !== 'number') {
+
+            throw new TypeError('_number must be type of number');
+        }
+
+        if (_number == 0) {
+
+            throw new Error('number of sync task must be greater than 0');
+        }
+
+        this.#maxSyncTask = Math.floor(_number);
+    }
+
+    resolveWSHandler() {
+
+
     }
 }
 

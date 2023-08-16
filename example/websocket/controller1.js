@@ -1,6 +1,7 @@
 const {WS, WSController} = require('../../index.js');
 const {args, autoBind, ApplicationContext} = require('../../index.js');
 const ResponseError = require('../../src/error/responseError.js');
+const WSEvent = require('../../src/websocket/router/wsEvent.js');
 
 @autoBind()
 class Component {
@@ -8,7 +9,15 @@ class Component {
     prop = '1';
 }
 
-//@WS.channel('prefix')
+function test(socket, next) {
+
+    console.log('interceptor');
+
+    next();
+}
+
+//@WS.interceptor(test)
+@WS.channel('prefix')
 @WS.context()
 class Controller1 extends WSController{
 
@@ -28,16 +37,11 @@ class Controller1 extends WSController{
     // }
 
     @WS.channel('test')
-    @args(Component)
-    async handle(component) {
+    @args(Component, WSEvent)
+    async handle(component, event) {
 
-        console.log(component)
-        
-        console.log('test event')
-
-        throw new Error('test error decorator')
-
-        return 1;
+        const eventArgs = this.context.eventArguments;
+        return {status: 'ok'};
     }
 
 

@@ -4,6 +4,7 @@ const channel = require('./decorators/channel.js');
 const filter = require('./decorators/filter.js');
 const namespace = require('./decorators/namespace.js');
 const handleError = require('./decorators/handleError.js');
+const interceptor = require('./decorators/interceptor.js');
 
 const WS = new Proxy({
     resolve: function() {
@@ -17,8 +18,9 @@ const WS = new Proxy({
     namespace: namespace,
     context: context,
     channel: channel,
-    addFilter: filter,
-    handleError: handleError
+    filter: filter,
+    handleError: handleError,
+    interceptor: interceptor
 }, {
     get: function(target, prop) {
 

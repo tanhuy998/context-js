@@ -55,7 +55,7 @@ class WebsocketContext {
      * @returns 
      */
     static manage(_contextSymbol) {
-
+        
         const context = this.#contexts.get(_contextSymbol);
 
         if (!context) {
@@ -71,7 +71,7 @@ class WebsocketContext {
         }
 
         let prefix = controllerClass[METADATA].channelPrefix;
-
+        
         prefix = prefix ? prefix + ':' : '';
 
         const {router, channels} = context;
@@ -227,7 +227,12 @@ class WebsocketContext {
 
             const controllerState = appContext.iocContainer.get(ControllerState);
 
-            event.sender.data.controllerState = controllerState
+            event.sender.data.controllerState = controllerState;
+
+            controllerState.override(event.constructor, event.constructor, {
+                defaultInstance: event,
+                iocContainer: appContext.iocContainer
+            });
 
             next();
         })
@@ -242,6 +247,10 @@ class WebsocketContext {
             throw new Error('cannot resolve the websocket server');
         }
 
+        const routingUnit = new Map();
+
+        const interceptors = new Map();
+
         for (const context of this.#contexts.values()) {
 
             const {target, router, errorHandlers} = context;
@@ -254,19 +263,68 @@ class WebsocketContext {
 
             const channelPrefixes = classMeta?.channelPrefixes?.values();
 
-            const finalRouter = this.#initContextRouter(channelPrefixes, {_subChannelRouter: router, _classFilters: classFilters}) || router;
+            const eventHandlingRouter = this.#initContextRouter(channelPrefixes, {_subChannelRouter: router, _classFilters: classFilters}) || router;
+
+            //this.#initInterceptor(finalRouter, classMeta)
+
+            const classInterceptors = classMeta.interceptors;
 
             this.#initDefaultErrorHandler(context);
 
-            this.#initRouterPresetMiddlewares(finalRouter);
+            this.#initRouterPresetMiddlewares(eventHandlingRouter);
 
             this.#initErrorHandler(router, ...errorHandlers);
 
             for (const nsp of namespaces.values() || []) {
 
-                // channelPrefixes instanceof Set
-                ioServer.of(nsp).use(finalRouter);
+                if (classInterceptors) {
+
+                    if (!interceptors.has(nsp)) {
+
+                        interceptors.set(nsp, []);
+                    }
+
+                    interceptors.get(nsp).push(...classInterceptors);
+                }
+
+                if (!routingUnit.has(nsp)) {
+
+                    routingUnit.set(nsp, new WSRouter());
+                }
+
+                const nspRouter = routingUnit.get(nsp);
+
+                nspRouter.use(eventHandlingRouter);
             }
+        }
+
+        for (const unit of routingUnit.entries()) {
+
+            const [nsp, router] = unit;
+
+            if (interceptors.has(nsp)) {
+
+                const nspInterceptors = interceptors.get(nsp);
+
+                ioServer.of(nsp).use(...nspInterceptors);
+            }
+
+            ioServer.of(nsp).use(router);
+        }
+    }
+
+    static #initInterceptor(_router, _classMeta) {
+
+        const {interceptors} = _classMeta;
+
+        if (!Array.isArray(interceptors)) {
+
+            return;
+        }
+
+        for (cb of interceptors) {
+
+
         }
     }
 
@@ -370,9 +428,17 @@ class WebsocketContext {
 
         const classRouter = new WSRouter();
 
+
         if (_prefixes.length === 0) {
 
-            classRouter.use(_classFilters, _subChannelRouter);
+            for (const channel of _subChannelRouter.channels || []) {
+
+                classRouter.use(channel, _classFilters);
+
+                classRouter.use(channel, _subChannelRouter);
+            }
+            
+            return classRouter;
         }
 
 
@@ -381,7 +447,11 @@ class WebsocketContext {
 
             if (_classFilters.length > 0) {
 
-                classRouter.use(prefix, _classFilters);
+                for (const channel of _subChannelRouter.channels || []) {
+
+                    classRouter.use(`${prefix}:${channel}`, _classFilters);
+                    console.log(`${prefix}:${channel}`);
+                }
             }
 
             classRouter.use(prefix, _subChannelRouter);

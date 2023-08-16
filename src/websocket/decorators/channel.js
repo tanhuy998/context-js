@@ -80,20 +80,17 @@ function caseMethod(_method, context, event) {
         // when a legacy decorator is inoked before
         if (_method.name === 'stage3WrapperFunction') {
 
-            _method = _method();
+            const decoratorResult = _method();
 
-            if (_method instanceof AbstractMethodDecorator) {
+            if (decoratorResult instanceof AbstractMethodDecorator) {
 
-                _method.on('afterResolve', detectAndSendMessageBack);
+                decoratorResult.on('afterResolve', detectAndSendMessageBack);
 
-                return function stage3WrapperFunction() {
-                    
-                    return _method;
-                }
+                return _method;
             }
         }
 
-        // when there is no legacy invoke before
+        // when there is no legacy decorator applied to this method
         return function () {
 
             const result = _method.call(this, ...arguments)

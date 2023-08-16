@@ -7,7 +7,7 @@ class WSController extends BaseController {
     #handshake;
     #socket;
     #rooms;
-    #data;
+
     #socketId;
 
     #server;
@@ -32,6 +32,12 @@ class WSController extends BaseController {
         }
     }
 
+    get rooms() {
+
+        return this.#rooms;
+    }
+
+
     constructor() {
 
         super(...arguments);
@@ -44,7 +50,7 @@ class WSController extends BaseController {
         const handshake = _socket.handshake;
 
         this.#rooms = _socket.rooms;
-        this.#data = _socket.data;
+        
         this.#socketId = _socket.id;
 
         this.setContext(handshake);
@@ -60,12 +66,30 @@ class WSController extends BaseController {
         if (_context instanceof ClientContext) {
 
             this.#context = _context;
+
+            this.#initAttribute();   
         }
     }
 
-    emit(_event, ...payload) {
+    #initAttribute() {
 
-        return this.#socket.emit(_event, ...payload);
+        this.#socket = this.#context.state.sender;
+
+        this.#socketId = this.#socket.id;
+
+        this.#rooms = this.#socket.rooms;
+
+        this.#handshake = this.#socket.handshake;
+    }
+
+    async emit(_event, ...payload) {
+
+        return this.#socket.emitWithAck(_event, ...payload);
+    }
+
+    to(_room) {
+
+        return this.#socket.to(_room);
     }
 }
 

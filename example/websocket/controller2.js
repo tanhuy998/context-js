@@ -11,8 +11,8 @@ function testFilter(event) {
     return true;
 }
 @WS.context()
-//@WS.channel('prefix')
-@WS.addFilter(testFilter, testFilter)
+@WS.channel('prefix')
+@WS.filter(testFilter)
 class Controler2 extends WSController {
 
     constructor() {
@@ -29,11 +29,11 @@ class Controler2 extends WSController {
         //this.context.
     }
 
-    @WS.channel('test')
-    test2() {
+    // @WS.channel('test')
+    // test2() {
 
-        console.log('controller2');
-    }
+    //     console.log('controller2');
+    // }
 }
 
 module.exports = Controler2;

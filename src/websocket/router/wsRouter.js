@@ -43,12 +43,35 @@ class WSRouter extends Function {
         this.#maxSyncTask = Math.floor(_number);
     }
 
+    /**
+     *  @type Map<RouteHandler>
+     */
     #channelList = new Map();
 
+    /**
+     *  integral channel is channel whose pattern is defined as an regular expression
+     *  When a specific channel is not defined before a matched channel
+     *  it handlers will be prepend with the integral handlers
+     * 
+     *  @type Map<Array>
+     */
+    #integralChannels = new Map();
+
+    /**
+     *  @type Set<string>
+     */
+    #mappedChannel = new Set();
+
+    /**
+     *  @type boolean
+     */
     #layeredChannel;
 
     #currentEventError;
 
+    /**
+     *  @type ErrorHandler
+     */
     #errorHandler;
 
     #genericHandler;
@@ -69,9 +92,29 @@ class WSRouter extends Function {
 
     static count = 0;
     #id;
+
     get id() {
 
         return this.#id;
+    }
+
+    get channels() {
+
+        const ret = [];
+
+        const except = [WSRouter.DEFAULT_CHANNEL, WSRouter.ERROR_CHANNEL];
+
+        for (const key of this.#channelList.keys()) {
+
+            if (except.includes(key)) {
+
+                continue;
+            }
+
+            ret.push(key);
+        }
+
+        return ret;
     }
 
     constructor() {
@@ -255,7 +298,7 @@ class WSRouter extends Function {
         }   
         
         const handler = this.#channelList.get(_requestChannel);
-
+        
         return [_requestChannel, handler];
     }
 
@@ -408,7 +451,7 @@ class WSRouter extends Function {
 
     use(..._handlers) {
 
-        if (_handlers.length == 0) {
+        if (_handlers.length === 0) {
 
             throw new TypeError('_handlers must be type of function, undefined given');
         }
@@ -426,13 +469,117 @@ class WSRouter extends Function {
         }
     }
 
+    /**
+     *  Register channel that particular events whose channel match the regex _pattern
+     *  there are scenarios:
+     *  case 1: match() register channel when there is no related channel was defined before
+     * 
+     *          ex: router.match(/admin(.*)/, ...1handlers)
+     *              router.channel('admin:all', ...2handlers)
+     *          
+     *              when events arrive with channel admin:all
+     *              the handlers would invoke in order : ...1handlers -> ...2handlers
+     *  
+     *  case 2: match() register channel after related channels 
+     * 
+     *          ex: router.channel('admin:all', ...1handlers)
+     *              router.match(/admin(.*)/, ...2handlers)
+     *              router.channel('admin:all', ...3handlers)
+     *              router.match(/admin(.*)/, ...4handlers)
+     *              
+     *              the handlers order would be : ...1handlers -> ...2handlers -> ...3handlers -> ...4handlers
+     * 
+     * @param {RegExp} _pattern 
+     * @param  {...Function} _handlers 
+     */
+    match(_pattern, ..._handlers) {
+
+        if (_handlers.length === 0) {
+
+            throw new TypeError('_handlers must be type of function, undefined given');
+        }
+
+        if (!(_pattern instanceof RegExp)) {
+
+            throw new TypeError('_pattern is not a RegEx');
+        }
+
+        this.#mapRelatedChannels(_pattern, ..._handlers);
+    }
+
+    #mapRelatedChannels(_regexChannel, ..._handlers) {
+
+        const raw = _regexChannel.source;
+        
+        if (!this.#integralChannels.has(raw)) {
+
+            this.#integralChannels.set(raw, []);
+        }
+
+        this.#integralChannels.get(raw).push(..._handlers);
+
+        //let match = false;
+        /**
+         *  
+         */
+        for (const channel of this.#channelList.keys() || []) {
+
+            const matchIntegral = channel.match(_regexChannel);
+
+            let channelIsMapped = this.#mappedChannel.has(channel);
+
+            //match = matchIntegral ? true: match;
+
+            if (matchIntegral) {
+
+                if (!channelIsMapped) {
+
+                    this.#mappedChannel.add(channel);
+                }
+
+                this.channel(channel, ..._handlers);
+            }
+
+            // if (matchIntegral && !channelIsMapped) {
+
+            //     this.#mappedChannel.add(channel);
+
+            //     channelIsMapped = true;
+            // }
+
+            // if (matchIntegral && channelIsMapped) {
+
+            //     // just append the handlers to to de channel
+            //     this.channel(channel, ..._handlers);
+            // }
+
+            // if (channel.match(_regexChannel)) {
+            //     console.log('init match')
+
+            //     noMatch = false;
+
+            //     if ()
+
+            //     //this.#mappedChannel.add(channel);
+
+            //     this.channel(channel, ..._handlers);
+            // }
+        }
+    }
+
     #pushHandler(_targetSet, ..._handler) {
 
 
     }
 
+    /**
+     * 
+     * @param {string} _pattern 
+     * @param  {...Function} _handlers 
+     * @returns 
+     */
     channel(_pattern, ..._handlers) {
-
+        
         if (typeof _pattern !== 'string') {
 
             throw new TypeError('channel pattern must be a type of string');
@@ -444,6 +591,21 @@ class WSRouter extends Function {
         }
 
         
+
+        const channelIsMapped = this.#mappedChannel.has(_pattern);
+        
+        
+
+        // if (integralHandlers.length > 0) {
+
+        //     integralHandlers.push(..._handlers);
+
+        //     _handlers = integralHandlers;
+        // }
+        
+        /**
+         *  Search for the matched integral channels that is defined before 
+         */
         const newHandlersChain = this.#combineHandlers(_pattern, _handlers);
 
         const currentHandlersChain = this.#channelList.get(_pattern);
@@ -460,7 +622,25 @@ class WSRouter extends Function {
         }
         else {
 
-            this.#channelList.set(_pattern, newHandlersChain);
+            const integralHandlers = this.#getUnMappedIntergralHandlersOf(_pattern);
+            
+            const integralChain = this.#combineHandlers(_pattern, integralHandlers);
+
+            let targetChain;
+
+            if (integralChain) {
+                
+                integralChain.pushBack(newHandlersChain);
+
+                targetChain = integralChain;
+            }
+            else {
+                
+                targetChain = newHandlersChain;
+            }
+
+            
+            this.#channelList.set(_pattern, targetChain);
         }
 
         const isLayerChannel = this.#layeredChannel?.get(_pattern);
@@ -472,6 +652,34 @@ class WSRouter extends Function {
 
             this.#layeredChannel.set(_pattern, updatedHandlerChain);
         }
+    }
+
+    #getUnMappedIntergralHandlersOf(_channel) {
+
+        // if (this.#mappedChannel.has(_channel)) {
+
+        //     return []; 
+        // }
+
+        const result = [];
+
+        for (const integralChannel of this.#integralChannels.entries()) {
+            
+            /**
+             *  raw: string
+             *  handlers: Array
+             */
+            const [raw, handlers] = integralChannel;
+            
+            const integralPattern = new RegExp(raw);
+
+            if (_channel.match(integralPattern)) {
+
+                result.push(...handlers);
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -516,7 +724,7 @@ class WSRouter extends Function {
                 isLayerChannel = true;
             }
 
-            const node = new RouteHandler(callback, routeHandlerConfig);
+            const node = callback instanceof RouteHandler ? callback : new RouteHandler(callback, routeHandlerConfig);
 
             if (!handler) {
                 

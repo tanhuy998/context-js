@@ -7,6 +7,7 @@ Provide abstraction on controller base programming with [Express](https://expres
 
 ## Features
 
+- Websocket controller (beta since v1.1.0)
 - Handling request by using controller classes.
 - Routing with controller.
 - Dependency Injection.
@@ -826,14 +827,19 @@ function adminLog(req, res, next) {
 The flow of Constraints is described below.
 
 ```
-[globalConstraint.before] -> [localConstraint.before] -> [endpointMiddleware.before] -> [Controller.action] -> [endpointMiddleware.after] -> [localConstraint.after] -> [globalConstraint.after]
+[globalConstraint.before] 
+-> [localConstraint.before] 
+-> [endpointMiddleware.before] 
+-> [Controller.action] 
+-> [endpointMiddleware.after] 
+-> [localConstraint.after] 
+-> [globalConstraint.after]
 ```
 
 ## Dependency Injection
 
 
-This package provides Dependency Injection by using an ioc container to help Javascript users on wiring dependencies between components.
-Dependency Injection in this package just support two types of injection is Constructor Injection and Property Injection.
+This package provides Dependency Injection by using an ioc container to help Javascript users on wiring dependencies across components. Dependency Injection in this package just support two types of injection is Constructor Injection and Property Injection.
 Borrowing the concept Dependency Injection of ASP.NET and Larvel's Service Container, Components has it's own lifecycle depends on which type that a particular component is bound.
 
 
@@ -948,7 +954,7 @@ class Controller extends BaseController {
 
 ```
 
-*Note*: The ioc container could not inject components to async handler because Babel transforms async method into sync method that the ioc container could not read reflection to inject components correctly. Anyway, we have an alternative way to inject components to async method as the following.
+*Note*: The ioc container could not inject components to async handler because Babel wraps async method in another sync method that the ioc container could not read reflection to inject components correctly. Anyway, we have an alternative way to inject components to async method as the following.
 
 ```js
 const {autoBind, BaseController, routingContext, Endpoint, args} = require('@tanhuy998/context-js')
@@ -1177,6 +1183,456 @@ someMethod() {
             });
 }
 ```
+
+# Websocket Controller
+
+Since v1.1, Context-js support websocket controller that is compatible with Socket.io package. It requires Socket.io version 4.x or higher on both client and server side.
+
+Websocket features have been built under @babel/plugin-proposal-decorators version 2022-03 so that if legacy version was setted, the websocket features would not work and cause errors.
+
+```js
+const {WS, WSController} = require('@tanhuy998/context-js');
+
+@WS.context()
+class Controller extends WSController {
+
+    constructor() {
+
+      super();
+    }
+}
+
+```
+
+in index.js
+
+```js
+const http = require('http');
+const {Server} = require('socket.io');
+const httpServer = http.createServer();
+const io = new Server(httpServer);
+const {WS} = require('@tanhuy998/context-js');
+
+// import the controller class immediately
+const Controller = require('./path/to/file');
+
+WS.server(io);
+WS.resolve()
+
+```
+
+
+## Handling websocket events
+
+Context-js considers websocket events as channels. It defines a routing mechanism like Express.Router. When an event occurs, the ws router will dispatches the event to a specific handler that is define before.
+
+```js
+const {WS, WSController} = require('@tanhuy998/context-js');
+
+@WS.context()
+class Controller extends WSController {
+
+    constructor() {
+
+      super();
+    }
+
+    @WS.channel('message')
+    handleMessage() {
+
+        // return means sending back acknowledgment if the client 
+        // await for that
+        return {status: 'ok'};
+    }
+}
+```
+
+### Emit events to client
+
+```js
+const {WS, WSController} = require('@tanhuy998/context-js');
+
+@WS.context()
+class Controller extends WScontroller{
+
+    constructor() {
+
+        super();
+    }
+
+    @WS.channel('message')
+    async message() {
+
+        await this.emit('confirm-message', {status: 'ok'});
+    }
+}
+```
+
+
+
+## WS channeling events
+
+When an event occurs, it's channeled to direct registered handlers. To channel events, use colon ":" to seperate subchannels.
+
+```js
+const {WS, WSController} = require('@tanhuy998/context-js');
+
+@WS.context()
+class CartController extends WSController {
+
+    constructor() {
+
+      super();
+    }
+
+    @WS.channel('cart:addProduct')
+    addProduct() {
+
+        
+      
+    }
+
+    @WS.channel('cart:checkout')
+    checkout() {
+
+
+    }
+}
+```
+
+## WS Prefix channels 
+
+Apply @WS.channel to the controller for declaring a prefix for its sub channels inside
+
+
+```js
+const {WS, WSController} = require('@tanhuy998/context-js');
+
+@WS.channel('cart')
+@WS.context()
+class Controller extends WSController {
+
+    constructor() {
+
+      super();
+    }
+
+    @WS.channel('addProduct')
+    addProduct() {
+
+        /**
+         *  client.emit('cart:addProduct')
+         */
+      
+    }
+
+    @WS.channel('checkout')
+    checkout() {
+
+        /**
+         *  client.emit('cart:checkout')
+         */
+    }
+}
+```
+
+## WS filter 
+
+Filters are middlewares that intercept the flow of handling an event. When a websocket connection established, filters will be invoked for each emitted event from the client to check for prerequisites.
+
+Similar to standard js Array.filler method. Each filter function need to return a value of boolean (or values related to true/false) to tell the router that a particular event meets specific requirements for furhter handling operations.
+
+Defining a filter.
+
+
+```js
+function filter(_event) {
+
+  return true // if pass, false otherwise
+}
+```
+
+To add filter to Controller, use ``@WS.filter()``
+
+```js
+const {WS, WSController} = require('@tanhuy998/context-js');
+
+function authorize(role = 'user') {
+
+    return function (event) {
+
+        const token = event.sender.handshake.auth:
+
+        const secret = proccess.env.secret;
+
+        try {
+
+            const payload = jwt.verify(token, secret);
+
+            if (payload.role === role) {
+
+                return true;
+            }
+
+            return false;
+        }
+        catch(e) {
+
+            return false;
+        }
+    }
+}
+
+@WS.filter(authorize('admin'))
+@WS.context('/admin')
+class Controller extends WSController {
+
+    /*
+     *  this controller will take effect on '/admin' namespace
+     */
+
+    constructor() {
+
+      super();
+    }
+
+    @WS.channel('chat:message')
+    handleMessage() {
+
+        return {status: 'ok'};
+    }
+}
+```
+
+
+## WS namespaces
+
+
+The Socket.io module defines a concept called 'namespace' which is to isolate hanlding context betwwen clients.
+
+Context-js also cover this concept for flexibly isolating activities acrosss controllers.
+
+
+```js
+const {WS, WSController} = require('@tanhuy998/context-js');
+
+/*
+ *  By default, @WS.context() works on the default namespace called '/',
+ *  to assign a namspace to the controller to take effect on.
+ *  just pass the namespace(s) as argument(s) to @WS.context
+ */
+
+@WS.context('/admin')
+class Controller extends WSController {
+
+    /*
+     *  this controller will take effect on '/admin' namespace
+     */
+
+    constructor() {
+
+        super();
+    }
+
+
+    @WS.channel('chat:message')
+    handleMessage() {
+
+        return {status: 'ok'};
+    }
+}
+```
+
+another way of declaring namespaces is using @WS.namespace
+
+```js
+const {WS, WSCont roller} = require('@tanhuy998/context-js');
+
+/*
+ *  By default, @WS.context() works on the default namespace called '/',
+ *  to assign a namspace to the controller to take effect on.
+ *  just pass the namespace(s) as argument(s) to @WS.context
+ */
+
+@WS.context()
+@WS.namespace('/admin')
+class Controller extends WSController {
+
+    /*
+     *  this controller not only takes effect on '/admin' namespace
+     *  but also effects on the default namespace '/' because default 
+     *  argument of @WS.context is '/'
+     */
+
+    constructor() {
+
+      super();
+    }
+
+    @WS.channel('chat:message')
+    handleMessage() {
+
+        return {status: 'ok'};
+    }
+}
+```
+
+### Error handling with WSControllers
+
+Context-js provides an error handling mechanism that helps users handle errors as simple as possible.
+
+By default, Context js will check for the existence of ``onError`` method of each controller as a default error handler that is thrown inside the controller.
+
+Errors would be thrown back to the the higher order error handler if the controller didn't defining any error handler.
+
+```js
+const {WS, WSController, args, WSEvent} = require('@tanhuy998/context-js');
+
+
+@WS.context()
+@WS.namespace('/admin')
+class Controller extends WSController {
+
+    constructor() {
+
+      super();
+    }
+
+    @WS.channel('chat:message')
+    @args(WSEvent)
+    async handleMessage(_event) {
+
+        await Model.Message.save(_event.eventArguments);
+
+        return {status: 'ok'};
+    }
+    
+    @args(Error) // inject the thrown error to the method
+    onError(_error) {
+
+      /*
+       *  if Model.Message.save(_event.eventArguments) throw an error
+       *  the Error will automatically been caught and dispatched to handler
+       */
+
+      console.log(_error.message);
+    }
+}
+```
+
+#### More Error Handlers
+
+use `@WS.handleError` on the method you want it to be an error handler
+
+```js
+const {WS, WSController, args, WSEvent} = require('@tanhuy998/context-js');
+
+class CustomError extends Error {
+
+
+}
+
+
+@WS.context()
+@WS.namespace('/admin')
+class Controller extends WSController {
+
+    constructor() {
+
+      super();
+    }
+
+    @WS.channel('chat:message')
+    @args(WSEvent)
+    async handleMessage(_event) {
+
+        await Model.Message.save(_event.eventArguments);
+
+        return {status: 'ok'};
+    }
+    
+    @args(Error)
+    onError(_error) {
+
+      /*
+       *  if Model.Message.save(_event.eventArguments) throw an error
+       *  the Error will automatically been caugtch
+       */
+
+      if (_error.code === 'ERR_BUFFER_OUT_OF_BOUNDS') {
+
+        throw new CustomError();
+      }
+
+      throw _error;
+    }
+
+    @WS.handleError
+    @args(Error)
+    handleCustomError(_error) {
+
+      if (_error instanceof CustomError) {
+
+        console.log('error handling chain ends here');
+      }
+      else {
+
+        return _error;
+      }
+    }
+
+    @WS.handleError
+    lastHandler() {
+
+      const error = this.error;
+
+      const next = this.context.next;
+
+      const event = this.context.state;
+
+      event.response({
+        status: 'error'
+      }); // response back to the client if the clients declared an acknowledgment
+
+      // dispatch the error for the higher order error handler unit
+      next(error);
+    }
+}
+```
+
+### dispatching error in handlerchain
+
+There are three ways to dispatch the error to next handler.
+
+```js
+const {WS, WSController, args, WSEvent} = require('@tanhuy998/context-js');
+
+
+@WS.context()
+@WS.namespace('/admin')
+class Controller extends WSController {
+
+    constructor() {
+
+      super();
+    }
+    
+    @WS.handleError
+    @args(Error, WSEvent)
+    error(_error, _event) {
+
+
+      this.context.next(_error);
+
+      throw _error;
+
+      return _error;
+    }
+}
+```
+
+*Note: injecting `Error` abstract on a method that is not an error handler would cause unexpecting result. In most cases the IocContainer would inject `undefined`.
+
 
 ## Utility Decorators
 

@@ -57,91 +57,102 @@ function everyOneSecond() {
     }, 1000)
 }
 
-router.channel('test', (_event, response, next) => {
+// router.channel('test', (_event, response, next) => {
 
-    const label = _event.args;
+//     const label = _event.args;
 
-    ++counter;
+//     ++counter;
+//     console.log('next regex')
+//     //_event.sender.label = label;
 
-    //_event.sender.label = label;
+//     //console.time(label);
+//     response({test: 'error'});
+//     next();
+// })
 
-    //console.time(label);
-    response({test: 'error'});
-    next();
-})
+// router.match(/test(.)*/, (e, r, next) => {
 
-const routerA = new Router();
+//     console.log('test regex channel')
 
-const routerB = new Router();
+//     next();
+// })
 
-routerB.use((e, res, next) => {
+// const routerA = new Router();
 
-    console.log('B default middleware');
+// const routerB = new Router();
 
-    next();
-})
+// routerB.use((e, res, next) => {
 
-routerB.channel('B', (e, res, next) => {
+//     console.log('B default middleware');
 
-    console.log('B');
+//     next();
+// })
 
-    next();
-})
+// routerB.channel('B', (e, res, next) => {
 
-routerB.channel('B1', (e, res, next) => {
+//     console.log('B');
 
-    console.log('B1');
+//     next();
+// })
+
+// routerB.channel('B1', (e, res, next) => {
+
+//     console.log('B1');
 
 
-    next(new Error('test error'));
-})
+//     next(new Error('test error'));
+// })
 
-routerB.use((e, _e, res, next) => {
+// routerB.use((e, _e, res, next) => {
 
-    console.log(e);
+//     console.log(e);
 
-    console.log('B error')
+//     console.log('B error')
 
-    next(e);
-})
+//     next(e);
+// })
 
-routerA.channel('A', (e, res, next) => {
+// routerA.channel('A', (e, res, next) => {
 
-    console.log('A');
+//     console.log('A');
 
-    next();
-}, routerB);
+//     next();
+// }, routerB);
 
-routerA.channel('A', (e, res, next) => {
+// routerA.channel('A', (e, res, next) => {
 
     
 
-    console.log('A 1');
-    next(1);
-}, (e, _e, res, next) => {
+//     console.log('A 1');
+//     next(1);
+// }, (e, _e, res, next) => {
 
-    console.log(e);
+//     console.log(e);
 
-    console.log('A error')
+//     console.log('A error')
 
-    next(e);
-})
+//     next(e);
+// })
 
-router.channel('testmain', (_event, response, next) => {
+// router.channel('testmain', (_event, response, next) => {
 
-    const label = _event.args;
+//     console.log('next regex channel')
 
-    ++counter;
+//     const label = _event.args;
 
-    next();
-}, routerA);
+//     ++counter;
 
-router.use((e, _e, res, next) => {
+//     next();
+// }, routerA);
 
-    console.log('testmain error');
+// router.use((e, _e, res, next) => {
 
-    next(e);
-})
+//     console.log('testmain error');
+
+//     next(e);
+// })
+
+
 // async (_event, response, next) => {
 
 //     next()
@@ -157,6 +168,8 @@ router.use((e, _e, res, next) => {
 //     next()
 // })
 
+console.log(router.channels)
+
 io.use(router);
 
 WS.server(io);
@@ -164,18 +177,15 @@ WS.server(io);
 WS.resolve();
 
 
+// io.on('connection', (socket) => {
 
-io.on('connection', (socket) => {
+//     //console.log('new');
 
-    //console.log('new');
+//     //console.log(socket.data);
 
-    //console.log(socket.data);
+    
+// })
 
-    socket.on('ms', () => {
-
-        //console.log('ms event')
-    });
-})
 
 
 // io.engine.use((req, res, next) => {
@@ -190,16 +200,32 @@ io.on('connection', (socket) => {
 //     //console.log('headers', headers)
 // })
 
+// io.engine.use((req, res, next) => {
+
+//     console.log(req.url);
+
+//     next();
+// })
+
+
+io.on('connection', (socket) => {
+
+    //console.log('new connection')
+
+    socket.on('error', (error) => {
+
+        //console.log(error);
+    })
+})
+
 io.use((socket, next) => {
 
     socket.data = {status: 'passed'};
-    console.log('top1', socket.handshake)
 
+    // socket.use((event, next) => {
 
-    socket.use((event, next) => {
-
-        console.log(event);
-    })
+    //     console.log(event);
+    // })
     // socket.conn.on("upgrade", () => {
     //     // called when the transport is upgraded (i.e. from HTTP long-polling to WebSocket)
     //     //console.log("upgraded transport", socket.conn.transport.name); // prints "websocket"
@@ -232,16 +258,6 @@ io.use((socket, next) => {
     next();
 })
 
-
-
-
-io.on('connection', (socket) => {
-
-    socket.on('error', (error) => {
-
-        //console.log(error);
-    })
-})
 
 // const router = new Router;
 
@@ -289,6 +305,8 @@ io.on('connection', (socket) => {
 // // });
 
 // io.use(router);
+
+
 
 httpServer.listen(3000, () => {
 
