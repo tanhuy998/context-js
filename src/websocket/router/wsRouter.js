@@ -5,12 +5,25 @@ const ResponseError = require('../../error/responseError.js');
 //const { types } = require('@babel/core');
 const {METADATA} = require('../../constants.js');
 const ErrorHandler = require('./errorHandler.js');
+const AbortControllerException = require('./abortRouterException.js');
 
 
 /**
  *  WSRouter mananages events for each incomming socket connection
  */
 class WSRouter extends Function {
+
+    static #mounted = false;
+
+    static get mounted() {
+
+        return this.#mounted;
+    }
+
+    static mount() {
+
+        this.#mounted = true;
+    }
 
     static get DEFAULT_CHANNEL() {
 
@@ -326,7 +339,7 @@ class WSRouter extends Function {
 
         const eventPack = {
             handlerArguments: handlerArgs,
-            pushError,
+            pushError: pushError,
             lastNextFunction: socketNextfunction,
             eventDispatcher: eventDispatcher
         };
@@ -335,7 +348,7 @@ class WSRouter extends Function {
 
             return defaultHandler.handle(0, {
                 handlerArguments: handlerArgs,
-                pushError,
+                pushError: pushError,
                 lastNextFunction: handleRoute
             })
         }
@@ -361,19 +374,27 @@ class WSRouter extends Function {
 
             router.pushError(error, {
                 eventObject: event,
-                //lastNextFunction: socketNextfunction,
-                globalErrorHandler: dispatchError || socketNextfunction
+                globalCallback: socketNextfunction,
+                dispatchError: dispatchError || socketNextfunction
             });
         }
     }
 
 
-
-    #handleError(_error, _event, globalErrorHandler) {
-
+    /**
+     * 
+     * @param {*} _error 
+     * @param {*} _event 
+     * @param {*} _globalCallback 
+     * @returns 
+     */
+    #handleError(_error, _event, {_globalCallback, _dispatchError}) {
+        
         // false is the abort signal to end channel handler sequence
-        if (_error === false) {
-    
+        if (_error instanceof AbortControllerException) {
+            
+            _globalCallback();
+
             return;
         }
     
@@ -381,12 +402,12 @@ class WSRouter extends Function {
     
         if (_error instanceof ResponseError) {
     
-            return socketNextfunction(_error.data);
+            return _dispatchError(_error.data);
         }
     
         if (!errorHandler) {
             //// ('no error handler')
-            return globalErrorHandler(_error.origin || _error);
+            return _globalCallback(_error.origin || _error);
         }
     
         const theExacError = _error.origin || _error;
@@ -395,22 +416,23 @@ class WSRouter extends Function {
             handlerArguments: [theExacError, _event, _event.response],
             event: _event,
             error: theExacError,
-            lastNextFunction: function(error) {
+            // lastNextFunction: function(error) {
     
-                if (error) {
+            //     if (error) {
     
-                    globalErrorHandler(error);
-                }
-            }
+            //         _globalCallback(error);
+            //     }
+            // }
+            lastNextFunction: _dispatchError || _globalCallback
         }
         
         errorHandler.handle(0, errorHandlingPack);
     }
 
     // for async functions to push error back to router to handle
-    pushError(_error, {eventObject, globalErrorHandler}) {
+    pushError(_error, {eventObject, globalCallback, dispatchError}) {
         ////// ('push error')
-        this.#handleError(_error, eventObject, globalErrorHandler);
+        this.#handleError(_error, eventObject, {_globalCallback: globalCallback, _dispatchError: dispatchError});
     }
 
     #preparePayload(_event, _socket, args) {
@@ -450,6 +472,11 @@ class WSRouter extends Function {
     }
 
     use(..._handlers) {
+
+        if (WSRouter.mounted) {
+
+            return;
+        }
 
         if (_handlers.length === 0) {
 
@@ -493,6 +520,11 @@ class WSRouter extends Function {
      * @param  {...Function} _handlers 
      */
     match(_pattern, ..._handlers) {
+
+        if (WSRouter.mounted) {
+
+            return;
+        }
 
         if (_handlers.length === 0) {
 
@@ -580,6 +612,11 @@ class WSRouter extends Function {
      */
     channel(_pattern, ..._handlers) {
         
+        if (WSRouter.mounted) {
+
+            return;
+        }
+
         if (typeof _pattern !== 'string') {
 
             throw new TypeError('channel pattern must be a type of string');
@@ -706,13 +743,6 @@ class WSRouter extends Function {
                 throw new TypeError('_handler must be a function');
             }
 
-            if (typeof callback === 'function' && callback.length > 3) {
-                
-                this.#pushErrorHandler(callback);
-
-                continue;
-            }
-
             if (callback instanceof WSRouter) {
 
                 const router = callback;
@@ -722,6 +752,13 @@ class WSRouter extends Function {
                 //router.mergeWithHigherOrderConfig(currentConfig);
 
                 isLayerChannel = true;
+            }
+
+            if (callback.length > 3) {
+                
+                this.#pushErrorHandler(callback);
+
+                continue;
             }
 
             const node = callback instanceof RouteHandler ? callback : new RouteHandler(callback, routeHandlerConfig);

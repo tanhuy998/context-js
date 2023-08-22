@@ -261,7 +261,7 @@ class WebsocketContext {
 
             const classFilters = classMeta.filters || [];
 
-            const channelPrefixes = classMeta?.channelPrefixes?.values();
+            const channelPrefixes = classMeta?.channelPrefixes;
 
             const eventHandlingRouter = this.#initContextRouter(channelPrefixes, {_subChannelRouter: router, _classFilters: classFilters}) || router;
 
@@ -311,6 +311,8 @@ class WebsocketContext {
 
             ioServer.of(nsp).use(router);
         }
+
+        WSRouter.mount();
     }
 
     static #initInterceptor(_router, _classMeta) {
@@ -421,53 +423,88 @@ class WebsocketContext {
      */
     static #initContextRouter(_prefixes = [], {_subChannelRouter, _classFilters}) {
 
-        if ((_prefixes?.size === 0 || _prefixes.length === 0) && _classFilters?.length === 0) {
+        const noPrefixDefined =  (_prefixes?.size == 0 || _prefixes.length === 0);
+        const noFilterDefined = _classFilters?.length === 0;
+
+        const hasFilter = !noFilterDefined;
+        //if ((_prefixes?.size === 0 || _prefixes.length === 0) && _classFilters?.length === 0) {
+        if (noPrefixDefined && noFilterDefined) {
 
             return undefined;
         }
 
+        
         const classRouter = new WSRouter();
+        const subChannels = _subChannelRouter.channels;
 
+        /**
+         *  Case 1: when no prefixes defined
+         */
+        if (noPrefixDefined) {
 
-        if (_prefixes.length === 0) {
+            classRouter.use(layer(subChannels));
 
-            for (const channel of _subChannelRouter.channels || []) {
+            if (hasFilter) {
 
-                classRouter.use(channel, _classFilters);
-
-                classRouter.use(channel, _subChannelRouter);
+                classRouter.use(_classFilters);
             }
+
+            classRouter.use(_subChannelRouter);
             
             return classRouter;
         }
 
+        /**
+         *  otherwise
+         */
+        const channels = [];
 
-        // if _prefixes contains nothing, this loop never happens
-        for (const prefix of _prefixes || []) {
+        classRouter.use(layer(channels));
 
-            if (_classFilters.length > 0) {
+        if (hasFilter) {
+            
+            classRouter.use(_classFilters);
+        }
 
-                for (const channel of _subChannelRouter.channels || []) {
-
-                    classRouter.use(`${prefix}:${channel}`, _classFilters);
-                    console.log(`${prefix}:${channel}`);
-                }
-            }
+        for (const prefix of _prefixes.values() || _prefixes) {
 
             classRouter.use(prefix, _subChannelRouter);
+
+            for (const subChannel of subChannels || []) {
+
+                channels.push(`${prefix}:${subChannel}`);
+            }
         }
-        
-        // let t = classRouter.channelList.get('prefix');
-
-        // console.log('router id:', classRouter.id);
-        // while (t) {
-
-        //     console.log(t.id);
-
-        //     t = t.next;
-        // }
 
         return classRouter;
+
+
+
+        function layer(list = []) {
+
+            return function(e, r, next) {
+                
+                const met = true;
+
+                if (!Array.isArray(list) || list.length == 0) {
+
+                    met = false;
+                }
+                console.log(list, met);
+                const eventChannel = e.channel;
+                
+                if (met && list.includes(eventChannel)) {
+                    console.log('match', list, eventChannel)
+                    next();
+                }
+                else {
+                    console.log(1)                    
+                    const AbortHandling = require('./router/abortRouterException.js');
+
+                    next(new AbortHandling());
+                }
+            }
+        }
     }
 }
 
