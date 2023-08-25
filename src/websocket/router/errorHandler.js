@@ -1,12 +1,28 @@
 const RouteHandler = require('./routeHandler.js');
 
+/**
+ *  @typedef {import('./wsEvent.js')} WSEvent
+ */
 module.exports = class ErrorHandler extends RouteHandler {
 
+    /**
+     * @inheritdoc
+     */
     constructor() {
 
         super(...arguments);
     }
 
+    /**
+     * @override
+     * 
+     * @param {Number} _taskCount 
+     * @param {Object} _handlingPack 
+     * @param {Function} _handlingPack.lastNextFunction
+     * @param {Array<any>} _handlingPack.handlerArguments
+     * @param {WSEvent} _handlingPack.event
+     * @param {Error} _handlingPack.error
+     */
     handle(_taskCount, _handlingPack) {
 
         const {handlerArguments, event, error, lastNextFunction} = _handlingPack;

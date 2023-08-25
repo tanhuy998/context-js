@@ -3,6 +3,17 @@ const ApplicationContext = require('../applicationContext.js');
 const {Stage3_handleRequest} = require('../requestDispatcher.js');
 const ClientContext = require('./clientContext.js');
 
+/**
+ *  @typedef {import('./controller/wsController.js')} WSController
+ */
+
+/**
+ * 
+ * @param {WSController} controller 
+ * @param {string} action 
+ * @param {ApplicationContext} appContext 
+ * @returns 
+ */
 module.exports = function dispatch(controller, action, appContext = undefined) {
 
 
@@ -11,7 +22,7 @@ module.exports = function dispatch(controller, action, appContext = undefined) {
         let controllerObject;
 
         if (appContext instanceof ApplicationContext && appContext.supportIoc) {
-
+            
             controllerObject = appContext.buildController(controller, event, response, next);
         }
         else {

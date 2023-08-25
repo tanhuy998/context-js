@@ -1,5 +1,12 @@
 module.exports = class ControllerConfiguration {
 
+    /**
+     *  @typedef {import('./controllerComponentManager') ControllerComponentManager}
+     */
+
+    /**
+     *  @type {ControllerComponentManager}
+     */
     #container;
     #keys = new Map();
 

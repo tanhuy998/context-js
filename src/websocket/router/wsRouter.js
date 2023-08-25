@@ -9,12 +9,37 @@ const AbortControllerException = require('./abortRouterException.js');
 
 
 /**
+ *  @global 
+ * 
+ *  @callback standardCallback
+ *  @param {?any} error
+ *  
+ *  @callback wsHandlerCallback
+ *  @param {WSEvent} event
+ *  @param {?Function} response
+ *  @param {standardCallback} next
+ *  
+ *  @callback wsErrorHandlerCallback
+ *  @param {any} error
+ *  @param {WSEvent} event
+ *  @param {?Function} response
+ *  @param {standardCallback} next
+ */
+
+
+/**
  *  WSRouter mananages events for each incomming socket connection
  */
 class WSRouter extends Function {
 
+    /**
+     *  @type {boolean}
+     */
     static #mounted = false;
 
+    /**
+     *  @type {boolean}
+     */
     static get mounted() {
 
         return this.#mounted;
@@ -25,22 +50,37 @@ class WSRouter extends Function {
         this.#mounted = true;
     }
 
+    /**
+     *  @returns {string}
+     */
     static get DEFAULT_CHANNEL() {
 
         return '\u03A9';
     }
 
+    /**
+     *  @returns {string}
+     */
     static get ERROR_CHANNEL() {
 
         return '\u20AC';
     }
 
+    /**
+     *  @type {number}
+     */
     #maxSyncTask = 100;
 
     [METADATA] = {
         isRouter: true,
     }
 
+    /**
+     * 
+     * @param {number} _number 
+     * 
+     * @throws
+     */
     maxSyncTask(_number) {
 
         if (typeof _number !== 'number') {
@@ -57,7 +97,7 @@ class WSRouter extends Function {
     }
 
     /**
-     *  @type Map<RouteHandler>
+     *  @type {Map<string,RouteHandler>}
      */
     #channelList = new Map();
 
@@ -66,24 +106,24 @@ class WSRouter extends Function {
      *  When a specific channel is not defined before a matched channel
      *  it handlers will be prepend with the integral handlers
      * 
-     *  @type Map<Array>
+     *  @type {Map<string, Array>}
      */
     #integralChannels = new Map();
 
     /**
-     *  @type Set<string>
+     *  @type {Set<string>}
      */
     #mappedChannel = new Set();
 
     /**
-     *  @type boolean
+     *  @type {boolean}
      */
     #layeredChannel;
 
     #currentEventError;
 
     /**
-     *  @type ErrorHandler
+     *  @type {?ErrorHandler}
      */
     #errorHandler;
 
@@ -93,11 +133,17 @@ class WSRouter extends Function {
 
     #errorHandlerStack;
 
+    /**
+     *  @type {Map}
+     */
     get channelList() {
 
         return this.#channelList;
     }
 
+    /**
+     *  @type {RouteHandler | undefined}
+     */
     get defaultChannel() {
 
         return this.#channelList.get(WSRouter.DEFAULT_CHANNEL);
@@ -111,6 +157,9 @@ class WSRouter extends Function {
         return this.#id;
     }
 
+    /**
+     *  @type {Array}
+     */
     get channels() {
 
         const ret = [];
@@ -207,8 +256,9 @@ class WSRouter extends Function {
 
                 const eventObject = this.#preparePayload(event, _socket, args);
 
+                /** @type {FootPrint} */
                 const footPrint = {
-                    event: eventObject,            // WSEvent
+                    event: eventObject,            
                     eventDispatcher: this,         // type of WSRouter
                     dispatchError: null       // typeof Function
                 }
@@ -254,7 +304,7 @@ class WSRouter extends Function {
      * 
      * @param {string} _str 
      * @param {string} _prefix 
-     * @returns 
+     * @returns {string}
      */
     #replacePrefix(_str, _prefix) {
 
@@ -316,11 +366,19 @@ class WSRouter extends Function {
     }
 
     /**
-     * hanndle for each incomming event from the client
+     *  @typedef {Object} FootPrint
+     *  @property {WSEvent} event
+     *  @property {WSRouter?} eventDispatcher
+     *  @property {Function?} dispatchError
+     */
+
+    /**
+     *  Handle incomming event that is dispatched by the ws server
      * 
      * @param {string} _channel 
-     * @param {WSEvent} _event
-     * @param {Function} serverNextfunction the 'next' function refer to next middleware of the server
+     * @param {FootPrint} _footPrint
+     * @param {Function} socketNextfunction 
+     * @returns 
      */
     //handleIncomingEvent(_channel, _socket, args = [], socketNextfunction) {
     handleIncomingEvent(_channel, { event, eventDispatcher, dispatchError}, socketNextfunction) {
@@ -383,13 +441,14 @@ class WSRouter extends Function {
 
     /**
      * 
-     * @param {*} _error 
-     * @param {*} _event 
-     * @param {*} _globalCallback 
-     * @returns 
+     * @param {any} _error 
+     * @param {WSEvent} _event 
+     * @param {Object} dispatchStrategy 
+     * @param {Function} dispatchStrategy._globalCallback
+     * @param {Function} dispatchStrategy._dispatchError
      */
     #handleError(_error, _event, {_globalCallback, _dispatchError}) {
-        
+        _
         // false is the abort signal to end channel handler sequence
         if (_error instanceof AbortControllerException) {
             
@@ -470,7 +529,22 @@ class WSRouter extends Function {
 
         return undefined;
     }
-
+    
+    /**
+     * @overload
+     * @param  {...wsHandlerCallback} _handlers 
+     * 
+     * @overload
+     * @param  {...wsErrorHandlerCallback} _handlers 
+     *  
+     * @overload 
+     * @param {string} _channel
+     * @param {...wsErrorHandlerCallback} _handlers
+     * 
+     * @overload 
+     * @param {string} _channel
+     * @param {...wsHandlerCallback} _handlers
+     */
     use(..._handlers) {
 
         if (WSRouter.mounted) {
@@ -517,7 +591,9 @@ class WSRouter extends Function {
      *              the handlers order would be : ...1handlers -> ...2handlers -> ...3handlers -> ...4handlers
      * 
      * @param {RegExp} _pattern 
-     * @param  {...Function} _handlers 
+     * @param  {...wsHandlerCallback} _handlers 
+     * 
+     * @throws
      */
     match(_pattern, ..._handlers) {
 
@@ -607,11 +683,12 @@ class WSRouter extends Function {
     /**
      * 
      * @param {string} _pattern 
-     * @param  {...Function} _handlers 
-     * @returns 
+     * @param  {...wsHandlerCallback} _handlers 
+     * 
+     * @throwss
      */
     channel(_pattern, ..._handlers) {
-        
+
         if (WSRouter.mounted) {
 
             return;

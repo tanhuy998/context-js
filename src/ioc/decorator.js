@@ -10,18 +10,31 @@ const { BaseController } = require('../controller/baseController.js');
 const ControlerState = require('../controller/controllerState.js');
 const ControllerConfiguration = require('../controller/controllerConfiguration.js');
 
+/**
+ *  @readonly
+ *  @enum {string}
+ */
 class BindType {
 
+    /**
+     *  @returns {string}
+     */
     static get SINGLETON() {
 
         return 'singleton';
     }
     
+    /**
+     *  @returns {string}
+     */
     static get SCOPE() {
 
         return 'scope';
     }
 
+    /**
+     *  @returns {string}
+     */
     static get TRANSIENT() {
 
         return 'transient';
@@ -38,20 +51,44 @@ class IocContainerBindScopeInterfaceError extends Error {
 
 class BindingContext {
 
+    /**
+     *  @type {IocContainer}
+     */
     static #currentIocContainer;
+
+    /**
+     *  @type {boolean}
+     */
     static #isFixedContext = false;
 
+    /**
+     *  @type {Object}
+     */
     static #Component = {};
     static #componentMap = new WeakMap();
 
     static #bindingHooks = [];
+
+    /**
+     *  @type {Object}
+     */
     static #currentComponent;
 
+    /**
+     * 
+     * @returns {Array}
+     */
     static getBindingHooks() {
 
         return this.#bindingHooks;
     }
 
+    /**
+     * 
+     * @param  {...Function} hooks 
+     * 
+     * @throws
+     */
     static addHook(...hooks) {
 
         if (!this.#currentComponent) {
@@ -80,6 +117,10 @@ class BindingContext {
         this.#bindingHooks.push(...hooks);
     }
 
+    /**
+     * 
+     * @param {Symbol} symbol 
+     */
     static bindComponent(symbol) {
 
         this.#Component[symbol] = 1;
@@ -89,11 +130,21 @@ class BindingContext {
         this.#currentComponent = symbol;
     }
 
+    /**
+     *  @type {Object}
+     */
     static get currentComponent() {
 
         return this.#currentComponent;
     }
 
+    /**
+     * 
+     * @param {Symbol} symbol 
+     * @param {Object} concrete 
+     * 
+     * @returns {undefined}
+     */
     static assignComponent(symbol, concrete) {
 
         if (!this.#Component[symbol]) return;
@@ -112,16 +163,28 @@ class BindingContext {
         //this.#hooks.add()
     }
 
+    /**
+     * 
+     * @param {Symbol} symbol 
+     * @returns 
+     */
     static getBindComponentBySymbol(symbol) {
 
         return this.#Component[symbol];
     }
-
+    
+    /**
+     *  @returns {boolean}
+     */
     static get isFixedContext() {
 
         return this.#isFixedContext;
     }
 
+    /**
+     * 
+     * @param {IocContainer} _iocContainer 
+     */
     static fixedContext(_iocContainer) {
 
         this.#checkFixedContext();
@@ -139,6 +202,10 @@ class BindingContext {
         }
     }
 
+    /**
+     * 
+     * @param {IocContainer} _iocContainer 
+     */
     static switchContext(_iocContainer) {
 
         this.#checkFixedContext();
@@ -161,6 +228,10 @@ class BindingContext {
         this.#currentIocContainer = undefined;
     }
 
+    /**
+     * 
+     * @returns {IocContainer}
+     */
     static currentContext() {
 
         const context = this.#currentIocContainer;
@@ -195,8 +266,15 @@ function resovleConstructorArguments(_constructor, _iocContainer, _controllerSta
     return [constructorArgs, _controllerState];
 }
 
+/**
+ * 
+ * @param {BindType} _type 
+ * @param {boolean} _resolvePropertyWhenInstantiate 
+ * @param {IocContainer} _iocContainer 
+ * @returns 
+ */
 function autoBind(_type = BindType.TRANSIENT, _resolvePropertyWhenInstantiate = true, _iocContainer) {
-
+    
     if (BindingContext.currentComponent) {
 
         throw new Error('applying @autoBind multiple times is not allowed');

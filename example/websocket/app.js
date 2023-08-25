@@ -57,118 +57,118 @@ function everyOneSecond() {
     }, 1000)
 }
 
-router.channel('test', (_event, response, next) => {
+// router.channel('test', (_event, response, next) => {
 
-    const label = _event.args;
+//     const label = _event.args;
 
-    ++counter;
-    console.log('next regex')
-    //_event.sender.label = label;
+//     ++counter;
+//     console.log('next regex')
+//     //_event.sender.label = label;
 
-    //console.time(label);
-    response({test: 'error'});
-    next();
-})
+//     //console.time(label);
+//     response({test: 'error'});
+//     next();
+// })
 
-router.match(/test(.)*/, (e, r, next) => {
+// router.match(/test(.)*/, (e, r, next) => {
 
-    console.log('test regex channel')
+//     console.log('test regex channel')
 
-    next();
-})
+//     next();
+// })
 
-const routerA = new Router();
+// const routerA = new Router();
 
-const routerB = new Router();
+// const routerB = new Router();
 
-routerB.use((e, res, next) => {
+// routerB.use((e, res, next) => {
 
-    console.log('B default middleware');
+//     console.log('B default middleware');
 
-    next();
-})
+//     next();
+// })
 
-routerB.channel('B', (e, res, next) => {
+// routerB.channel('B', (e, res, next) => {
 
-    console.log('B');
+//     console.log('B');
 
-    next();
-})
+//     next();
+// })
 
-routerB.channel('B1', (e, res, next) => {
+// routerB.channel('B1', (e, res, next) => {
 
-    console.log('B1');
+//     console.log('B1');
 
 
-    next(new Error('test error'));
-})
+//     next(new Error('test error'));
+// })
 
-routerB.use((e, _e, res, next) => {
+// routerB.use((e, _e, res, next) => {
 
-    console.log(e);
+//     console.log(e);
 
-    console.log('B error')
+//     console.log('B error')
 
-    next(e);
-})
+//     next(e);
+// })
 
-routerA.channel('A', (e, res, next) => {
+// routerA.channel('A', (e, res, next) => {
 
-    console.log('A');
+//     console.log('A');
 
-    next();
-}, routerB);
+//     next();
+// }, routerB);
 
-routerA.channel('A', (e, res, next) => {
+// routerA.channel('A', (e, res, next) => {
 
     
 
-    console.log('A 1');
-    next(1);
-}, (e, _e, res, next) => {
+//     console.log('A 1');
+//     next(1);
+// }, (e, _e, res, next) => {
 
-    console.log(e);
+//     console.log(e);
 
-    console.log('A error')
+//     console.log('A error')
 
-    next(e);
-})
-
-router.channel('testmain', (_event, response, next) => {
-
-    console.log('next regex channel')
-
-    const label = _event.args;
-
-    ++counter;
-
-    next();
-}, routerA);
-
-router.use((e, _e, res, next) => {
-
-    console.log('testmain error');
-
-    next(e);
-})
-
-
-// async (_event, response, next) => {
-
-//     next()
-// }, (_e, res, next) => {
-
-
-//     //console.log(_e.sender.id);
-
-//     res(1);
-
-//     console.timeEnd(_e.label);
-
-//     next()
+//     next(e);
 // })
 
-io.use(router);
+// router.channel('testmain', (_event, response, next) => {
+
+//     console.log('next regex channel')
+
+//     const label = _event.args;
+
+//     ++counter;
+
+//     next();
+// }, routerA);
+
+// router.use((e, _e, res, next) => {
+
+//     console.log('testmain error');
+
+//     next(e);
+// })
+
+
+// // async (_event, response, next) => {
+
+// //     next()
+// // }, (_e, res, next) => {
+
+
+// //     //console.log(_e.sender.id);
+
+// //     res(1);
+
+// //     console.timeEnd(_e.label);
+
+// //     next()
+// // })
+
+// io.use(router);
 
 WS.server(io);
 

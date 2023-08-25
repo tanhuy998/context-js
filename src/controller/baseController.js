@@ -1,6 +1,7 @@
 const HttpContext = require('../httpContext.js');
 const ControllerState = require('./controllerState.js');
 const {PropertyDecorator} = require('../decorator/decoratorResult.js');
+const ControlerState = require('./controllerState.js');
 
 
 
@@ -84,13 +85,22 @@ class BaseController {
     // };
     //static proxy = new Proxy(BaseController, BaseController.proxyHandler);
 
-    //@httpContext
+    /**
+     *  @type {HttpContext}
+     */
     #context;
     // #decoratedList;
+
+    /**
+     *  @type {ControlerState}
+     */
     #state;
 
+    /**
+     *  @returns {ControlerState}
+     */
     get state() {
-
+        
         return this.#state;
     }
 
@@ -98,6 +108,10 @@ class BaseController {
         //this.#decoratedList = [];
     }
 
+    /**
+     * 
+     * @param {ControlerState} _controllerState 
+     */
     setState(_controllerState) {
 
         if (this.#state) return;
@@ -115,6 +129,10 @@ class BaseController {
         
     }
 
+    /**
+     * 
+     * @param {HttpContext} _httpContext 
+     */
     setContext(_httpContext) {
 
         if (!this.#context && _httpContext instanceof HttpContext) {
@@ -150,6 +168,9 @@ class BaseController {
         // }
     }
 
+    /**
+     *  @returns {HttpContext}
+     */
     get httpContext() {
 
         return this.#context;

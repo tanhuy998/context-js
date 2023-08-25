@@ -14,9 +14,15 @@ const InvalidClassReflectionError = require('../libs/invalidClassReflectionError
 
 class ControllerComponentManager extends IocContainer {
 
+    /**
+     *  @type {ControllerConfiguration}
+     */
     #config;
 
-
+    /**
+     * 
+     * @param {string | undefined} presetVersion 
+     */
     constructor(presetVersion = undefined) {
 
         super();
@@ -31,11 +37,19 @@ class ControllerComponentManager extends IocContainer {
         this.#config = new ControllerConfiguration(this);
     }
 
+    /**
+     *  @returns {ControllerConfiguration}
+     */
     get configuration() {
 
         return this.#config;
     }
 
+    /**
+     * 
+     * @param {Object} abstract 
+     * @param {Object} concrete 
+     */
     bindScope(abstract, concrete) {
         
         this.#checkForAutoBindController(abstract);
@@ -43,6 +57,12 @@ class ControllerComponentManager extends IocContainer {
         this.#config.bindScope(abstract, concrete);
     }
 
+    /**
+     * @override
+     * @param {Object} abstract 
+     * @param {Object} concrete 
+     * @param {boolean} override 
+     */
     bind(abstract, concrete, override = false) {
         
         this.#checkForAutoBindController(abstract);
@@ -50,6 +70,12 @@ class ControllerComponentManager extends IocContainer {
         super.bind(abstract, concrete, override);
     }
 
+     /**
+     * @override
+     * @param {Object} abstract 
+     * @param {Object} concrete 
+     * @param {boolean} override 
+     */
     bindSingleton(abstract, concrete, override = false) {
         
         this.#checkForAutoBindController(abstract);
@@ -73,6 +99,11 @@ class ControllerComponentManager extends IocContainer {
         this.hook.add(_component, injectCoreComponentForController);
     }
 
+    /**
+     * 
+     * @param {Object} _concrete 
+     * @returns {boolean}
+     */
     isAutoBindController(_concrete) {
         
         if (!(_concrete.name == 'Component')) return;
@@ -80,6 +111,10 @@ class ControllerComponentManager extends IocContainer {
         return this._isParent(BaseController, _concrete);
     }
 
+    /**
+     * 
+     * @param {ControllerConfiguration} config 
+     */
     setConfig(config) {
 
         if (config instanceof ControllerConfiguration) {
@@ -88,6 +123,21 @@ class ControllerComponentManager extends IocContainer {
         }
     }
 
+    /**
+     *
+     */
+
+    /**
+     * @template T
+     * 
+     * @param {T} _concrete 
+     * @param {*} req 
+     * @param {*} res 
+     * @param {*} next 
+     * @returns {T}
+     * 
+     * @throws {Error | TypeError}
+     */
     buildController(_concrete, req, res, next) {
 
         if (!req && !res && !next) {
@@ -130,7 +180,12 @@ class ControllerComponentManager extends IocContainer {
     }
 
 
-
+    /**
+     * @override
+     * @param {Object} abstract 
+     * @param {ControlerState} _controllerState 
+     * @returns {Object | undefined}
+     */
     get(abstract, _controllerState) {
         
         const instance = this.#_get(abstract, _controllerState);
@@ -138,6 +193,12 @@ class ControllerComponentManager extends IocContainer {
         return instance;
     }
 
+    /**
+     * 
+     * @param {Object} abstract 
+     * @param {ControlerState} _controllerState 
+     * @returns {Object | undefined}
+     */
     #_get(abstract, _controllerState) {
 
         if (!_controllerState) {
@@ -164,6 +225,12 @@ class ControllerComponentManager extends IocContainer {
         return this.#analyzeConcrete(concrete, _controllerState);
     }
 
+    /**
+     * 
+     * @param {Object} abstract 
+     * @param {ControlerState} _controllerState 
+     * @returns {Object | undefined}
+     */
     getScopeComponent(abstract, _controllerState) {
 
         const controllerState = _controllerState;
@@ -192,6 +259,13 @@ class ControllerComponentManager extends IocContainer {
         }
     }
 
+    /**
+     * 
+     * @param {Object} abstract 
+     * @param {ControlerState | undefined} _controllerState 
+     *  
+     * @returns {Object | undefined}
+     */
     build(concrete, _controllerState = undefined) {
 
         if (_controllerState) {

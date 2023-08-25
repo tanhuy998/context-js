@@ -25,6 +25,10 @@ class Hook extends EventEmitter{
 
     #topics = new WeakMap();
 
+    /**
+     * 
+     * @param {IocContainer} _iocContainer 
+     */
     constructor(_iocContainer) {
 
         super();
@@ -36,6 +40,11 @@ class Hook extends EventEmitter{
         }).bind(this))
     }
 
+    /**
+     * 
+     * @param {string} _topic 
+     * @param  {...Function} _callback 
+     */
     add(_topic, ..._callback) {
 
         if (!this.#topics.has(_topic)) {
@@ -46,6 +55,11 @@ class Hook extends EventEmitter{
         this.#topics.get(_topic).push(..._callback);
     }
 
+    /**
+     * 
+     * @param {string} _topic 
+     * @param {Object} _instance 
+     */
     notify(_topic, _instance) {
         
         const hooks = this.#topics.get(_topic) || [];
@@ -68,10 +82,16 @@ class IocContainer extends EventEmitter {
 
     #singleton = new WeakMap();
     
+    /**
+     * @type {Hook}
+     */
     #hook;
 
     #id = Date.now();
 
+    /**
+     *  @returns {Hook}
+     */
     get hook() {
 
         return this.#hook;
@@ -136,6 +156,12 @@ class IocContainer extends EventEmitter {
         this.#stringKeys.set(key, value);
     }
 
+    /**
+     * 
+     * @param {Object} abstract 
+     * @param {Object} concrete 
+     * @param {boolean} override 
+     */
     bind(abstract, concrete, override = false) {
 
         this.checkType(abstract, concrete);
@@ -155,6 +181,13 @@ class IocContainer extends EventEmitter {
         this.#container.set(abstract, concrete);
     }
 
+    /**
+     * 
+     * @param {Object} abstract 
+     * @param {Object} concrete 
+     * 
+     * @throws
+     */
     checkType(abstract, concrete) {
 
         // const concreteType = (typeof concrete);
@@ -171,6 +204,12 @@ class IocContainer extends EventEmitter {
         }
     }
 
+    /**
+     * 
+     * @param {Object} base 
+     * @param {Object} derived 
+     * @returns 
+     */
     _isParent(base, derived) {
 
         if (derived == base) return true;
@@ -188,6 +227,12 @@ class IocContainer extends EventEmitter {
         } 
     }
 
+    /**
+     * 
+     * @param {Object} abstract 
+     * @param {Object} concrete 
+     * @param {boolean} override 
+     */
     bindSingleton(abstract, concrete, override = false) {
 
         this.bind(abstract, concrete, override);
@@ -200,16 +245,31 @@ class IocContainer extends EventEmitter {
         this.#singleton.set(abstract, new Empty());
     }
 
+    /**
+     * 
+     * @param {Object} _abstract 
+     * @returns {boolean} 
+     */
     has(_abstract) {
 
         return this.#container.has(_abstract);
     }
 
+    /**
+     * 
+     * @param {string} key 
+     * @returns {boolean}
+     */
     hasKey(key) {
 
         return this.#stringKeys.has(key);
     }
 
+    /**
+     * 
+     * @param {string} key 
+     * @returns {Object | undefined}
+     */
     getConcreteByKey(key) {
 
         const abstract = this.getAbstractByKey(key);
@@ -224,6 +284,11 @@ class IocContainer extends EventEmitter {
         }
     }
 
+    /**
+     * 
+     * @param {Object} abstract 
+     * @returns {Object | undefined}
+     */
     getConcreteOf(abstract) {
 
         if (!this.#container.has(abstract)) return undefined;
@@ -231,6 +296,11 @@ class IocContainer extends EventEmitter {
         return this.#container.get(abstract);
     }
 
+    /**
+     * 
+     * @param {string} key 
+     * @returns {Object | undefined}
+     */
     getAbstractByKey(key) {
 
         if (!this.#stringKeys.has(key)) return undefined;
@@ -238,11 +308,22 @@ class IocContainer extends EventEmitter {
         return this.#stringKeys.get(key);
     }
 
+    /**
+     * 
+     * @param {Object} _abstract 
+     * @returns {boolean}
+     */
     hasSingleton(_abstract) {
 
         return this.#singleton.has(_abstract);
     }
 
+    /**
+     * 
+     * @param {Object} abstract 
+     * @param {Object} _constructorArgs 
+     * @returns {Object | undefined}
+     */
     get(abstract, _constructorArgs = {}) {
 
         if (!this.#container.has(abstract)) return undefined;
@@ -307,6 +388,12 @@ class IocContainer extends EventEmitter {
         }
     }
 
+    /**
+     * 
+     * @param {string} key 
+     * @param {Object} _constructorArgs 
+     * @returns {Object | undefined} 
+     */
     getByKey(key, _constructorArgs = {}) {
 
         if (!this.#stringKeys.has(key)) return undefined;
@@ -325,6 +412,11 @@ class IocContainer extends EventEmitter {
         }
     }
 
+    /**
+     * 
+     * @param {Object} concrete 
+     * @returns {Object | undefined}
+     */
     build(concrete) {
 
         let reflection = this.#metadata.reflections.get(concrete);

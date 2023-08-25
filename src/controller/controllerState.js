@@ -1,16 +1,27 @@
 const ControllerConfiguration = require('./controllerConfiguration.js');
 
+/**
+ *  @typedef {import('./controllerComponentManager.js')} ControllerComponentManager
+ */
+
 module.exports = class ControlerState {
 
     #components = new WeakMap();
     #keys = new Map();
+
+    /**
+     *  @type {Set?}
+     */
     #scope;
 
+    /**
+     *  @type {WeakMap?}
+     */
     #overriddenScope;
 
     constructor(controllerConfiguration = ControllerConfiguration) {
     // default argument is for dependencies injection, not for passing argument
-
+        
         this.#scope = controllerConfiguration.getScope();
     }
 
@@ -28,6 +39,13 @@ module.exports = class ControlerState {
         return this.#components.has(key);
     }
 
+    /**
+     * 
+     * @param {Object} _component 
+     * @param {ControllerComponentManager} _container 
+     * 
+     * @returns {undefined}
+     */
     load(_component, _container) {
         
         const component = _component;
@@ -44,6 +62,19 @@ module.exports = class ControlerState {
         this.#keys.set(component.name, instance);
     }
 
+    /**
+     *  @typedef {Object} OverrideMeta
+     *  @property {Object} defaultInstance
+     *  @property {string} componentKey
+     *  @property {ControllerComponentManager} iocContainer 
+     */
+
+    /**
+     *   
+     * @param {Object} _abstract 
+     * @param {Object} _concrete 
+     * @param {OverrideMeta} param2 
+     */
     override(_abstract, _concrete, {defaultInstance, componentKey, iocContainer}) {
 
         const isValidBinding = iocContainer ? iocContainer._isParent(_abstract, _concrete) : ControlerState._isParent(_abstract, _concrete);
@@ -90,11 +121,22 @@ module.exports = class ControlerState {
 
     }
 
+    /**
+     * 
+     * @param {Object} _abstract 
+     * @returns {boolean}
+     */
     has(_abstract) {
 
         return this.#overriddenScope?.has(_abstract) || this.#scope.has(_abstract);
     }
 
+    /**
+     * 
+     * @param {Object} base 
+     * @param {Object} derived 
+     * @returns {boolean}
+     */
     static _isParent(base, derived) {
 
         if (derived === base) return true;
@@ -112,6 +154,12 @@ module.exports = class ControlerState {
         } 
     }
 
+    /**
+     * 
+     * @param {Object} _component 
+     * @param {Object} _instance 
+     * @param {ControllerComponentManager} _container 
+     */
     loadInstance(_component, _instance, _container) {
         // this method need the third parameter as an instance of IocContainer
         // to get refernce reach type checking for _instance

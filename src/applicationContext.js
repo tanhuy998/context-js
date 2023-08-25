@@ -6,27 +6,63 @@ const HttpContext = require('./httpContext.js');
 const {request, response} = require('express');
 const ControllerState = require('./controller/controllerState.js');
 const ControllerConfiguration = require('./controller/controllerConfiguration.js');
+const AppState = require('./appState.js');
 //const WS = require('./websocket/ws.js');
 
+/**
+ *  @typedef {import('./websocket/websocketContext.js')} WebsocketContext
+ *  @typedef {import('./http/httpRouting.js')} HttpRouteContext
+ *  @typedef {import('./ioc/decorator.js').BindingContext} IocBindingContext
+ */
 
 class ApplicationContext {
 
     #config;
     #preset;
     #rootDir;
-
+    
+    /** @type {} */
     #routeContext;
+
+    /** @type {WebsocketContext}*/
     #websocketContext;
+
+    /** @type {IocBindingContext} */
     #bindingContext;
 
+    /**
+     *  @type {ControllerConfiguration}
+     */
     #componentsConfig;
     #iocContainer;
+
+    /**
+     *  @type {boolean}
+     */
     #supportIoc = false;
+
+    /**
+     *  @type {ControllerComponentManager}
+     */
     #componentManager;
 
+    /**
+     *  @type {number}
+     */
     #maxSyncTask = 50;
 
+
     #wsHandler;
+
+    /**
+     *  @type {AppState}
+     */
+    #state;
+
+    get state() {
+
+        return this.#state;
+    }
 
     get wsHandler() {
 
@@ -38,6 +74,7 @@ class ApplicationContext {
         return this.#maxSyncTask;
     }
 
+    
     get components() {
 
         return this.#componentsConfig;
@@ -48,6 +85,9 @@ class ApplicationContext {
         return this.#supportIoc;
     }
 
+    /**
+     *  @returns {ControllerComponentManager}
+     */
     get iocContainer() {
 
         return this.#componentManager;
@@ -82,7 +122,7 @@ class ApplicationContext {
         this.#supportIoc = true;
 
         this._initPresetComponents();
-    };
+    }
 
     _initPresetComponents() {
 
@@ -103,6 +143,8 @@ class ApplicationContext {
     constructor(_preset) {
         
         this.#preset = _preset;
+
+        this.#state = AppState.INIT;
 
         this.#resolveRootDir();
         this.#Init();
@@ -170,6 +212,15 @@ class ApplicationContext {
     resolveWSHandler() {
 
 
+    }
+
+    mount() {
+
+        this.#state = AppState.MOUNT;
+
+        
+
+        this.#state = AppState.RUNTIME;
     }
 }
 

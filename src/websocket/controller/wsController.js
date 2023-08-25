@@ -4,21 +4,41 @@ const ClientContext = require('../clientContext.js')
 
 class WSController extends BaseController {
 
+    /**
+     *  @type {Object}
+     */
     #handshake;
+
+    /**
+     *  
+     */
     #socket;
+
     #rooms;
 
+    /**
+     *  @type {string}
+     */
     #socketId;
 
     #server;
 
+    /**
+     *  @type {ClientContext}
+     */
     #context;
 
+    /**
+     *  @returns {ClientContext}
+     */
     get context() {
 
         return this.#context;
     }
 
+    /**
+     *  @type {Object}
+     */
     get handshake() {
 
         return this.#handshake;
@@ -60,7 +80,11 @@ class WSController extends BaseController {
 
         this.#handshake = _httpContext;
     }
-
+    
+    /**
+     * @override
+     * @param {ClientContext} _context 
+     */
     setContext(_context) {
 
         if (_context instanceof ClientContext) {
@@ -82,6 +106,12 @@ class WSController extends BaseController {
         this.#handshake = this.#socket.handshake;
     }
 
+    /**
+     * @async
+     * @param {string} _event 
+     * @param  {...any} payload 
+     * @returns 
+     */
     async emit(_event, ...payload) {
 
         return this.#socket.emitWithAck(_event, ...payload);

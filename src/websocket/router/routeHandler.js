@@ -5,6 +5,13 @@ const {EventEmitter} = require('node:events');
 const {types} = require('node:util');
 const {METADATA} = require('../../constants.js');
 
+
+/**
+ *  @global
+ * 
+    @typedef {import('./wsRouter.js')} WSRouter
+ */
+
 module.exports = class RouteHandler extends T_WeakTypeNode{
 
     /**
@@ -19,12 +26,15 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
     }
 
     #tempContext;
-    #router;
 
+    #router;
+    
+    /** @type {number} */
     #maxSyncTask;
 
     #errorCatcher = new EventEmitter();
 
+    /** @type {Function} */
     get callbackFunction() {
 
         return this.data;
@@ -35,6 +45,7 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
         return this.#router;
     }
 
+    /** @type {Number} */
     get maxSyncTask() {
 
         return this.#maxSyncTask || RouteHandler.MAX_SYNC_TASK;
@@ -47,6 +58,13 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
         return this.#id;
     }
 
+    /**
+     * 
+     * @param {Function} _callback 
+     * @param {Object} config
+     * @param {WSRouter} config.router 
+     * @param {Number} config.maxSyncTask
+     */
     constructor(_callback, {router, maxSyncTask}) {
 
         if (typeof _callback !== 'function') {
@@ -76,6 +94,11 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
         })
     }
 
+    /**
+     *  @param {any}
+     * 
+     *  @throws {TypeError}
+     */
     #checkIfCallable(_value) {
 
         const isFunction = typeof _value !== 'function';
@@ -87,6 +110,10 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
         }
     }
 
+    /**
+     * 
+     * @param {RouteHandler} _node 
+     */
     setNext(_node) {
         
         this.#checkIfCallable(_node.value);
@@ -109,7 +136,15 @@ module.exports = class RouteHandler extends T_WeakTypeNode{
     //     super.pushBack(_node);
     // }
 
-    
+    /**
+     * 
+     * @param {Number} _taskCount 
+     * @param {Object} _eventPack 
+     * @param {Function} _eventPack.lastNextFunction
+     * @param {Array<any>} _eventPack.handlerArguments
+     * @param {Function} _eventPack.pushError
+     * @param {WSRouter} _eventPack.eventDispatcher
+     */
     handle(_taskCount = 0, _eventPack) {
 
         const _this = this;
