@@ -33,17 +33,6 @@
   ],
   "author": "Huy Tran - tanhuy998",
   "license": "MIT",
-  "files": [
-    "index.js",
-    "legacy.js",
-    "stage3.js",
-    "decoratorVersion.js",
-    "LICENSE",
-    "README.md",
-    ".babelrc",
-    "tc39-stage3-decorator/",
-    "src/"
-  ],
   "devDependencies": {
     "@babel/cli": "^7.21.0",
     "@babel/core": "^7.20.12",
