@@ -1,5 +1,5 @@
 //const PreInvokeFunction = require('./src/callback/preInvokeFunction.js');
-//const controller = require('./src/controller/baseController.js')
+const controller = require('./src/controller/baseController.js')
 const decorator = require('./src/decorator/decoratorResult.js');
 const http = require('./src/http/httpRouting.js');
 const middleware = require('./src/middleware/middleware.js');
@@ -21,7 +21,7 @@ const request = require('./src/request/decorator.js');
 
 module.exports.PreInvokeFunction = require('./src/callback/preInvokeFunction.js');
 
-//module.exports.BaseController = controller.BaseController;
+module.exports.BaseController = controller.BaseController;
 
 module.exports.dispatchable = controller.dispatchable;
 
@@ -37,7 +37,7 @@ module.exports.response = response; // decorator
 
 module.exports.args = requestDispatcher.args;
 
-//module.exports.dispatchRequest = requestDispatcher.dispatchRequest;
+module.exports.dispatchRequest = requestDispatcher.dispatchRequest;
 
 module.exports.requestParam = requestDispatcher.requestParam;
 

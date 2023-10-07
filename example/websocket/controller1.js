@@ -13,6 +13,7 @@ class Component {
     prop = '1';
 }
 
+
 function test(socket, next) {
 
     console.log('interceptor');

@@ -7,7 +7,8 @@ module.exports = getBabelConfig();
 function getBabelConfig() {
 
     const appRootPath = resolveProjectRootDir();
-
+    //const appRootPath = process.cwd();
+    
     const packageJson = require(path.join(appRootPath, './package.json'));
 
     if (packageJson && packageJson.babel) {

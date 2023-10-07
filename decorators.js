@@ -68,7 +68,7 @@ else {
 
 const parts = require(path);
 
-
+const WS = parts.WS;
 
 module.exports = {
     /** @type */
@@ -125,13 +125,13 @@ module.exports = {
     actionResult : parts.actionResults,
 
     /**@type {WS} */
-    WS : websocketContent.WS,
+    WS : parts.WS,
 
-    /** @class */
-    WSController : websocketContent.WSController,
+    /** @class WSController*/
+    WSController : parts.WSController,
 
     /**@type {WSRouter} */
-    WSRouter : websocketContent.Router,
+    WSRouter : parts.Router,
 }
 
 
@@ -146,7 +146,7 @@ module.exports = {
 // module.exports.dispatchable = parts.dispatchable;
 
 // /**@type  {Endpoint}*/
-// module.exports.Endpoint = parts.Endpoint;
+// module.exports.Endpoint = parts.Endpoint;    
 
 // /**@type {Route} */
 // module.exports.Route = parts.Route;

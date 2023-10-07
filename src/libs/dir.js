@@ -42,7 +42,4 @@ function resolveProjectRootDir(_dir) {
     return resolveProjectRootDir(path.dirname(dirname));
 }
 
-module.exports = function() {
-
-    return cwd();
-};
+module.exports = resolveProjectRootDir;
