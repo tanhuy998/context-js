@@ -1,11 +1,8 @@
 {
   "name": "@tanhuy998/context-js",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Controller management for Express.js",
   "main": "index.js",
-  "imports": {
-    "#src": "./src" 
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/tanhuy998/context-js"
