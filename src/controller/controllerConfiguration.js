@@ -8,6 +8,7 @@ module.exports = class ControllerConfiguration {
      *  @type {ControllerComponentManager}
      */
     #container;
+    
     #keys = new Map();
 
     #scope = new Set();

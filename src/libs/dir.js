@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-
+const {cwd} = require('node:process');
 function resolveProjectRootDir(_dir) {
 
     let dirname;
@@ -42,4 +42,7 @@ function resolveProjectRootDir(_dir) {
     return resolveProjectRootDir(path.dirname(dirname));
 }
 
-module.exports = resolveProjectRootDir;
+module.exports = function() {
+
+    return cwd();
+};

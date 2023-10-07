@@ -1,7 +1,11 @@
-const {WS, WSController} = require('../../index.js');
+const {WS, WSController, ActionResult} = require('../../index.js');
 const {args, autoBind, ApplicationContext} = require('../../index.js');
 const ResponseError = require('../../src/error/responseError.js');
 const WSEvent = require('../../src/websocket/router/wsEvent.js');
+
+const main = require('../../index.js');
+const { consumes } = require('../../legacy.decorators.js');
+//const { WSController, WSController } = require('../../stage3.js');
 
 @autoBind()
 class Component {
@@ -22,7 +26,7 @@ function test(socket, next) {
 class Controller1 extends WSController{
 
     constructor() {
-
+        
         super();
     }
 
@@ -39,11 +43,10 @@ class Controller1 extends WSController{
     @WS.channel('test')
     @args(Component, WSEvent)
     async handle(component, event) {
-
+        
         const eventArgs = this.context.eventArguments;
         return {status: 'ok'};
     }
-
 
     @args(Error)
     onError(error) {

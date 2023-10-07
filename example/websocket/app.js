@@ -15,7 +15,7 @@ const io = new Server(httpServer);
 
 const v8 = require('v8');
 
-const {WS, ApplicationContext, Router} = require('../../index.js');
+const {WS, ApplicationContext, WSRouter} = require('../../index.js');
 
 ApplicationContext.useIoc();
 
@@ -24,7 +24,7 @@ const Controller2 = require('./controller2.js');
 const { count } = require('console');
 const { nextTick } = require('process');
 
-const router = new Router();
+const router = new WSRouter();
 router.maxSyncTask(2)
 
 let counter = 0;

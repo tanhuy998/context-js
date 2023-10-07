@@ -13,44 +13,49 @@
 //     PreInvokeFunction , ...controller, ...decorator, ...http, ...middleware, response, ...baseController, ...requestDispatcher, ...responseDecorator
 // };
 
-class InvalidBabelDecoratorVersion extends Error {
+const decorators = require('./decorators.js');
 
-    constructor() {
+const common = require('./common.js');
 
-        super('Invalid Babel configuation for decorators');
-    }
-}
+const loadedModules = {...decorators, ...common};
 
-const babelDecoratorVersion = require('./decoratorVersion.js');
-
-let modules;
-
-if (babelDecoratorVersion == 'legacy') {
-
-    modules = require('./legacy.js');
-}
-else if (babelDecoratorVersion == 'stage3') {
-
-    modules = require('./stage3.js');
-}
-else {
-
-    throw new InvalidBabelDecoratorVersion();
-}
-
-module.exports = modules;
-
-module.exports.decoratorVersion = babelDecoratorVersion;
+module.exports = loadedModules;
 
 const ApplicationContext = require('./src/applicationContext.js');
+//const WSController = require('./src/websocket/controller/wsController.js');
 
 const appContextPreset = {
-    RouteContext: modules.RouteContext,
+    //RouteContext: modules.RouteContext,
+    RouteContext: require('./src/http/httpRouting.js').RouteContext,
     WebsocketContext: require('./src/websocket/websocketContext.js'),
     ioc: {
-        BindingContext: modules.BindingContext,
+        //BindingContext: modules.BindingContext,
+        BindingContext: require('./src/ioc/decorator.js').BindingContext
     }
 }
 
-module.exports.ApplicationContext = new ApplicationContext(appContextPreset);
+loadedModules.ApplicationContext = new ApplicationContext(appContextPreset);
 //module.exports.enableRuntimeError = require('./src/error/expressErrorHanler.js');
+
+
+// const actionResults = {
+//     ...require('./src/response/utils/view.js'),
+//     ...require('./src/response/utils/redirect.js'),
+//     ...require('./src/response/utils/fileResult.js'),
+//     ...require('./src/response/utils/download.js'),
+// };
+
+// const websocketContent = require('./src/websocket/index.js');
+
+
+
+
+// module.exports.consumes = new Proxy(request.consumes, adapter);
+
+// module.exports.actionResult = actionResults;
+
+// module.exports.WS = websocketContent.WS;
+
+// module.exports.WSController = websocketContent.WSController;
+
+// module.exports.WSRouter = websocketContent.Router;

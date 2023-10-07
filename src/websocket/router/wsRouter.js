@@ -50,7 +50,7 @@ class WSRouter extends Function {
         this.#mounted = true;
     }
 
-    /**
+    /** 
      *  @returns {string}
      */
     static get DEFAULT_CHANNEL() {
