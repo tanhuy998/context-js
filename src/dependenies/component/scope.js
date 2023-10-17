@@ -1,9 +1,15 @@
-const ControllerConfiguration = require('./controllerConfiguration.js');
+const ComponentConfigurator = require('./componentConfigurator.js');
 
 /**
- *  @typedef {import('./controllerComponentManager.js')} ControllerComponentManager
+ *  @typedef {import('./componentManager.js')} ComponentManager
  */
 
+/**
+ *  define the scope that store the scope component of each handling contextt
+ *  scope components are genuinely registered as transient components
+ *  when a scope component is needed in the first time, scope will request the component manager build a new instance
+ *  and then store it to future use.
+ */
 module.exports = class Scope {
 
     #components = new WeakMap();
@@ -19,10 +25,15 @@ module.exports = class Scope {
      */
     #overriddenScope;
 
-    constructor(controllerConfiguration = ControllerConfiguration) {
-    // default argument is for dependencies injection, not for passing argument
-        
-        this.#scope = controllerConfiguration.getScope();
+    /**
+     * 
+     * @param {ComponentConfigurator} componentConfigurator 
+     */
+    constructor(componentConfigurator) {
+
+        // Scope just store the abstract class, concrete class is stored at componentManager
+        // when an abstract is needed for the first, it will request the concrete from the componentManager    
+        this.#scope = componentConfigurator.getScope();
     }
 
     #Init() {

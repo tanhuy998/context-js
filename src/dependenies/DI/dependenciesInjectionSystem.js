@@ -1,5 +1,5 @@
 const Contextual = require('./contextual.js');
-const FunctionInjectorEngine = require('./functionInjectorEngine.js');
+const FunctionInjectorEngine = require('../injector/functionInjectorEngine.js');
 
 /**
  * @typedef {import('../context/context.js')} Context
@@ -27,11 +27,11 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
 
         const context = this.context;
 
-        this.#functionInjector = new FunctionInjectorEngine(context);
+        this.#functionInjector = context.constructor.iocContainer.injector;
     }
 
     inject(_unknown) {
 
-
+                
     }
 }

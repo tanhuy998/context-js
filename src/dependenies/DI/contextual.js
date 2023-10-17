@@ -1,5 +1,8 @@
+const Context =  require('../context/context.js');
+
 module.exports = class Contextual {
 
+    /**@type {Context}*/
     #context;
 
     get context() {
@@ -9,7 +12,7 @@ module.exports = class Contextual {
 
     constructor(_context) {
 
-        this.#context;
+        this.#context = _context;
 
         this.#init();
     };

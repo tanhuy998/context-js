@@ -1,21 +1,21 @@
-
-const ControllerState = require('./controllerState.js');
-const {Type} = require('../libs/type.js');
 const IocContainer = require('../ioc/iocContainer.js');
-const ControllerConfiguration = require('./controllerConfiguration.js');
+const Scope = require('./scope.js');
+const {Type} = require('../../libs/type.js');
+const ComponentConfigurator = require('./componentConfigurator.js');
+
 const {ReflectionBabelDecoratorClass_Stage_3} = require('../libs/babelDecoratorClassReflection.js');
 const {EventEmitter} = require('node:events');
 const { BaseController } = require('../controller/baseController.js');
 const HttpContext = require('../httpContext.js');
-const ControlerState = require('./controllerState.js');
 const reflectFunction = require('../libs/reflectFunction.js');
 const reflectClass = require('../libs/reflectClass.js');
 const InvalidClassReflectionError = require('../libs/invalidClassReflectionError.js');
+//const Scope = require('./scope.js');
 
 class ComponentManager extends IocContainer {
 
     /**
-     *  @type {ControllerConfiguration}
+     *  @type {ComponentConfigurator}
      */
     #config;
 
@@ -34,11 +34,11 @@ class ComponentManager extends IocContainer {
             })
         }
 
-        this.#config = new ControllerConfiguration(this);
+        this.#config = new ComponentConfigurator(this);
     }
 
     /**
-     *  @returns {ControllerConfiguration}
+     *  @returns {ComponentConfigurator}
      */
     get configuration() {
 
@@ -91,9 +91,9 @@ class ComponentManager extends IocContainer {
 
         function injectCoreComponentForController() {
 
-            const controllerState = new ControlerState(iocContainer.configuration);
+            const scope = new Scope(iocContainer.configuration);
 
-            this.setState(controllerState);
+            this.setState(scope);
         }
 
         this.hook.add(_component, injectCoreComponentForController);
@@ -113,11 +113,11 @@ class ComponentManager extends IocContainer {
 
     /**
      * 
-     * @param {ControllerConfiguration} config 
+     * @param {ComponentConfigurator} config 
      */
     setConfig(config) {
 
-        if (config instanceof ControllerConfiguration) {
+        if (config instanceof ComponentConfigurator) {
 
             this.#config = config;
         }
@@ -147,7 +147,7 @@ class ComponentManager extends IocContainer {
 
         if (!this.#config) {
 
-            throw new Error('ControllerComponentManager Error: there is no configuration to handle.');
+            throw new Error('ComponentManager Error: there is no configuration to handle.');
         }
 
         if (!this._isParent(BaseController, _concrete)) {
@@ -167,11 +167,11 @@ class ComponentManager extends IocContainer {
         }
         else {
 
-            const controllerState = new ControlerState(this.#config);
+            const scope = new ControlerState(this.#config);
 
-            controllerState.loadInstance(HttpContext, httpContext, this)
+            scope.loadInstance(HttpContext, httpContext, this)
 
-            instance = this.#analyzeConcrete(_concrete, controllerState);  
+            instance = this.#analyzeConcrete(_concrete, scope);  
         }
 
         instance.setContext(httpContext);
@@ -183,12 +183,12 @@ class ComponentManager extends IocContainer {
     /**
      * @override
      * @param {Object} abstract 
-     * @param {ControlerState} _controllerState 
+     * @param {Scope} _scope 
      * @returns {Object | undefined}
      */
-    get(abstract, _controllerState) {
+    get(abstract, _scope) {
         
-        const instance = this.#_get(abstract, _controllerState);
+        const instance = this.#_get(abstract, _scope);
 
         return instance;
     }
@@ -196,22 +196,22 @@ class ComponentManager extends IocContainer {
     /**
      * 
      * @param {Object} abstract 
-     * @param {ControlerState} _controllerState 
+     * @param {Scope} _scope 
      * @returns {Object | undefined}
      */
-    #_get(abstract, _controllerState) {
+    #_get(abstract, _scope) {
 
-        if (!_controllerState) {
+        if (!_scope) {
             
             return super.get(abstract);
         }
 
         //const scope = this.#config.getScope();
-        const scope = _controllerState instanceof ControlerState ? _controllerState : this.#config.getScope();
+        const scope = _scope instanceof Scope ? _scope : this.#config.getScope();
         
         if (scope.has(abstract)) {
             
-            return this.getScopeComponent(abstract, _controllerState);
+            return this.getScopeComponent(abstract, _scope);
         }
         
         if (!this.has(abstract)) return undefined;
@@ -222,18 +222,18 @@ class ComponentManager extends IocContainer {
         }
 
         const concrete = this.getConcreteOf(abstract);
-        return this.#analyzeConcrete(concrete, _controllerState);
+        return this.#analyzeConcrete(concrete, _scope);
     }
 
     /**
      * 
      * @param {Object} abstract 
-     * @param {ControlerState} _controllerState 
+     * @param {Scope} _scope 
      * @returns {Object | undefined}
      */
-    getScopeComponent(abstract, _controllerState) {
+    getScopeComponent(abstract, _scope) {
 
-        const controllerState = _controllerState;
+        const scope = _scope;
 
         let component = abstract;
 
@@ -244,12 +244,12 @@ class ComponentManager extends IocContainer {
         
         if (component) {
 
-            if (!controllerState.isLoaded(component)) {
+            if (!scope.isLoaded(component)) {
 
-                controllerState.load(component, this);
+                scope.load(component, this);
             }
 
-            const instance = controllerState.get(component);
+            const instance = scope.get(component);
             
             return instance;
         }
@@ -262,20 +262,20 @@ class ComponentManager extends IocContainer {
     /**
      * 
      * @param {Object} abstract 
-     * @param {ControlerState | undefined} _controllerState 
+     * @param {Scope | undefined} _scope 
      *  
      * @returns {Object | undefined}
      */
-    build(concrete, _controllerState = undefined) {
+    build(concrete, _scope = undefined) {
 
-        if (_controllerState) {
+        if (_scope) {
 
-            if (!(_controllerState instanceof ControllerState)) {
+            if (!(_scope instanceof Scope)) {
 
-                _controllerState = new ControllerState(this.#config);
+                _scope = new Scope(this.#config);
             }
 
-            const instance = this.#analyzeConcrete(concrete, _controllerState);
+            const instance = this.#analyzeConcrete(concrete, _scope);
 
             this.#notifyNewInstance(instance, concrete); 
 
@@ -395,11 +395,11 @@ class ComponentManager extends IocContainer {
         }
     }
 
-    #analyzeConcrete(concrete, _controllerState) {
+    #analyzeConcrete(concrete, _scope) {
 
         const reflection = this.#reflect(concrete);
 
-        const args = this.#discoverParamWithScope(reflection.params, _controllerState);
+        const args = this.#discoverParamWithScope(reflection.params, _scope);
         
         const instance = new concrete(...args);
 
@@ -416,7 +416,7 @@ class ComponentManager extends IocContainer {
         return this.#config.getScope().has(abstract);
     }
 
-    resolveArgumentsOf(_concrete /*can be function or class*/, _controllerState, _asFunction = false) {
+    resolveArgumentsOf(_concrete /*can be function or class*/, _scope, _asFunction = false) {
 
         let reflection;
 
@@ -429,12 +429,12 @@ class ComponentManager extends IocContainer {
             reflection = this.#reflect(_concrete);
         }
 
-        const args = this.#discoverParamWithScope(reflection.params, _controllerState);
+        const args = this.#discoverParamWithScope(reflection.params, _scope);
 
         return args;
     }
 
-    #discoverParamWithScope(list, _controllerState) {
+    #discoverParamWithScope(list, _scope) {
 
         const scopeConfig = this.#config;
 
@@ -448,7 +448,7 @@ class ComponentManager extends IocContainer {
                 
                 if (this.#hasScope(className)) {
 
-                    return this.getScopeComponent(className, _controllerState);
+                    return this.getScopeComponent(className, _scope);
                 }
                 else {
 
@@ -458,7 +458,7 @@ class ComponentManager extends IocContainer {
 
                         const concrete = this.getConcreteOf(component);
 
-                        return this.get(concrete, _controllerState);
+                        return this.get(concrete, _scope);
                     }
                     else {
 
@@ -493,4 +493,4 @@ class ComponentManager extends IocContainer {
     }
 }
 
-module.exports = ControllerComponentManager;
+module.exports = ComponentManager;
