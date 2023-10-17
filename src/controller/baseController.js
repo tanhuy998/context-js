@@ -12,7 +12,9 @@ function dispatchable(_class) {
     return _class;
 }
 
-class BaseController {
+class BaseController extends Function{
+
+    static #router
 
     //static httpContext;
 
@@ -177,4 +179,4 @@ class BaseController {
     }
 };
 
-module.exports = {BaseController, dispatchable};
+module.exports = BaseController;

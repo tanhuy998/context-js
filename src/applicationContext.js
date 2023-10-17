@@ -15,11 +15,11 @@ const AppState = require('./appState.js');
  *  @typedef {import('./ioc/decorator.js').BindingContext} IocBindingContext
  */
 
+const {CONTEXT_DEFAULT, PRIMARY} = require('./constants.js')
+
 class ApplicationContext {
 
     #config;
-    #preset;
-    #rootDir;
     
     /** @type {} */
     #routeContext;
@@ -54,15 +54,7 @@ class ApplicationContext {
 
     #wsHandler;
 
-    /**
-     *  @type {AppState}
-     */
-    #state;
 
-    get state() {
-
-        return this.#state;
-    }
 
     get wsHandler() {
 
@@ -140,16 +132,6 @@ class ApplicationContext {
         this.#componentManager.bind(ControllerState, ControllerState);
     }
 
-    constructor(_preset) {
-        
-        this.#preset = _preset;
-
-        this.#state = AppState.INIT;
-
-        this.#resolveRootDir();
-        this.#Init();
-    }
-
     #Init() {
         
         this.#initPreset();
@@ -176,11 +158,6 @@ class ApplicationContext {
 
     #bindComponentInConfig() {
 
-    }
-
-    #resolveRootDir() {
-
-        this.#rootDir = resolveProjectRootDir();
     }
 
     getComponent(abstract, _controllerState) {
@@ -221,6 +198,74 @@ class ApplicationContext {
         
 
         this.#state = AppState.RUNTIME;
+    }
+
+
+
+    /**
+     * 
+     * 
+     * 
+     * 
+     * 
+     */
+
+    #contexts = new Map();
+    #preset;
+    #rootDir;
+
+    /**
+ *  @type {AppState}
+ */
+    #state;
+
+    get state() {
+
+        return this.#state;
+    }
+    constructor(_preset) {
+        
+        this.#preset = _preset;
+        
+        this.#Init();
+    }
+
+    dispatch() {
+
+        return this.dispatchHandler(CONTEXT_DEFAULT);
+    }
+    dispatchHandler(context) {
+
+        if (!context) {
+
+            context = CONTEXT_DEFAULT;
+        }
+
+        return this.resolveWSHandler();
+    }
+
+    #resolveHandler() {
+
+        
+    }
+
+    #init() {
+
+        this.#state = AppState.INIT;
+
+        this.#resolveRootDir();
+        this.#initPreset();
+
+    }
+
+    #initPreset() {
+
+
+    }
+
+    #resolveRootDir() {
+
+        this.#rootDir = resolveProjectRootDir();
     }
 }
 
