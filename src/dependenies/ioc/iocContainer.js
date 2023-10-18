@@ -5,10 +5,13 @@
 // const { PropertyDecorator } = require('../decorator/decoratorResult.js');
 const {EventEmitter} = require('node:events');
 const {Type} = require('../../libs/type.js');
+const {checkType, isParent} = require('../../utils/type.js');
 
 const FunctionInjectorEngine = require('../injector/functionInjectorEngine.js');
 const isAbstract = require('reflectype/src/utils/isAbstract.js');
 const {CONSTRUCTOR} = require('../constants.js');
+
+const Interface = require('reflectype/src/interface/interface.js');
 
 class Empty {
 
@@ -178,9 +181,9 @@ class IocContainer extends EventEmitter {
      */
     bind(abstract, concrete, override = false) {
 
-        this.checkType(abstract, concrete);
+        checkType(abstract, concrete);
 
-        const key = abstract.name;
+        //const key = abstract.name;
 
         if (this.#container.has(abstract) && override) {
 
@@ -191,55 +194,92 @@ class IocContainer extends EventEmitter {
 
         //this.#stringKeys.set(key, concrete);
 
-        this.bindArbitrary(key, abstract);
+        //this.bindArbitrary(key, abstract);
         this.#container.set(abstract, concrete);
     }
 
-    /**
-     * 
-     * @param {Object} abstract 
-     * @param {Object} concrete 
-     * 
-     * @throws
-     */
-    checkType(abstract, concrete) {
+    // /**
+    //  * 
+    //  * @param {Object} abstract 
+    //  * @param {Object} concrete 
+    //  * 
+    //  * @throws
+    //  */
+    // checkType(abstract, concrete) {
 
-        // const concreteType = (typeof concrete);
-        // const abstractType = (typeof abstract);
+    //     // const concreteType = (typeof concrete);
+    //     // const abstractType = (typeof abstract);
 
-        if (!abstract.constructor && !concrete.constructor) {
+    //     if (concrete.prototype instanceof Interface) {
 
-            throw new Error('IocContainer Error: abstract and concrete must have contructor')
-        }
+    //         throw new TypeError(`cannot bind concrete class [${concrete?.name}] that is subclass of [Interface]`);
+    //     }
 
-        if (!this._isParent(abstract, concrete)) {
+    //     if (abstract.prototype instanceof Interface) {
 
-            throw new Error('IocContainer Error: ' + concrete.constructor.name + ' did not inherit ' + abstract.constructor.name);
-        }
-    }
+    //         if (!concrete[IS_CHECKABLE] || concrete.__implemented(abstract)) {
 
-    /**
-     * 
-     * @param {Object} base 
-     * @param {Object} derived 
-     * @returns 
-     */
-    _isParent(base, derived) {
+    //             throw new TypeError(`class [${concrete?.name}] hasn't implement [${abstract.name}] yet`);
+    //         }
 
-        if (derived == base) return true;
+    //         return;
+    //     }
 
-        let prototype = derived.__proto__;
+    //     if (!abstract.constructor && !concrete.constructor) {
 
-        while(prototype !== null) {
+    //         throw new Error('IocContainer Error: abstract and concrete must have contructor')
+    //     }
+
+    //     if (!this._isParent(abstract, concrete)) {
+
+    //         throw new Error('IocContainer Error: ' + concrete.constructor.name + ' did not inherit ' + abstract.constructor.name);
+    //     }
+    // }
+
+
+    // _hasRelationShip(lhs, rhs) {
+
+    //     try {
+
+    //         this.checkType(lhs, rhs);
+
+    //         return true;
+    //     }
+    //     catch {}
+
+    //     try {
+
+    //         this.checkType(rhs, lhs);
+
+    //         return true;
+    //     }
+    //     catch {}
+
+    //     return false;
+    // }
+
+    // /**
+    //  * 
+    //  * @param {Object} base 
+    //  * @param {Object} derived 
+    //  * @returns 
+    //  */
+    // _isParent(base, derived) {
+
+    //     if (derived == base) return true;
+
+    //     let prototype = derived.__proto__;
+
+    //     while(prototype !== null) {
             
-            if (prototype === base) {
+    //         if (prototype === base) {
 
-                return true;
-            }
+    //             return true;
+    //         }
 
-            prototype = prototype.__proto__;
-        } 
-    }
+    //         prototype = prototype.__proto__;
+    //     } 
+    // }
 
     /**
      * 
@@ -387,7 +427,7 @@ class IocContainer extends EventEmitter {
 
         const instancePrototype = _instance.constructor;
 
-        this.checkType(_abstract, instancePrototype);
+        checkType(_abstract, instancePrototype);
 
         if (this.#singleton.has(_abstract)) {
 
@@ -427,6 +467,11 @@ class IocContainer extends EventEmitter {
 
     build(concrete) {
 
+        if (concrete instanceof Interface) {
+
+            throw new TypeError('iocContainer refused to build instance of [Interface]');
+        }
+
         if (!isAbstract(concrete)) {
 
             throw new Error(`cannot build [${concrete?.name ?? concrete}]`);
@@ -447,39 +492,39 @@ class IocContainer extends EventEmitter {
 
         return new concrete();
     }
-    /**
-     * 
-     * @param {Array<ReflectionParameter>} list 
-     * @returns 
-     */
-    #discoverParams(list) {
+    // /**
+    //  * 
+    //  * @param {Array<ReflectionParameter>} list 
+    //  * @returns 
+    //  */
+    // #discoverParams(list) {
 
-        const result = list.map((param) => {
+    //     const result = list.map((param) => {
             
-            if (param.defaultValue != undefined && param.defaultValueType == Type.UNIT) {
+    //         if (param.defaultValue != undefined && param.defaultValueType == Type.UNIT) {
                 
-                const arg = this.getByKey(param.defaultValue);
+    //             const arg = this.getByKey(param.defaultValue);
 
-                return arg;
-            }
-            else {
+    //             return arg;
+    //         }
+    //         else {
 
-                return undefined;
-            }
-        });
+    //             return undefined;
+    //         }
+    //     });
 
-        return result;
-    }
+    //     return result;
+    // }
 
-    #notifyResolvedComponent(_instance, _abstract, _concrete) {
+    // #notifyResolvedComponent(_instance, _abstract, _concrete) {
 
-        this.emit('resolveComponets', _instance, _abstract, _concrete);
-    }
+    //     this.emit('resolveComponets', _instance, _abstract, _concrete);
+    // }
 
-    #notifyNewInstance(_instance, _concrete) {
+    // #notifyNewInstance(_instance, _concrete) {
 
-        this.emit('newInstance', _instance, _concrete);
-    }
+    //     this.emit('newInstance', _instance, _concrete);
+    // }
 
 }
 

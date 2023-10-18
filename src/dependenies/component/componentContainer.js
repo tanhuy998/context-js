@@ -62,9 +62,9 @@ class ComponentContainer extends IocContainer {
      * @returns {Object | undefined}
      */
     #resolveComponentFromScope(abstract, _scope) {
-
+        
         if (!_scope.isLoaded(abstract)) {
-
+            
             _scope.load(abstract, this);
         }
         

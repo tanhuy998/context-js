@@ -1,4 +1,5 @@
 const {CONSTRUCTOR} = require('../constants.js');
+const {hasRelationShip, checkType} = require('../../utils/type.js');
 
 /**
  *  @typedef {import('./componentContainer.js')} ComponentContainer
@@ -77,7 +78,7 @@ class Scope {
 
         //if (!this.#components.has(component)) return;
 
-        const instance = _container.build(component, this);
+        const instance = _container.get(component);
         //const instance = _container.get(component, this);
         
         this.#components.set(component, instance);
@@ -93,7 +94,8 @@ class Scope {
      */
     override(_abstract, _concrete, {defaultInstance, componentKey, iocContainer}) {
 
-        const isValidBinding = iocContainer ? iocContainer._isParent(_abstract, _concrete) : ControlerState._isParent(_abstract, _concrete);
+        //const isValidBinding = iocContainer ? iocContainer._hasRelationShip(_abstract, _concrete) : Scope._isParent(_abstract, _concrete);
+        const isValidBinding = hasRelationShip(_abstract, _concrete);
 
         if (!isValidBinding) {
 
@@ -194,10 +196,12 @@ class Scope {
 
         const instanceConstructor = _instance.constructor;
 
-        if (!_container._isParent(_component, instanceConstructor)) {
+        // if (!_container._isParent(_component, instanceConstructor)) {
 
-            throw new Error('the loaded instance is not inherit ' + _component.name);
-        }
+        //     throw new Error('the loaded instance is not inherit ' + _component.name);
+        // }
+
+        checkType(_component, instanceConstructor);
 
         this.#components.set(_component, _instance);
     }
