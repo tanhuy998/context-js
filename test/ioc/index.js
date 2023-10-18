@@ -1,7 +1,7 @@
-//const IocContainer = require('../../src/dependenies/ioc/iocContainer.js');
+const IocContainer = require('../../src/dependenies/ioc/iocContainer.js');
 const {type, paramsType} = require('reflectype/src/decorators')
 
-//const container = new IocContainer();
+const container = new IocContainer();
 
 class A {
 
@@ -9,40 +9,38 @@ class A {
 
 }
 
-class component {
+class Component {
 
+    static count = 0;
 
+    prop 
+    constructor() {
+
+        this.prop = ++this.constructor.count;
+    }
 }
 
+const {CONSTRUCTOR} = require('../../src/dependenies/constants.js');
+
+//@bind
 class B extends A {
 
     id;
 
-    // @paramsType(component)
-    ['constructor'](_comp) {
+    @paramsType(Component)
+    [CONSTRUCTOR](_comp) {
 
         console.log(arguments);
 
         this.id = _comp;
     }
-
-    
-    // constructor(_comp) {
-
-    //     console.log(_comp);
-
-    //     super();
-    // }
 }
 
-//container.bind(A, B);
+container.bindSingleton(Component, Component);
+container.bind(A, B);
 
-//const obj = container.build(B);
-
-
-
-const obj = new B('á');
+const obj = container.get(A);
 
 console.log(obj.id)
 
-console.log(B.prototype.constructor.toString());
+// console.log(B.prototype[CONSTRUCTOR]);

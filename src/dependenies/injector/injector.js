@@ -9,7 +9,7 @@ module.exports = class Injector {
 
     get iocContainer() {
 
-        return this.iocContainer;
+        return this.#iocContainer;
     }
 
     constructor(_iocContainer) {

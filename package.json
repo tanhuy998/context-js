@@ -9,7 +9,8 @@
   },
   "homepage": "https://github.com/tanhuy998/context-js",
   "scripts": {
-    "test": "node ./test/apply-express/test.js"
+    "test": "node ./test/apply-express/test.js",
+    "test-ioc": "npx babel ./test/ioc > ./test/ioc/compile.js && node ./test/ioc/compile"
   },
   "keywords": [
     "expressjs",
@@ -44,7 +45,7 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "reflectype": "^0.0.4",
+    "reflectype": "^0.0.5",
     "socket.io": "^4.7.0"
   }
 }

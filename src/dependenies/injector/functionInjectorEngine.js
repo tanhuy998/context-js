@@ -27,6 +27,8 @@ module.exports = class FunctionInjectorEngine extends Injector {
         /**@type {property_metadata_t}*/
         const funcMeta = metaOf(_func);
 
+        const reflection = new ReflectionFunction(_func);
+
         const funcDefaultParams = funcMeta.value;
 
         funcMeta.value ??= new Array(reflection.parameters.length);
@@ -46,7 +48,7 @@ module.exports = class FunctionInjectorEngine extends Injector {
         /**@type {property_metadata_t} */
         const funcMeta = metaOf(_func);
 
-        if (!meta) {
+        if (!funcMeta) {
 
             return [];
         }
@@ -137,9 +139,9 @@ module.exports = class FunctionInjectorEngine extends Injector {
         const funcMeta = metaOf(_function);
 
         this.#preprocessFunction(_function);
-
+        
         const args = this.#resolveComponentsFor(_function);
-
+        
         this.#setDefaultArguments(_function, args);
     }
 }

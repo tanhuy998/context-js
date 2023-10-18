@@ -8,6 +8,7 @@ const {Type} = require('../../libs/type.js');
 
 const FunctionInjectorEngine = require('../injector/functionInjectorEngine.js');
 const isAbstract = require('reflectype/src/utils/isAbstract.js');
+const {CONSTRUCTOR} = require('../constants.js');
 
 class Empty {
 
@@ -432,75 +433,21 @@ class IocContainer extends EventEmitter {
             throw new Error(`cannot build [${concrete?.name ?? concrete}]`);
         }
 
-        this.injector.inject(concrete);
-        
+        const pseudoConstructor = concrete.prototype[CONSTRUCTOR];
+
+        if (typeof pseudoConstructor === 'function') {
+            
+            this.injector.inject(pseudoConstructor);
+
+            const instance = new concrete();
+
+            pseudoConstructor.call(instance);
+
+            return instance;
+        }
+
         return new concrete();
     }
-
-    // /**
-    //  * 
-    //  * @param {Object} concrete 
-    //  * @returns {Object | undefined}
-    //  */
-    // build(concrete) {
-
-    //     let reflection = this.#metadata.reflections.get(concrete);
-
-    //     if (!concrete.constructor) {
-
-    //         throw new Error(`IocContainer Error: cannot build ${concrete}`)
-    //     }
-        
-    //     if (!reflection) {
-
-    //         try {
-                
-    //             reflection = reflectClass(concrete);
-    //         }
-    //         catch(error) {
-
-    //             const specialReflectionCases = this.#preset.specialReflectionCase;
-                
-    //             for (const reflector of specialReflectionCases) {
-
-    //                 try {
-
-    //                     reflection = new reflector(concrete);
-
-    //                     if (reflection) break;
-    //                 }
-    //                 catch(e) {}
-    //             }
-    //         }
-    //         finally {
-
-    //             if (!reflection) {
-                    
-    //                 reflection = reflectFunction(concrete);
-    //             }
-    //             // caching reflection of the concrete for further usage
-    //             this.#metadata.reflections.set(concrete, reflection);
-                
-    //             const args = this.#discoverParams(reflection.params);
-        
-    //             const instance = new concrete(...args);
-
-    //             this.#notifyNewInstance(instance, concrete);
-
-    //             return instance;
-    //         }
-    //     }
-    //     else {
-
-    //         const args = this.#discoverParams(reflection.params);
-
-    //         const instance = new concrete(...args);
-
-    //         this.#notifyNewInstance(instance, concrete);
-
-    //         return instance;
-    //     }
-    // }
     /**
      * 
      * @param {Array<ReflectionParameter>} list 
