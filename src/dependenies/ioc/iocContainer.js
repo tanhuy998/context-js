@@ -339,18 +339,21 @@ class IocContainer extends EventEmitter {
      * @returns {Object | undefined}
      */
     get(abstract, _constructorArgs = {}) {
-
-        if (!this.#container.has(abstract)) return undefined;
+        
+        if (!this.#container.has(abstract)) {
+            
+            return undefined;
+        }
         
         const concrete = this.#container.get(abstract);
         
         let result;
 
         if (this.#singleton.has(abstract)) {
-
+            
             const obj = this.#singleton.get(abstract);
 
-            if (obj.constructor.name == "Empty") {
+            if (obj.constructor.name === "Empty") {
 
                 const instance = this.build(concrete);
 
@@ -363,17 +366,13 @@ class IocContainer extends EventEmitter {
 
                 result = obj;
             }
-
-            
         }
         else {
-
             //return this.build(concrete);
             result = this.build(concrete);
-
         }
 
-        this.#notifyResolvedComponent(result, abstract, concrete)
+        //this.#notifyResolvedComponent(result, abstract, concrete)
         
         return result;
     }
@@ -434,7 +433,7 @@ class IocContainer extends EventEmitter {
         }
 
         const pseudoConstructor = concrete.prototype[CONSTRUCTOR];
-
+        
         if (typeof pseudoConstructor === 'function') {
             
             this.injector.inject(pseudoConstructor);

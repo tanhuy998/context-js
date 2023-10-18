@@ -1,7 +1,8 @@
-const ComponentConfigurator = require('./componentConfigurator.js');
+const {CONSTRUCTOR} = require('../constants.js');
 
 /**
- *  @typedef {import('./componentManager.js')} ComponentManager
+ *  @typedef {import('./componentContainer.js')} ComponentContainer
+ * 
  */
 
 /**
@@ -10,7 +11,7 @@ const ComponentConfigurator = require('./componentConfigurator.js');
  *  when a scope component is needed in the first time, scope will request the component manager build a new instance
  *  and then store it to future use.
  */
-module.exports = class Scope {
+class Scope {
 
     #components = new WeakMap();
     #keys = new Map();
@@ -25,15 +26,26 @@ module.exports = class Scope {
      */
     #overriddenScope;
 
+
+    /**
+     * pseudo constructor
+     * 
+     * @param {ComponentManager} componentManager 
+     */
+    [CONSTRUCTOR](componentManager) {
+
+        this.#scope = componentManager?.getScope();
+    }
+
     /**
      * 
-     * @param {ComponentConfigurator} componentConfigurator 
+     * @param {ComponentManager} componentManager 
      */
-    constructor(componentConfigurator) {
+    constructor(componentManager) {
 
         // Scope just store the abstract class, concrete class is stored at componentManager
         // when an abstract is needed for the first, it will request the concrete from the componentManager    
-        this.#scope = componentConfigurator.getScope();
+        this.#scope = componentManager?.getScope();
     }
 
     #Init() {
@@ -70,15 +82,8 @@ module.exports = class Scope {
         
         this.#components.set(component, instance);
 
-        this.#keys.set(component.name, instance);
+        //this.#keys.set(component.name, instance);
     }
-
-    /**
-     *  @typedef {Object} OverrideMeta
-     *  @property {Object} defaultInstance
-     *  @property {string} componentKey
-     *  @property {ControllerComponentManager} iocContainer 
-     */
 
     /**
      *   
@@ -169,7 +174,7 @@ module.exports = class Scope {
      * 
      * @param {Object} _component 
      * @param {Object} _instance 
-     * @param {ControllerComponentManager} _container 
+     * @param {ComponentContainer} _container 
      */
     loadInstance(_component, _instance, _container) {
         // this method need the third parameter as an instance of IocContainer
@@ -209,3 +214,5 @@ module.exports = class Scope {
         return this.#components.get(component);
     }
 }
+
+module.exports = Scope;

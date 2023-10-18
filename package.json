@@ -10,7 +10,8 @@
   "homepage": "https://github.com/tanhuy998/context-js",
   "scripts": {
     "test": "node ./test/apply-express/test.js",
-    "test-ioc": "npx babel ./test/ioc > ./test/ioc/compile.js && node ./test/ioc/compile"
+    "test-ioc": "npx babel ./test/ioc > ./test/ioc/compile.js && node ./test/ioc/compile",
+    "test-component": "npx babel ./test/componentManager > ./test/componentManager/compile.js && node ./test/componentManager/compile"
   },
   "keywords": [
     "expressjs",
