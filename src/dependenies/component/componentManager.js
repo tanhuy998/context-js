@@ -63,6 +63,7 @@ class ComponentManager {
         const pseudoConstructor = Scope.prototype[CONSTRUCTOR];
         
         this.container.bind(Scope, Scope);
+        this.bindScope(Scope, Scope);
 
         initTypePropertyField(pseudoConstructor);
 
