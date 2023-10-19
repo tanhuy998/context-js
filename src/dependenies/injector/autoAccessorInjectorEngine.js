@@ -17,6 +17,36 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
         super(...arguments);
     }
 
+    #ableToInject(propMeta) {
+        
+        if (typeof propMeta !== 'object') {
+                
+            return false;
+        }
+
+        if (propMeta.isMethod) {
+
+            return false;
+        }
+
+        if (typeof propMeta.type !== 'function') {
+
+            return false;
+        }
+
+        if (typeof propMeta.footPrint !== 'object') {
+
+            return false;
+        }
+
+        if (propMeta.footPrint.needInject !== true) {
+
+            return false;
+        }
+
+        return true;
+    }
+
     inject(_object) {
         
         /**@type {metadata_t} */
@@ -35,12 +65,12 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
             
             /**@type {property_metadata_t} */
             const propMeta = propertiesMeta[name];
+            
+            if (!this.#ableToInject(propMeta)) {
 
-            if (typeof propMeta !== 'object' && typeof propMeta.type !== 'function') {
-                
                 continue;
             }
-
+            
             const propAccessor = propMeta.footPrint?.accessor;
 
             const {type} = propMeta;

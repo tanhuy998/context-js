@@ -840,18 +840,18 @@ The flow of Constraints is described below.
 
 
 This package provides Dependency Injection by using an ioc container to help Javascript users on wiring dependencies across components. Dependency Injection in this package just support two types of injection is Constructor Injection and Property Injection.
-Borrowing the concept Dependency Injection of ASP.NET and Larvel's Service Container, Components has it's own lifecycle depends on which type that a particular component is bound.
+Borrowing mostly the concept Dependency Injection of ASP.NET and Laravel's Service Container, Components has it's own lifecycle depends on which type they are bound.
 
 
 ## Binding components
 
-Binding components is the way implementing the Dependency Inversion. Binding means telling the Ioc Container which component (concrete) should be injected as abstraction (base classes or interfaces).
+Binding components is the prerequisite operation of dependency injection. That makes the Dependency Inversion concept meaningful. Binding means telling the Ioc Container which component (concrete) should be injected as abstraction (base classes or interfaces). There exists relationships between abstracts and concretes (as-is/can-do)
 
 There are three types of binding components (also called as component's lifecycle)
 
- - Sington: The Ioc Container just resolve the component once and then reuse it over the Node global module.
-  - Scope: Like Singleton. But the component is resolved when a httpContext arrive. The component will be reuse if the context need it has controller state.
-  - Transient: Each time we need a component, the ioc container will build a new intance.
+ - Singleton: the component lives in the whole context (appication), and theres no others.
+  - Scope: the component lives only in a particular scope, there's no the same unless outside its scope.
+  - Transient: components live anywhere even though which context it stand.
 
 ```js
 const {ApplicationContext} = require('express-controller-js');
@@ -896,26 +896,37 @@ class Singleton {
 
 ## Injecting dependencies
 
-### Constructor Injection (Method Injection)
+The two rules of dependencise injection in this package is:
 
-Assign the constructor's (method's) parameters default value as the component to annotate the Ioc Container the type of component you want to inject.
+  + The dependency (instance of a class) must be registered to to iocContainer before another dependencies (instances) needs (initiation) it.
+  + Dependency Injection just work when the component's dependency's type well-defined (also have alternative way).
+
+Thanks to package "reflectype" (also my own package :haha) that contributes a method to redefine metadatas of classes and objects. therefore, Dependency Injection in Javascript can become more complex than it should be.
+
+### Constructor Injection (pseudo constructor)
+
+Define a pseudo constructor to let the instance's dependencies injected by the iocContainer.
+
+Make sure the base's contructor can invoke properly without arguments;
 
 ```js
-const {autoBind, BaseController} = require('@tanhuy998/context-js')
+const {autoBind, HttpController, CONSTRUCTOR, autowired} = require('@tanhuy998/context-js')
+
+const {paramsType} = requie('reflectype');
 
 @autoBind()
 class ComponentA {}
 
 @autoBind()
-class Controller extends BaseController {
+class Controller extends HttpController {
     
     prop;
-    
-    // inject a instance of ComponentA to the parameter
-  constructor(component = ComponentA) {
-    super();
-    
-    this.prop = component;
+  
+  @autowired
+  paramsType(ComponentA)
+  [CONSTRUCTOR](component) {
+
+    this.prop = component
   }
 }
 
@@ -925,6 +936,9 @@ Inject components to endpoint's handler
 
 ```js
 const {autoBind, BaseController, routingContext, Endpoint} = require('@tanhuy998/context-js')
+const {HttpController, CONSTRUCTOR, autowired} = require('@tanhuy998/context-js')
+
+const {paramsType} = requie('reflectype');
 
 @autoBind()
 class ComponentA {
@@ -934,7 +948,7 @@ class ComponentA {
 
 @routingContext()
 @autoBind()
-class Controller extends BaseController {
+class Controller extends HttpController {
     
     prop;
     
@@ -945,46 +959,11 @@ class Controller extends BaseController {
     this.prop = component;
   }
 
+  @autowired
   @Endpoint.GET('/')
-  index(component = ComponentA) {
+  @paramsType(ComponentA)
+  index(_component) {
 
-    console.log(component.message);
-  }
-}
-
-```
-
-*Note*: The ioc container could not inject components to async handler because Babel wraps async method in another sync method that the ioc container could not read reflection to inject components correctly. Anyway, we have an alternative way to inject components to async method as the following.
-
-```js
-const {autoBind, BaseController, routingContext, Endpoint, args} = require('@tanhuy998/context-js')
-
-@autoBind()
-class ComponentA {
-
-  message = 'Hello World';
-}
-
-@routingContext()
-@autoBind()
-class Controller extends BaseController {
-    
-    prop;
-    
-    // inject a instance of ComponentA to the parameter
-  constructor(component = ComponentA) {
-    super();
-    
-    this.prop = component;
-  }
-
-  @Endpoint.GET('/')
-  @args(ComponentA)  // @args also effects on dependency injection
-  async asyncIndex(component) {
-    /**
-     *  Decorator @args pass argumments to the method
-     *  ioc container will lookup for possible components on @args
-     */
     console.log(component.message);
   }
 }
@@ -994,19 +973,25 @@ class Controller extends BaseController {
 
 ### Property injection
 
-Applying `@is(Component)` to the class annotated with `@autobind` to inject the exact component. The component which is injected must be register to the ioc container as a bound component. 
+Applying `@autowired` to the class annotated with `@autobind` to inject the "equivalent" component. 
+
+This method only works on auto-accessor field, add keyword "accessor" before the field, then apply `@type` to that field in order to determine the type of the field is and then apply `@autowired` to tell the iocContainer that this field need to be injected.
 
 ```js
 const {autoBind, is, BaseController} = require('@tanhuy998/context-js')
+const {HttpController, CONSTRUCTOR, paramsType, autowired} = require('@tanhuy998/context-js')
+
+const {type} = require('reflectype');
 
 @autoBind()
 class ComponentA {}
 
 @autoBind()
-class Controller extends BaseController {
+class Controller extends HttpController {
 
-  @is(ComponentA)
-  prop;
+  @autowired
+  @type(ComponentA)
+  accessor prop;
 
   constructor() {
 
@@ -1015,6 +1000,65 @@ class Controller extends BaseController {
 }
 
 ```
+
+### Injection behavior 
+
+When the two Dependencies Injection methods coexist, they act like a normal Object instantantiation. Fields are evaluated just before constructor is called.
+
+```js
+const {autoBind, HttpController, CONSTRUCTOR, autowired} = require('@tanhuy998/context-js')
+
+const {paramsType, type} = requie('reflectype');
+
+@autoBind()
+class ComponentA {
+
+  static count = 0;
+
+  id;
+
+  constructor() {
+
+    this.id = ++this.constructor.count;
+  }
+}
+
+@autoBind()
+class Controller extends HttpController {
+  
+  @autowired
+  @type(ComponentA)
+  accessor prop;
+  
+  @autowired
+  paramsType(ComponentA)
+  [CONSTRUCTOR](component) {
+
+    this.prop = component
+  }
+
+  print() {
+
+    console.log(this.prop.id);
+  }
+}
+
+```
+
+the output of the print() method is 2 (in number). Because fields are primarily injected. After that, pseudo constructor is called by the iocContainer.
+
+An important point to note, the progression of how ioc Container inititating a component
+
+```
+  instance := new Class();
+  inject -> fields;
+  inject -> psudo constructor;
+```
+
+another note:
+
+Abstracts and conscretes 's static field also be injected when they are register to iocContainer (except interfaces).
+
 
 ## Response decorator
 

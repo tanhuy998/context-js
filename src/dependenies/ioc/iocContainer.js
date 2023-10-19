@@ -12,6 +12,7 @@ const isAbstract = require('reflectype/src/utils/isAbstract.js');
 const {CONSTRUCTOR} = require('../constants.js');
 
 const Interface = require('reflectype/src/interface/interface.js');
+const DependenciesInjectionSystem = require('../DI/dependenciesInjectionSystem.js');
 
 class Empty {
 
@@ -28,59 +29,6 @@ class IocContainerSetDefaultInstanceError extends Error {
     }
 }
 
-class Hook extends EventEmitter{
-
-    #topics = new WeakMap();
-
-    /**
-     * 
-     * @param {IocContainer} _iocContainer 
-     */
-    constructor(_iocContainer) {
-
-        super();
-
-        _iocContainer.on('newInstance', (function (_instance, _concrete) {
-            
-            this.notify(_concrete, _instance);
-
-        }).bind(this))
-    }
-
-    /**
-     * 
-     * @param {string} _topic 
-     * @param  {...Function} _callback 
-     */
-    add(_topic, ..._callback) {
-
-        if (!this.#topics.has(_topic)) {
-
-            this.#topics.set(_topic, []);
-        }
-
-        this.#topics.get(_topic).push(..._callback);
-    }
-
-    /**
-     * 
-     * @param {string} _topic 
-     * @param {Object} _instance 
-     */
-    notify(_topic, _instance) {
-        
-        const hooks = this.#topics.get(_topic) || [];
-
-        for (const callback of hooks) {
-            
-            if (typeof callback == 'function') {
-                
-                callback.bind(_instance)();
-            }
-        }
-    }
-}
-
 class IocContainer extends EventEmitter {
 
     #container = new WeakMap();
@@ -88,79 +36,28 @@ class IocContainer extends EventEmitter {
     #stringKeys = new Map();
 
     #singleton = new WeakMap();
-    
-    /**
-     * @type {Hook}
-     */
-    #hook;
 
-    #id = Date.now();
+    // /**@type {FunctionInjectorEngine} */
+    // #functionInjector;
 
-    /**
-     *  @returns {Hook}
-     */
-    get hook() {
-
-        return this.#hook;
-    }
-
-    // #preset = {
-    //     specialReflectionCase: [ReflectionBabelDecoratorClass_Stage_0],
-    // };
-
-    #metadata = {
-
-        reflections: new WeakMap()
-    }
-    //var objectPool = new Set();
-
-    /**@type {FunctionInjectorEngine} */
-    #functionInjector;
+    /**@type {DependenciesInjectionSystem} */
+    #injector;
 
     get injector() {
 
-        return this.#functionInjector;
+        return this.#injector;
     }
 
     constructor() {
 
         super();
 
-        this.#hook = new Hook(this);
-
-        this.#functionInjector = new FunctionInjectorEngine(this);
+        this.#init();
     }
 
-    // preset(_config) {
+    #init() {
 
-    //     for (const key in _config) {
-
-    //         this.#preset[key] = _config[key];
-    //     }
-    // }
-
-    // getPreset() {
-
-    //     return this.#preset;
-    // }
-
-    cacheReflection(key, value) {
-
-        const reflections = this.#metadata.reflections;
-
-        if (reflections.has(key)) {
-
-            reflections.delete(key)
-        }
-
-        reflections.set(key, value);
-    }
-
-    getReflectionOf(key) {
-
-        if (!this.#metadata.reflections.has(key)) return undefined;
-
-        return this.#metadata.reflections.get(key);
+        this.#injector = new DependenciesInjectionSystem(this);
     }
 
     bindArbitrary(key, value) {
@@ -183,103 +80,20 @@ class IocContainer extends EventEmitter {
 
         checkType(abstract, concrete);
 
-        //const key = abstract.name;
-
         if (this.#container.has(abstract) && override) {
 
             this.#container.delete(abstract);
-
-            //this.#stringKeys.delete(key);
         }
 
-        //this.#stringKeys.set(key, concrete);
+        if (!(abstract instanceof Interface)) {
 
-        //this.bindArbitrary(key, abstract);
+            this.injector.inject(abstract);
+        }
+        
+        this.injector.inject(concrete);
+
         this.#container.set(abstract, concrete);
     }
-
-    // /**
-    //  * 
-    //  * @param {Object} abstract 
-    //  * @param {Object} concrete 
-    //  * 
-    //  * @throws
-    //  */
-    // checkType(abstract, concrete) {
-
-    //     // const concreteType = (typeof concrete);
-    //     // const abstractType = (typeof abstract);
-
-    //     if (concrete.prototype instanceof Interface) {
-
-    //         throw new TypeError(`cannot bind concrete class [${concrete?.name}] that is subclass of [Interface]`);
-    //     }
-
-    //     if (abstract.prototype instanceof Interface) {
-
-    //         if (!concrete[IS_CHECKABLE] || concrete.__implemented(abstract)) {
-
-    //             throw new TypeError(`class [${concrete?.name}] hasn't implement [${abstract.name}] yet`);
-    //         }
-
-    //         return;
-    //     }
-
-    //     if (!abstract.constructor && !concrete.constructor) {
-
-    //         throw new Error('IocContainer Error: abstract and concrete must have contructor')
-    //     }
-
-    //     if (!this._isParent(abstract, concrete)) {
-
-    //         throw new Error('IocContainer Error: ' + concrete.constructor.name + ' did not inherit ' + abstract.constructor.name);
-    //     }
-    // }
-
-
-    // _hasRelationShip(lhs, rhs) {
-
-    //     try {
-
-    //         this.checkType(lhs, rhs);
-
-    //         return true;
-    //     }
-    //     catch {}
-
-    //     try {
-
-    //         this.checkType(rhs, lhs);
-
-    //         return true;
-    //     }
-    //     catch {}
-
-    //     return false;
-    // }
-
-    // /**
-    //  * 
-    //  * @param {Object} base 
-    //  * @param {Object} derived 
-    //  * @returns 
-    //  */
-    // _isParent(base, derived) {
-
-    //     if (derived == base) return true;
-
-    //     let prototype = derived.__proto__;
-
-    //     while(prototype !== null) {
-            
-    //         if (prototype === base) {
-
-    //             return true;
-    //         }
-
-    //         prototype = prototype.__proto__;
-    //     } 
-    // }
 
     /**
      * 
@@ -411,8 +225,6 @@ class IocContainer extends EventEmitter {
             //return this.build(concrete);
             result = this.build(concrete);
         }
-
-        //this.#notifyResolvedComponent(result, abstract, concrete)
         
         return result;
     }
@@ -477,55 +289,25 @@ class IocContainer extends EventEmitter {
             throw new Error(`cannot build [${concrete?.name ?? concrete}]`);
         }
 
-        const pseudoConstructor = concrete.prototype[CONSTRUCTOR];
+        // const pseudoConstructor = concrete.prototype[CONSTRUCTOR];
         
-        if (typeof pseudoConstructor === 'function') {
+        // if (typeof pseudoConstructor === 'function') {
             
-            this.injector.inject(pseudoConstructor);
+        //     this.injector.inject(pseudoConstructor);
 
-            const instance = new concrete();
+        //     const instance = new concrete();
 
-            pseudoConstructor.call(instance);
+        //     pseudoConstructor.call(instance);
 
-            return instance;
-        }
+        //     return instance;
+        // }
 
-        return new concrete();
+        const instance = new concrete();
+
+        this.#injector.inject(instance);
+
+        return instance;
     }
-    // /**
-    //  * 
-    //  * @param {Array<ReflectionParameter>} list 
-    //  * @returns 
-    //  */
-    // #discoverParams(list) {
-
-    //     const result = list.map((param) => {
-            
-    //         if (param.defaultValue != undefined && param.defaultValueType == Type.UNIT) {
-                
-    //             const arg = this.getByKey(param.defaultValue);
-
-    //             return arg;
-    //         }
-    //         else {
-
-    //             return undefined;
-    //         }
-    //     });
-
-    //     return result;
-    // }
-
-    // #notifyResolvedComponent(_instance, _abstract, _concrete) {
-
-    //     this.emit('resolveComponets', _instance, _abstract, _concrete);
-    // }
-
-    // #notifyNewInstance(_instance, _concrete) {
-
-    //     this.emit('newInstance', _instance, _concrete);
-    // }
-
 }
 
 module.exports = IocContainer;
