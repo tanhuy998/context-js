@@ -32,7 +32,7 @@ class ComponentManager {
 
     constructor(_container, {appContext} = {}) {
 
-        this.#app = appContext;
+        //this.#app = appContext;
 
         this.#container = _container instanceof ComponentContainer ? _container : new ComponentContainer();
 

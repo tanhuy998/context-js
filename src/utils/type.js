@@ -1,5 +1,6 @@
 const Interface = require('reflectype/src/interface/interface.js');
 const {IS_CHECKABLE} = require('reflectype/src/constants.js');
+const isAbstract = require('reflectype/src/utils/isAbstract.js');
 
 function checkType(abstract, concrete) {
 
@@ -77,4 +78,4 @@ function isParent(base, derived) {
     } 
 }
 
-module.exports = {isParent, hasRelationShip, checkType}
+module.exports = {isParent, hasRelationShip, checkType, isAbstract}

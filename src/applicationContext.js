@@ -244,10 +244,10 @@ class ApplicationContext {
         return this.resolveWSHandler();
     }
 
-    #resolveHandler() {
+    // #resolveHandler() {
 
         
-    }
+    // }
 
     #init() {
 

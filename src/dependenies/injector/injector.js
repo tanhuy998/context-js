@@ -16,4 +16,10 @@ module.exports = class Injector {
 
         this.#iocContainer = _iocContainer;
     }
+
+    /** default behavior */
+    inject() {
+
+
+    }
 }
