@@ -24,15 +24,8 @@ module.exports = class ObjectInjectorEngine extends Injector {
         const protoOrder = [];
 
         while (proto !== null && proto !== undefined && proto?.constructor !== Object) {
-            
-            const pseudoConstructor = proto[CONSTRUCTOR];
-            
-            if (typeof pseudoConstructor === 'function') {
 
-                const element = [proto, pseudoConstructor];
-
-                protoOrder.push(element);
-            }
+            protoOrder.push(proto);
 
             proto = proto.__proto__;
         }
@@ -44,19 +37,22 @@ module.exports = class ObjectInjectorEngine extends Injector {
         const fieldInjector = new AutoAccessorInjectorEngine(this.iocContainer);
         // the order of psudo constructor injection must be from base class to derived class
         // to insure the consitence and integrity of data
-        for (const element of protoStack || []) {
+        for (const proto of protoStack || []) {
 
-            const [proto, pseudoConstructor] = element;
-            
+            const pseudoConstructor = proto[CONSTRUCTOR];
+
             fieldInjector.inject(proto);
 
-            functionInjector.inject(pseudoConstructor);
+            if (typeof pseudoConstructor === 'function') {
 
-            /**
-             *  this line is confusing
-             */
-            //pseudoConstructor.call(proto);
-            pseudoConstructor.call(_object); // this line is confusing;
+                functionInjector.inject(pseudoConstructor);
+                /**
+                 *  this line is confusing
+                 */
+                //pseudoConstructor.call(proto);
+                pseudoConstructor.call(_object); // this line is confusing;
+
+            }            
         }
     }
 

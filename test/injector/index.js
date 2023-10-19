@@ -4,8 +4,8 @@ const {CONSTRUCTOR} = require('../../src/dependenies/constants.js');
 const ComponentManager = require('../../src/dependenies/component/componentManager');
 
 const Interface = require('reflectype/src/interface/interface.js');
-const {implement} = require('reflectype/src/interface/interface');
-const {type, paramsType} = require('reflectype/src/index.js')
+//const {implement} = require('reflectype/src/interface/interface.js');
+const {type, paramsType} = require('reflectype/src/decorators/index.js');
 
 
 class Bike {
@@ -18,24 +18,32 @@ class Car {
     name = 'car';
 }
 
+class Component {
 
+    prop = 'component';
+}
 
 class A {
 
     #secret;
-    vehicleA;
 
-    @paramsType(Bike)
-    [CONSTRUCTOR](bike) {
+    @type(Bike)
+    accessor vehicleA;
+
+    @type(Component)
+    accessor drive;
+
+    // @paramsType(Bike)
+    // [CONSTRUCTOR](bike) {
         
-        this.#secret = bike;
+    //     this.#secret = bike;
 
-        this.vehicleA = bike;
+    //     this.vehicleA = bike;
 
-        console.log('A', this.vehicleA);
-    }
+    //     console.log('A', this.vehicleA);
+    // }
 
-    showSecret() {
+    show() {
 
         console.log(this.#secret);
     }
@@ -44,7 +52,7 @@ class A {
 class B extends A {
 
     @type(Car)
-    vehicleB;
+    accessor vehicleB;
 
     // @paramsType(Car)
     // [CONSTRUCTOR](car) {
@@ -61,6 +69,7 @@ components.bind(Bike, Bike);
 components.bind(Car, Car);
 components.bind(A, A);
 components.bind(B, B);
+components.bind(Component, Component);
 
 const injector = new ObjectInjectorEngine(components.container);
 
@@ -68,7 +77,8 @@ const obj = new B();
 
 injector.inject(obj);
 
-console.log(obj);
+console.log(obj.vehicleA);
+console.log(obj.vehicleB)
+console.log(obj.drive);
 
-obj.showSecret()
 

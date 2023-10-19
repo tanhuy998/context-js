@@ -2,7 +2,6 @@ const isAbStract = require("reflectype/src/utils/isAbstract");
 const Injector = require("./injector");
 //const {metadata_t, metaOf, property_metadata_t} = require('reflectype/src/reflection/metadata.js');
 const {getTypeMetadata} = require('../../utils/metadata.js');
-const { server } = require("../../websocket/ws");
 
 /**
  * @typedef {import('reflectype/src/reflection/metadata.js').metadata_t} metadata_t
@@ -19,12 +18,12 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
     }
 
     inject(_object) {
-
+        
         /**@type {metadata_t} */
         const meta = getTypeMetadata(_object);
 
         const propertiesMeta = meta?.properties;
-
+        
         if (typeof propertiesMeta !== 'object') {
 
             return;
@@ -33,12 +32,12 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
         const propsName = Reflect.ownKeys(propertiesMeta);
 
         for (const name of propsName) {
-
+            
             /**@type {property_metadata_t} */
             const propMeta = propertiesMeta[name];
 
             if (typeof propMeta !== 'object' && typeof propMeta.type !== 'function') {
-
+                
                 continue;
             }
 
@@ -54,7 +53,7 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
 
                 /**
                  *  check if the setter of the field is bound with the object
-                 *  this operation happens because of the imporment  
+                 *  this operation happens because of changes
                  *  after stage 3 of TC39 decorator proposal
                  */
                 if (typeof setter.prototype === 'object') {
