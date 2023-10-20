@@ -22,7 +22,7 @@ function initTypePropertyField(_object) {
 
 function initTypeField(_object) {
 
-    initTypeMetadataField(_object);
+    initMetadataField(_object);
 
     _object[METADATA][TYPE_JS] ??= new metadata_t();
 }

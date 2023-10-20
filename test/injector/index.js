@@ -61,6 +61,12 @@ class B extends A {
 
     //     console.log('B', this.vehicleB)
     // }
+
+    @paramsType(Component)
+    doSomething(component) {
+
+        console.log(component);
+    }
 }
 
 
@@ -77,8 +83,11 @@ const obj = new B();
 
 injector.inject(obj);
 
-console.log(obj.vehicleA);
-console.log(obj.vehicleB)
-console.log(obj.drive);
 
+const MethodInjectorEngine = require('../../src/dependenies/injector/methodInjectorEngine.js');
 
+const methodInjector = new MethodInjectorEngine(components.container);
+
+methodInjector.inject(obj, 'doSomething');
+
+obj.doSomething();

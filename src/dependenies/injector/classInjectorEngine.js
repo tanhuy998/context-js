@@ -20,7 +20,7 @@ module.exports = class ClassInjectorEngine extends Injector {
 
         const meta = metaOf(_class);
 
-        if (typeof meta === 'object') {
+        if (typeof meta !== 'object') {
 
             return;
         }

@@ -1,11 +1,13 @@
 const AutoAccessorInjectorEngine = require('../injector/autoAccessorInjectorEngine.js');
 const FunctionInjectorEngine = require('../injector/functionInjectorEngine.js');
 const ObjectInjectorEngine = require('../injector/objectInjectorEngine.js');
+const MethodInjectorEngine = require('../injector/methodInjectorEngine.js');
 
 const {isAbstract} = require('../../utils/type.js');
 
 const {property_metadata_t, metadata_t, metaOf} = require('reflectype/src/reflection/metadata.js');
 const ClassInjectorEngine = require('../injector/classInjectorEngine.js');
+const Contextual = require('./contextual.js');
 
 /**
  * @typedef {import('../context/context.js')} Context
@@ -41,7 +43,24 @@ class DependencyKind {
     }
 }
 
-module.exports = class DependenciesInjectionSystem {
+function classifyMethodsOf(_object) {
+
+    return function(_key) {
+
+        if (_key === 'constructor') {
+
+            return false;
+        }
+
+        const prop = _object[_key];
+        /**@type {property_metadata_t?} */
+        const propMeta = metaOf(prop);
+
+        return typeof prop === 'function' && propMeta?.constructor === property_metadata_t && propMeta.isMethod === truw && Array.isArray(propMeta.defaultParamsType) && propMeta.defaultParamsType.length > 0;
+    }
+}
+
+module.exports = class DependenciesInjectionSystem extends Contextual{
 
     /**@type {FunctionInjectorEngine} */
     #functionInjector;
@@ -51,39 +70,66 @@ module.exports = class DependenciesInjectionSystem {
     #objectInjector;
     /**@type {ClassInjectorEngine} */
     #classInjector;
+    /**@type {MethodInjectorEngine} */
+    #methodInjector;
 
-    #iocContainer;
+    /**@type {boolean} */
+    get #fullyInject() {
+
+        return this.context.config?.fullyInject;
+    }
+
+    #componentManager;
     /**
      * 
      * @param {Context} _context 
      */
-    constructor(_iocContainer) {
+    constructor(_context) {
 
-        this.#iocContainer = _iocContainer;
+        super(...arguments)
 
         this.#init();
     }
 
     #init() {
 
-        const container = this.#iocContainer;
+        this.#componentManager = this.context.constructor.iocContainer;
+
+        const container = this.#componentManager;
 
         this.#functionInjector = new FunctionInjectorEngine(container);
         this.#objectInjector = new ObjectInjectorEngine(container);
         //this.#fieldInjector = new AutoAccessorInjectorEngine(container);
         this.#classInjector = new ClassInjectorEngine(container);
+        this.#methodInjector = new MethodInjectorEngine(container);
     }
 
-    inject(_unknown) {
+    /**
+     * 
+     * @param {Object} _unknown 
+     * @param {string || Symbol} _method 
+     * @returns 
+     */
+    inject(_unknown, _method) {
 
         const kind = this.#classify(_unknown);
 
         switch (kind) {
             case DependencyKind.UNKNOWN: return;
-            case DependencyKind.FIELD: return
+            case DependencyKind.FIELD: return;
             case DependencyKind.FUNCTION: this.#resolveFunction(_unknown);
-            case DependencyKind.CLASS: this.#resolveClass(_unknown)
-            case DependencyKind.OBJECT: this.#resolveObject(_unknown);
+            case DependencyKind.CLASS: this.#resolveClass(_unknown);
+            case DependencyKind.OBJECT: {
+
+                if (_method) {
+
+                    this.#resolveMethod(_unknown, _method)
+                }
+                else {
+
+                    this.#resolveObject(_unknown);
+                }
+            };
             default: return;
         }
     }
@@ -133,6 +179,11 @@ module.exports = class DependenciesInjectionSystem {
         const injector = this.#objectInjector;
 
         injector.inject(_object);
+
+        if (this.#fullyInject) {
+
+            this.#traceMethodsAndInject(_object);
+        }
     }
 
     #resolveFunction(_func) {
@@ -140,5 +191,21 @@ module.exports = class DependenciesInjectionSystem {
         const injector = this.#functionInjector;
 
         injector.inject(_func);
+    }
+
+    #resolveMethod(_object, _methodName) {
+
+        this.#methodInjector.inject(_object, _methodName);
+    }
+
+    #traceMethodsAndInject(_object) {
+
+        const methods = Reflect.ownKeys(_object)
+                        .filter(classifyMethodsOf(_object));
+
+        for (const methodName of methods || []) {
+
+            this.#resolveMethod(_object, methodName);
+        }
     }
 }

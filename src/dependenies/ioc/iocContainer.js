@@ -12,7 +12,8 @@ const isAbstract = require('reflectype/src/utils/isAbstract.js');
 const {CONSTRUCTOR} = require('../constants.js');
 
 const Interface = require('reflectype/src/interface/interface.js');
-const DependenciesInjectionSystem = require('../DI/dependenciesInjectionSystem.js');
+const ObjectInjectorEngine = require('../injector/objectInjectorEngine.js');
+const ClassInjectorEngine = require('../injector/classInjectorEngine.js');
 
 class Empty {
 
@@ -37,16 +38,11 @@ class IocContainer extends EventEmitter {
 
     #singleton = new WeakMap();
 
-    // /**@type {FunctionInjectorEngine} */
-    // #functionInjector;
 
-    /**@type {DependenciesInjectionSystem} */
-    #injector;
-
-    get injector() {
-
-        return this.#injector;
-    }
+    /**@type {ClassInjectorEngine} */
+    #classInjector;
+    /**@type {ObjectInjectorEngine} */
+    #objectInjector;
 
     constructor() {
 
@@ -57,7 +53,8 @@ class IocContainer extends EventEmitter {
 
     #init() {
 
-        this.#injector = new DependenciesInjectionSystem(this);
+        this.#objectInjector = new ObjectInjectorEngine(this);
+        this.#classInjector = new ClassInjectorEngine(this);
     }
 
     bindArbitrary(key, value) {
@@ -87,10 +84,8 @@ class IocContainer extends EventEmitter {
 
         if (!(abstract instanceof Interface)) {
 
-            this.injector.inject(abstract);
+            this.#classInjector.inject(abstract);
         }
-        
-        this.injector.inject(concrete);
 
         this.#container.set(abstract, concrete);
     }
@@ -289,22 +284,9 @@ class IocContainer extends EventEmitter {
             throw new Error(`cannot build [${concrete?.name ?? concrete}]`);
         }
 
-        // const pseudoConstructor = concrete.prototype[CONSTRUCTOR];
-        
-        // if (typeof pseudoConstructor === 'function') {
-            
-        //     this.injector.inject(pseudoConstructor);
-
-        //     const instance = new concrete();
-
-        //     pseudoConstructor.call(instance);
-
-        //     return instance;
-        // }
-
         const instance = new concrete();
 
-        this.#injector.inject(instance);
+        this.#objectInjector.inject(instance);
 
         return instance;
     }

@@ -1,7 +1,7 @@
 "use strict";
 "use strict";
 
-var _dec, _init_vehicleA, _dec2, _init_drive, _initProto, _dec3, _init_vehicleB, _initProto2;
+var _dec, _init_vehicleA, _dec2, _init_drive, _initProto, _dec3, _init_vehicleB, _dec4, _initProto2;
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
@@ -113,6 +113,7 @@ _init_vehicleA = _applyDecs2203R$e[0];
 _init_drive = _applyDecs2203R$e[1];
 _initProto = _applyDecs2203R$e[2];
 _dec3 = type(Car);
+_dec4 = paramsType(Component);
 var _A2 = /*#__PURE__*/new WeakMap();
 var B = /*#__PURE__*/function (_A3) {
   _inherits(B, _A3);
@@ -138,10 +139,24 @@ var B = /*#__PURE__*/function (_A3) {
     set: function set(v) {
       _classPrivateFieldSet(this, _A2, v);
     }
+  }, {
+    key: "doSomething",
+    value:
+    // @paramsType(Car)
+    // [CONSTRUCTOR](car) {
+
+    //     this.vehicleB = car;
+
+    //     console.log('B', this.vehicleB)
+    // }
+
+    function doSomething(component) {
+      console.log(component);
+    }
   }]);
   return B;
 }(A);
-var _applyDecs2203R$e2 = _slicedToArray(_applyDecs2203R(B, [[_dec3, 1, "vehicleB"]], []).e, 2);
+var _applyDecs2203R$e2 = _slicedToArray(_applyDecs2203R(B, [[_dec3, 1, "vehicleB"], [_dec4, 2, "doSomething"]], []).e, 2);
 _init_vehicleB = _applyDecs2203R$e2[0];
 _initProto2 = _applyDecs2203R$e2[1];
 var components = new ComponentManager();
@@ -153,7 +168,8 @@ components.bind(Component, Component);
 var injector = new ObjectInjectorEngine(components.container);
 var obj = new B();
 injector.inject(obj);
-console.log(obj.vehicleA);
-console.log(obj.vehicleB);
-console.log(obj.drive);
+var MethodInjectorEngine = require('../../src/dependenies/injector/methodInjectorEngine.js');
+var methodInjector = new MethodInjectorEngine(components.container);
+methodInjector.inject(obj, 'doSomething');
+obj.doSomething();
 

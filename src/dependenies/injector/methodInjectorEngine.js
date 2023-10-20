@@ -40,7 +40,11 @@ module.exports = class MethodInjectorEngine extends FunctionInjectorEngine {
             return true;
         }
 
-        const extraMeta = {injectedArgs: components};
+        const extraMeta = {
+            name: _methodName,
+            isMethod: true,
+            defaultArguments: components
+        };
 
         const payload = [extraMeta, getTypeMetadata(actualFunc)];
 
@@ -60,7 +64,7 @@ module.exports = class MethodInjectorEngine extends FunctionInjectorEngine {
             return false;
         }
 
-        const reflection = new ReflectionPrototypeMethod(_object, _methodName);
+        const reflection = new ReflectionPrototypeMethod(_object.constructor, _methodName);
 
         const objectMeta = getTypeMetadata(_object);
 
@@ -77,8 +81,8 @@ module.exports = class MethodInjectorEngine extends FunctionInjectorEngine {
         }
 
         const nameType = typeof _methodName;
-
-        if (nameType !== 'string' || nameType !== 'symbol') {
+        
+        if (nameType !== 'string' && nameType !== 'symbol') {
 
             throw new Error('type of _methodName must be either string or Symbol');
         }

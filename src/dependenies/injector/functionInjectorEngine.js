@@ -90,9 +90,16 @@ module.exports = class FunctionInjectorEngine extends Injector {
         typeMeta.value = args;
     }
 
-    resolveComponentsFor(_func) {
+    resolveComponentsFor(_func) { 
 
         const reflection = new ReflectionFunction(_func);
+        
+        if (!reflection.isValid) {
+
+            return undefined;
+        }
+
+        this.#preprocessFunction(_func);
 
         const parameters = reflection.parameters;
 
@@ -128,20 +135,16 @@ module.exports = class FunctionInjectorEngine extends Injector {
 
         this.#ensureFunction(_function);
 
-        const reflection = new ReflectionFunction(_function);
+        /**@type {property_metadata_t}*/
+        const funcMeta = metaOf(_function);
+        
+        const args = this.resolveComponentsFor(_function);
 
-        if (!reflection.isValid) {
+        if (args === undefined || args === null) {
 
             return;
         }
 
-        /**@type {property_metadata_t}*/
-        const funcMeta = metaOf(_function);
-
-        this.#preprocessFunction(_function);
-        
-        const args = this.resolveComponentsFor(_function);
-        
         this.#setDefaultArguments(_function, args);
     }
 }
