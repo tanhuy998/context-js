@@ -90,7 +90,7 @@ module.exports = class FunctionInjectorEngine extends Injector {
         typeMeta.value = args;
     }
 
-    #resolveComponentsFor(_func) {
+    resolveComponentsFor(_func) {
 
         const reflection = new ReflectionFunction(_func);
 
@@ -140,7 +140,7 @@ module.exports = class FunctionInjectorEngine extends Injector {
 
         this.#preprocessFunction(_function);
         
-        const args = this.#resolveComponentsFor(_function);
+        const args = this.resolveComponentsFor(_function);
         
         this.#setDefaultArguments(_function, args);
     }

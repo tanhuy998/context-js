@@ -17,14 +17,14 @@ function initTypePropertyField(_object) {
 
     initMetadataField(_object);
 
-    _object[METADATA][TYPE_JS] = new property_metadata_t();
+    _object[METADATA][TYPE_JS] ??= new property_metadata_t();
 }
 
 function initTypeField(_object) {
 
     initTypeMetadataField(_object);
 
-    _object[METADATA][TYPE_JS] = new metadata_t();
+    _object[METADATA][TYPE_JS] ??= new metadata_t();
 }
 
 function setPseudoConstructor(_class, _func) {
