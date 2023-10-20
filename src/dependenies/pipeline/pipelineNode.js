@@ -1,9 +1,11 @@
 const {T_WeakTypeNode} = require('../../libs/linkedList.js');
-const ContextHandler = require('../handler/handler.js');
-const ReflectionFunction = require('reflectype/src/metadata/reflectionFunction.js');
+const ContextHandler = require('../handler/constextHandler.js');
+
 const Void = require('reflectype/src/type/void.js');
 const {metaOf, property_metadata_t} = require('reflectype/src/reflection/metadata.js');
-const Context = require('../context/context.js');
+
+
+//const Context = require('../context/context.js');
 
 /**
  * @typedef {import('../context/context.js')} Context
@@ -11,7 +13,28 @@ const Context = require('../context/context.js');
  */
 
 
+function dispatchNext(handler, _payload) {
 
+    return function () {
+        
+        const next = handler.next;
+
+        if (!next) {
+
+            return;
+        }
+
+        next.accquire(_payload);
+    }
+}
+
+function catchError(_handler) {
+
+    return function(_error) {
+
+        _handler.accquireError(_error);
+    }
+}
 
 module.exports = class PipelineNode extends T_WeakTypeNode {
 
@@ -45,16 +68,66 @@ module.exports = class PipelineNode extends T_WeakTypeNode {
     }
 
     /**
+     * accquire a payload
      * 
      * @param {Context} _payload 
      */
     accquire(_payload) {
 
-        const handlerClass = new this.handlerAbstract;
+        const handler = this.#prepare(_payload);
 
-        const contextHandler = new handlerClass(_payload);
+        try {
 
-        this.#injectComponents(contextHandler, _payload);
+            const result = handler.handle();
+
+            if (result instanceof Promise) {
+    
+                result.then(dispatchNext(this, _payload))
+                .catch(catchError(this));
+            }
+
+            dispatchNext(this, _payload)();
+        }
+        catch (error) {
+
+            this.accquireError(error);
+        }
+    }
+
+    accquireError(error) {
+
+        console.log(error);
+    }
+
+    /**
+     * 
+     * @param {Context} _payload 
+     */
+    #prepare(_payload) {
+        
+        const globalContext = _payload.global;
+
+        const handlerAbstract = this.handlerAbstract;
+
+        const handler = new handlerAbstract();
+
+        if (typeof globalContext === 'function') {
+
+            const config = {
+                context: _payload
+            }
+
+            globalContext.DI?.inject(handler, config);  
+
+            if (!globalContext.fullyInject) {
+
+                config.method = 'handle';
+
+                globalContext.DI?.inject(handler, config);
+            }
+        }
+        
+        return handler;
     }
 
     /**
@@ -67,9 +140,6 @@ module.exports = class PipelineNode extends T_WeakTypeNode {
 
         const handleMethod = _handler.handle;
 
-        const DI_Engine = _context.getComponent(DependenciesInjectionEngine);
-
-        DI_Engine.injectFunction(handleMethod);
     }
 } 
 

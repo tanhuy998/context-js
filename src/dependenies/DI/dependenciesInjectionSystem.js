@@ -12,6 +12,7 @@ const Contextual = require('./contextual.js');
 /**
  * @typedef {import('../context/context.js')} Context
  * @typedef {import('reflectype/src/metadata/ReflectionParameter.js')} ReflectionParameter
+ * @typedef {import('../component/componentContainer.js')} ComponentContainer
  */
 
 
@@ -78,24 +79,20 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
 
         return this.context.config?.fullyInject;
     }
-
-    #componentManager;
     /**
      * 
-     * @param {Context} _context 
+     * @param {ComponentContainer} _compoentContainer 
      */
-    constructor(_context) {
+    constructor(_compoentContainer) {
 
-        super(...arguments)
+        super(...arguments);
 
         this.#init();
     }
 
     #init() {
-
-        this.#componentManager = this.context.constructor.iocContainer;
-
-        const container = this.#componentManager;
+    
+        const container = this.componentContainer;
 
         this.#functionInjector = new FunctionInjectorEngine(container);
         this.#objectInjector = new ObjectInjectorEngine(container);
@@ -107,27 +104,29 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
     /**
      * 
      * @param {Object} _unknown 
-     * @param {string || Symbol} _method 
+     * @param {string || Symbol} method
      * @returns 
      */
-    inject(_unknown, _method) {
+    inject(_unknown, {method, context} = {}) {
 
         const kind = this.#classify(_unknown);
+
+        const scope = context?.scope;
 
         switch (kind) {
             case DependencyKind.UNKNOWN: return;
             case DependencyKind.FIELD: return;
-            case DependencyKind.FUNCTION: this.#resolveFunction(_unknown);
-            case DependencyKind.CLASS: this.#resolveClass(_unknown);
+            case DependencyKind.FUNCTION: this.#resolveFunction(_unknown, scope);
+            case DependencyKind.CLASS: this.#resolveClass(_unknown, scope);
             case DependencyKind.OBJECT: {
 
-                if (_method) {
+                if (method) {
 
-                    this.#resolveMethod(_unknown, _method)
+                    this.#resolveMethod(_unknown, method, scope)
                 }
                 else {
 
-                    this.#resolveObject(_unknown);
+                    this.#resolveObject(_unknown, scope);
                 }
             };
             default: return;
@@ -174,38 +173,38 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
         injector.inject(_class)
     }
 
-    #resolveObject(_object) {
+    #resolveObject(_object, _scope) {
 
         const injector = this.#objectInjector;
 
-        injector.inject(_object);
+        injector.inject(_object, _scope);
 
         if (this.#fullyInject) {
 
-            this.#traceMethodsAndInject(_object);
+            this.#traceMethodsAndInject(_object, _scope);
         }
     }
 
-    #resolveFunction(_func) {
+    #resolveFunction(_func, _scope) {
 
         const injector = this.#functionInjector;
 
-        injector.inject(_func);
+        injector.inject(_func, _scope);
     }
 
-    #resolveMethod(_object, _methodName) {
+    #resolveMethod(_object, _methodName, _scope) {
 
-        this.#methodInjector.inject(_object, _methodName);
+        this.#methodInjector.inject(_object, _methodName, _scope);
     }
 
-    #traceMethodsAndInject(_object) {
+    #traceMethodsAndInject(_object, _scope) {
 
         const methods = Reflect.ownKeys(_object)
                         .filter(classifyMethodsOf(_object));
 
         for (const methodName of methods || []) {
 
-            this.#resolveMethod(_object, methodName);
+            this.#resolveMethod(_object, methodName, _scope);
         }
     }
 }

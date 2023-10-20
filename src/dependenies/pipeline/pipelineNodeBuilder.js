@@ -1,5 +1,5 @@
 const PipelineNode = require('./pipelineNode.js');
-const ContextHandler = require('../handler/handler.js');
+const ContextHandler = require('../handler/constextHandler.js');
 const Context = require('../context/context.js');
 
 module.exports = class PipelineNodeBuilder {

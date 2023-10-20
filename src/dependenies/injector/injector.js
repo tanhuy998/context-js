@@ -4,6 +4,13 @@
 
 module.exports = class Injector {
 
+    static #context;
+
+    static setContext(_context) {
+
+
+    }
+
     /**@type {IocContainer} */
     #iocContainer;
 

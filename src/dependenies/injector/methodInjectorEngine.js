@@ -17,7 +17,7 @@ module.exports = class MethodInjectorEngine extends FunctionInjectorEngine {
      * 
      * @return {boolean}
      */
-    inject(_object, _methodName) {
+    inject(_object, _methodName, _scope) {
 
         this.#ensureInput(...arguments);
 
@@ -33,7 +33,7 @@ module.exports = class MethodInjectorEngine extends FunctionInjectorEngine {
 
         const actualFunc = _object[_methodName];
 
-        const components = super.resolveComponentsFor(actualFunc);
+        const components = super.resolveComponentsFor(actualFunc, _scope);
 
         if (components.length === 0) {
             // nothing to inject, the process is determined as success

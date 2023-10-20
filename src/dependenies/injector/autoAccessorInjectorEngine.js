@@ -47,7 +47,7 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
         return true;
     }
 
-    inject(_object) {
+    inject(_object, _scope) {
         
         /**@type {metadata_t} */
         const meta = getTypeMetadata(_object);
@@ -79,7 +79,7 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
 
             if (typeof setter === 'function') {
 
-                const theDependency = this.iocContainer.get(type);
+                const theDependency = this.iocContainer.get(type, _scope);
 
                 /**
                  *  check if the setter of the field is bound with the object

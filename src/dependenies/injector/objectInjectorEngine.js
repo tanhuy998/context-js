@@ -17,7 +17,7 @@ module.exports = class ObjectInjectorEngine extends Injector {
      * 
      * @param {Object} _object 
      */
-    #traceProtoPseudoConstructorChain(_object) {
+    #traceProtoPseudoConstructorChain(_object, _scope) {
 
         let proto = _object;
 
@@ -41,11 +41,11 @@ module.exports = class ObjectInjectorEngine extends Injector {
 
             const pseudoConstructor = proto[CONSTRUCTOR];
 
-            fieldInjector.inject(proto);
+            fieldInjector.inject(proto, _scope);
 
             if (typeof pseudoConstructor === 'function') {
 
-                functionInjector.inject(pseudoConstructor);
+                functionInjector.inject(pseudoConstructor, _scope);
                 /**
                  *  this line is confusing
                  */
@@ -56,13 +56,13 @@ module.exports = class ObjectInjectorEngine extends Injector {
         }
     }
 
-    inject(_object) {
+    inject(_object, _scope) {
 
         if (isAbstract(_object)) {
 
             throw new CouldNotInjectError();
         }
 
-        this.#traceProtoPseudoConstructorChain(_object);
+        this.#traceProtoPseudoConstructorChain(_object, _scope);
     }
 }

@@ -1,27 +1,27 @@
-const Context =  require('../context/context.js');
 
 module.exports = class Contextual {
 
-    /**@type {Context}*/
-    #context;
+    #container;
 
-    get context() {
+    get componentContainer() {
 
-        return this.#context;
+        return this.#container;
     }
 
-    constructor(_context) {
+    constructor(_iocContainer) {
 
-        this.#context = _context;
+        this.#container = _iocContainer;
 
         this.#init();
     };
 
     #init() {
 
-        if (!(this.#context instanceof Context)) {
+        const container = this.#container;
 
-            throw new TypeError('[DependenciesInjecttionEngine] must be initialized with an instance of [Context]');
+        if (typeof container.get !== 'function') {
+
+            throw new TypeError('need an ioc container');
         }
     }
 }

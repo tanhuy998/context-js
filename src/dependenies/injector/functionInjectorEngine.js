@@ -90,7 +90,7 @@ module.exports = class FunctionInjectorEngine extends Injector {
         typeMeta.value = args;
     }
 
-    resolveComponentsFor(_func) { 
+    resolveComponentsFor(_func, _scope) { 
 
         const reflection = new ReflectionFunction(_func);
         
@@ -119,7 +119,7 @@ module.exports = class FunctionInjectorEngine extends Injector {
 
             if (paramType !== undefined && paramType !== null && paramType !== Void) {
 
-                const component = this.iocContainer.get(paramType);
+                const component = this.iocContainer.get(paramType, _scope);
 
                 ret[i] = component ?? ret[i];
             }
@@ -131,14 +131,14 @@ module.exports = class FunctionInjectorEngine extends Injector {
         return ret;
     }
 
-    inject(_function) {
+    inject(_function, _scope) {
 
         this.#ensureFunction(_function);
 
         /**@type {property_metadata_t}*/
         const funcMeta = metaOf(_function);
         
-        const args = this.resolveComponentsFor(_function);
+        const args = this.resolveComponentsFor(_function, _scope);
 
         if (args === undefined || args === null) {
 
