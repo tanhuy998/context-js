@@ -86,7 +86,7 @@ module.exports = class Phase extends T_WeakTypeNode {
      * @param {Context} _payload 
      */
     accquire(_payload) {
-
+        
         try {
 
             const handle = this.#prepare(_payload);
@@ -156,8 +156,8 @@ module.exports = class Phase extends T_WeakTypeNode {
                 context: _payload
             }
 
-            globalContext.DI?.inject(handler, config);  
-
+            globalContext.DI?.inject(_handlerInstance, config);  
+            
             /**
              * if inject mode is fullyInjectt
              * this means all methods of object is injected
@@ -166,7 +166,7 @@ module.exports = class Phase extends T_WeakTypeNode {
 
                 config.method = 'handle';
 
-                globalContext.DI?.inject(handler, config);
+                globalContext.DI?.inject(_handlerInstance, config);
             }
         }
     }

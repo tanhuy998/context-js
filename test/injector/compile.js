@@ -1,7 +1,7 @@
 "use strict";
 "use strict";
 
-var _dec, _init_vehicleA, _dec2, _init_drive, _initProto, _dec3, _init_vehicleB, _dec4, _initProto2;
+var _dec, _init_vehicleA, _dec2, _init_drive, _dec3, _initProto, _dec4, _init_vehicleB, _dec5, _dec6, _initProto2;
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
@@ -54,6 +54,7 @@ var Component = /*#__PURE__*/_createClass(function Component() {
 });
 _dec = type(Bike);
 _dec2 = type(Component);
+_dec3 = paramsType(Bike);
 var _secret = /*#__PURE__*/new WeakMap();
 var _A = /*#__PURE__*/new WeakMap();
 var _B = /*#__PURE__*/new WeakMap();
@@ -90,30 +91,27 @@ var A = /*#__PURE__*/function () {
       _classPrivateFieldSet(this, _B, v);
     }
   }, {
+    key: CONSTRUCTOR,
+    value: function value(bike) {
+      _classPrivateFieldSet(this, _secret, bike);
+      this.vehicleA = bike;
+      console.log('A', this.vehicleA);
+    }
+  }, {
     key: "show",
-    value:
-    // @paramsType(Bike)
-    // [CONSTRUCTOR](bike) {
-
-    //     this.#secret = bike;
-
-    //     this.vehicleA = bike;
-
-    //     console.log('A', this.vehicleA);
-    // }
-
-    function show() {
+    value: function show() {
       console.log(_classPrivateFieldGet(this, _secret));
     }
   }]);
   return A;
 }();
-var _applyDecs2203R$e = _slicedToArray(_applyDecs2203R(A, [[_dec, 1, "vehicleA"], [_dec2, 1, "drive"]], []).e, 3);
+var _applyDecs2203R$e = _slicedToArray(_applyDecs2203R(A, [[_dec, 1, "vehicleA"], [_dec2, 1, "drive"], [_dec3, 2, CONSTRUCTOR]], []).e, 3);
 _init_vehicleA = _applyDecs2203R$e[0];
 _init_drive = _applyDecs2203R$e[1];
 _initProto = _applyDecs2203R$e[2];
-_dec3 = type(Car);
-_dec4 = paramsType(Component);
+_dec4 = type(Car);
+_dec5 = paramsType(Car);
+_dec6 = paramsType(Component);
 var _A2 = /*#__PURE__*/new WeakMap();
 var B = /*#__PURE__*/function (_A3) {
   _inherits(B, _A3);
@@ -140,23 +138,20 @@ var B = /*#__PURE__*/function (_A3) {
       _classPrivateFieldSet(this, _A2, v);
     }
   }, {
+    key: CONSTRUCTOR,
+    value: function value(car) {
+      this.vehicleB = car;
+      console.log('B', this.vehicleB);
+    }
+  }, {
     key: "doSomething",
-    value:
-    // @paramsType(Car)
-    // [CONSTRUCTOR](car) {
-
-    //     this.vehicleB = car;
-
-    //     console.log('B', this.vehicleB)
-    // }
-
-    function doSomething(component) {
+    value: function doSomething(component) {
       console.log(component);
     }
   }]);
   return B;
 }(A);
-var _applyDecs2203R$e2 = _slicedToArray(_applyDecs2203R(B, [[_dec3, 1, "vehicleB"], [_dec4, 2, "doSomething"]], []).e, 2);
+var _applyDecs2203R$e2 = _slicedToArray(_applyDecs2203R(B, [[_dec4, 1, "vehicleB"], [_dec5, 2, CONSTRUCTOR], [_dec6, 2, "doSomething"]], []).e, 2);
 _init_vehicleB = _applyDecs2203R$e2[0];
 _initProto2 = _applyDecs2203R$e2[1];
 var components = new ComponentManager();

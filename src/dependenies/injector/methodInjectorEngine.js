@@ -1,7 +1,8 @@
 const FunctionInjectorEngine = require("./functionInjectorEngine");
-const ReflectionPrototypeMethod = require('reflectype/src/metadata/reflectionPrototypeMethod');
+//const ReflectionPrototypeMethod = require('reflectype/src/metadata/reflectionPrototypeMethod');
+const ReflectionFunction = require('reflectype/src/metadata/reflectionFunction');
 const {initTypeField, getTypeMetadata, initTypePropertyField} = require('../../utils/metadata');
-const { metadata_t } = require("reflectype/src/reflection/metadata");
+const { metadata_t, metaOf } = require("reflectype/src/reflection/metadata");
 
 module.exports = class MethodInjectorEngine extends FunctionInjectorEngine {
 
@@ -20,12 +21,12 @@ module.exports = class MethodInjectorEngine extends FunctionInjectorEngine {
     inject(_object, _methodName, _scope) {
 
         this.#ensureInput(...arguments);
-
+        
         if (!this.ableToInject(_object, _methodName)) {
 
             return false;
         }
-
+        
         initTypeField(_object);
 
         /**@type {metadata_t} */
@@ -34,7 +35,7 @@ module.exports = class MethodInjectorEngine extends FunctionInjectorEngine {
         const actualFunc = _object[_methodName];
 
         const components = super.resolveComponentsFor(actualFunc, _scope);
-
+        
         if (components.length === 0) {
             // nothing to inject, the process is determined as success
             return true;
@@ -64,12 +65,13 @@ module.exports = class MethodInjectorEngine extends FunctionInjectorEngine {
             return false;
         }
 
-        const reflection = new ReflectionPrototypeMethod(_object.constructor, _methodName);
-
+        //const reflection = new ReflectionPrototypeMethod(_object.constructor, _methodName);
+        const reflection = new ReflectionFunction(_object[_methodName]);
+        
         const objectMeta = getTypeMetadata(_object);
 
         const isValidObjectMeta = objectMeta.constructor === metadata_t || objectMeta === null || objectMeta === undefined;
-
+        
         return isValidObjectMeta && reflection.isValid;
     }
 

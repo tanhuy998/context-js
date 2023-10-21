@@ -74,16 +74,23 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
     /**@type {MethodInjectorEngine} */
     #methodInjector;
 
+    #container;
+
+    get componentContainer() {
+
+        return this.#container;
+    }
+
     /**@type {boolean} */
     get #fullyInject() {
 
-        return this.context.config?.fullyInject;
+        return this.global.fullyInject;
     }
     /**
      * 
      * @param {ComponentContainer} _compoentContainer 
      */
-    constructor(_compoentContainer) {
+    constructor(_globalContext) {
 
         super(...arguments);
 
@@ -91,8 +98,8 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
     }
 
     #init() {
-    
-        const container = this.componentContainer;
+
+        const container = this.#container = this.global.components.container;
 
         this.#functionInjector = new FunctionInjectorEngine(container);
         this.#objectInjector = new ObjectInjectorEngine(container);

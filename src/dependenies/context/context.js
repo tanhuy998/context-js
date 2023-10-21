@@ -1,9 +1,11 @@
 const DependenciesInjectionSystem = require('../DI/dependenciesInjectionSystem.js');
 const ComponentContainer = require('../component/componentContainer.js');
+const ComponentManager = require('../component/componentManager.js')
 const ItemsManager = require('../itemsManager.js');
 const Pipeline = require('../pipeline/pipeline.js');
 const Scope = require('../component/scope.js');
 
+const self = require('reflectype/src/utils/self.js');
 
 /**
  * @typedef {import('../component/scope.js')} Scope
@@ -19,45 +21,66 @@ class Context {
      * 
      * @type {boolean} 
      */
-    static #fullyInject = false;
+    static fullyInject = false;
 
-    static #iocContainer = new ComponentContainer();
-    static #configurator;
+    //static #iocContainer //= new ComponentContainer();
 
-    static #pipeline = new Pipeline(this);
+    static componentManager //= new ComponentManager(this.#iocContainer);
 
-    static #items = new ItemsManager();
+    static configurator;
 
-    static #DI_System = new DependenciesInjectionSystem(this.iocContainer);
+    static pipeline //= new Pipeline(this);
+
+    static items //= new ItemsManager();
+
+    static DI_System //= new DependenciesInjectionSystem(this.#iocContainer);
 
     static get DI() {
 
-        return this.#DI_System;
+        return this.DI_System;
     }
 
-    static get pipeline() {
+    // static get pipeline() {
 
-        return this.#pipeline;
+    //     return this.pipeline;
+    // }
+
+    // static get items() {
+
+    //     return this.items;
+    // }
+
+    // static get fullyInject() {
+
+    //     return typeof this.fullyInject === 'boolean' ? this.fullyInject : false;
+    // }
+
+    static get components() {
+
+        return this.componentManager;
     }
 
-    static get items() {
+    static __init() {
 
-        return this.#items;
-    }
+        if (this === Context) {
 
-    static get fullyInject() {
+            throw new Error('[Context] must be inhertied as new class');
+        }
 
-        return typeof this.#fullyInject === 'boolean' ? this.#fullyInject : false;
-    }
+        const iocContainer = new ComponentContainer();
 
-    static get iocContainer() {
-        
-        return this.#iocContainer;
+        this.componentManager ??= new ComponentManager(iocContainer);
+    
+        this.pipeline ??= new Pipeline(this);
+    
+        this.items ??= new ItemsManager();
+    
+        this.DI_System ??= new DependenciesInjectionSystem(this);        
     }
 
     static configure() {
 
-        return this.#configurator;
+        return this.configurator;
     }
 
 
@@ -92,7 +115,7 @@ class Context {
 
     constructor() {
 
-        this.#scope = this.constructor.iocContainer.get(Scope);
+        this.#scope = self(this).components.get(Scope);
     }
 
     getComponent(_abstract) {

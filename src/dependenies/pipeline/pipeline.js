@@ -24,7 +24,7 @@ module.exports = class Pipeline {
 
     constructor(_globolContext) {
 
-        this.#global;
+        this.#global = _globolContext;
 
         this.#init();
     }
@@ -54,7 +54,17 @@ module.exports = class Pipeline {
         return new PhaseBuilder(this);
     }
 
+    /**
+     * 
+     * @param {Context} _payload 
+     * @returns 
+     */
     run(_payload) {
+
+        if (this.#global && this.#global !== _payload.global) {
+
+            return;
+        }
 
         const firstPhase = this.#firstPhase;
 

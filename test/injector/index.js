@@ -33,15 +33,15 @@ class A {
     @type(Component)
     accessor drive;
 
-    // @paramsType(Bike)
-    // [CONSTRUCTOR](bike) {
+    @paramsType(Bike)
+    [CONSTRUCTOR](bike) {
         
-    //     this.#secret = bike;
+        this.#secret = bike;
 
-    //     this.vehicleA = bike;
+        this.vehicleA = bike;
 
-    //     console.log('A', this.vehicleA);
-    // }
+        console.log('A', this.vehicleA);
+    }
 
     show() {
 
@@ -54,13 +54,13 @@ class B extends A {
     @type(Car)
     accessor vehicleB;
 
-    // @paramsType(Car)
-    // [CONSTRUCTOR](car) {
+    @paramsType(Car)
+    [CONSTRUCTOR](car) {
         
-    //     this.vehicleB = car;
+        this.vehicleB = car;
 
-    //     console.log('B', this.vehicleB)
-    // }
+        console.log('B', this.vehicleB)
+    }
 
     @paramsType(Component)
     doSomething(component) {

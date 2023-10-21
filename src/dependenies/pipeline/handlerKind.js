@@ -17,27 +17,33 @@ module.exports = class HandlerKind {
         return 3;
     }
 
-    static classify(_unknown) {
+    static isES6Class(_unknown) {
 
+        return _unknown.toString().match(/^class.+\{|function.+\{.*\s*_classCallCheck/)
+    }
+
+    static classify(_unknown) {
+        
         if (typeof _unknown !== 'function') {
 
             throw new TypeError('handler passed to phases must be type of function');
         }
+        
+        if (_unknown.prototype instanceof ContextHandler) {
 
-        if (_unknown.toString().match(/^class/)) {
+            return this.REGULAR;
+        }
 
-            if (typeof _unknown.prototype.handle !== 'function') {
+        if (this.isES6Class(_unknown)) {
 
-                throw new Error(`class [${_unknown.name}] is missing handle() method`);
-            }
-            
-            if (_unknown.prototype instanceof ContextHandler) {
-
-                return this.REGULAR;
-            }
-            else {
+            if (typeof _unknown.prototype.handle === 'function') {
 
                 return this.ES6_CLASS;
+            }
+            
+            else {
+
+                throw new Error(`class [${_unknown.name}] is missing handle() method`);
             }
         }
 

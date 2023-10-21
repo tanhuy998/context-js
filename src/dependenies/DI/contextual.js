@@ -1,25 +1,27 @@
+/**
+ * @typedef {import('../context/context.js')} Context
+ */
 
 module.exports = class Contextual {
 
-    #container;
+    /**@@type {Context.constructor} */
+    #global;
+    
+    get global() {
 
-    get componentContainer() {
-
-        return this.#container;
+        return this.#global;
     }
 
-    constructor(_iocContainer) {
+    constructor(_globalContext) {
 
-        this.#container = _iocContainer;
+        this.#global = _globalContext;
 
         this.#init();
     };
 
     #init() {
 
-        const container = this.#container;
-
-        if (typeof container.get !== 'function') {
+        if (typeof this.global?.components?.container.get !== 'function') {
 
             throw new TypeError('need an ioc container');
         }

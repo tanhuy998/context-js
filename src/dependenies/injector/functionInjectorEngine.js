@@ -1,9 +1,7 @@
 const ReflectionFunction = require('reflectype/src/metadata/reflectionFunction.js');
 const Void = require('reflectype/src/type/void.js');
 const {metaOf, property_metadata_t} = require('reflectype/src/reflection/metadata.js');
-const Context = require('../context/context.js');
 
-const Contextual = require('../DI/contextual.js');
 const Injector = require('./injector.js');
 
 /**

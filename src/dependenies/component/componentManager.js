@@ -63,7 +63,8 @@ class ComponentManager {
         const pseudoConstructor = Scope.prototype[CONSTRUCTOR];
         
         this.container.bind(Scope, Scope);
-        this.bindScope(Scope, Scope);
+        //this.bindScope(Scope, Scope);
+        
 
         initTypePropertyField(pseudoConstructor);
 
@@ -115,27 +116,33 @@ class ComponentManager {
         //this.#keys.set(component.name, component);
     }
 
-    bindSingleton(key, value) {
+    bindSingleton(abstract, concrete) {
+
+        concrete ??= abstract;
 
         this.#checkState();
 
-        this.#container.bindSingleton(key, value);
+        this.#container.bindSingleton(abstract, concrete);
     }
 
-    bind(key, value) {
+    bind(abstract, concrete) {
+
+        concrete ??= abstract;
 
         this.#checkState();
 
-        this.#container.bind(key, value);
+        this.#container.bind(abstract, concrete);
     }
 
-    bindScope(key, value) {
+    bindScope(abstract, concrete) {
+
+        concrete ??= abstract;
 
         this.#checkState();
 
-        this.#addScopeComponent(key);
+        this.#addScopeComponent(abstract);
 
-        this.#container.bind(key, value);
+        this.#container.bind(abstract, concrete);
     }
 
     get(component, scope) {
