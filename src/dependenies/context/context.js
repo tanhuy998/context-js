@@ -2,8 +2,7 @@ const DependenciesInjectionSystem = require('../DI/dependenciesInjectionSystem.j
 const ComponentContainer = require('../component/componentContainer.js');
 const ItemsManager = require('../itemsManager.js');
 const Pipeline = require('../pipeline/pipeline.js');
-
-const ReflectionClass = require('reflectype/src/metadata/reflectionClass.js');
+const Scope = require('../component/scope.js');
 
 
 /**
@@ -25,11 +24,16 @@ class Context {
     static #iocContainer = new ComponentContainer();
     static #configurator;
 
-    static #pipeline = new Pipeline();
+    static #pipeline = new Pipeline(this);
 
     static #items = new ItemsManager();
 
     static #DI_System = new DependenciesInjectionSystem(this.iocContainer);
+
+    static get DI() {
+
+        return this.#DI_System;
+    }
 
     static get pipeline() {
 
@@ -47,7 +51,7 @@ class Context {
     }
 
     static get iocContainer() {
-
+        
         return this.#iocContainer;
     }
 
@@ -88,12 +92,12 @@ class Context {
 
     constructor() {
 
-        this.#scope = this.constructor.iocContainer.generateScope();
+        this.#scope = this.constructor.iocContainer.get(Scope);
     }
 
     getComponent(_abstract) {
 
-        const iocContainer = this.constructor.iocContainer;
+        const iocContainer = this.global.iocContainer;
 
         return iocContainer.get(_abstract, this.#scope);
     }
