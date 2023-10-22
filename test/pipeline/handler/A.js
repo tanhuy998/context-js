@@ -4,7 +4,7 @@ const autowired = require('../../../decorators/autowired');
 const Bike = require('../components/bike.js');
 const paramsType = require('reflectype/src/decorators/paramsType');
 const Driver = require('../components/driver');
-const Garage = require('../components/garage');
+const Garage = require('../components/warehouse');
 
 module.exports = class A {
 
@@ -12,19 +12,15 @@ module.exports = class A {
     @type(Bike)
     accessor vehicle
 
-    @autowired
-    @type(Garage)
-    accessor garage
-
     constructor() {
 
         
     }
 
-    @autowired
-    @paramsType(Driver)
+    // @autowired
+    // @paramsType(Driver)
     handle(_v) {
 
-        console.log('phase A', this.vehicle, _v, this.garage);
+        console.log('+ phase A: deliver to customer using', this.vehicle);
     }
 }

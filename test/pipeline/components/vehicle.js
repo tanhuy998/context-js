@@ -1,6 +1,7 @@
 const {type} = require('reflectype/src/decorators');
 const autowired = require('../../../decorators/autowired');
 const Driver = require('./driver.js');
+const Product = require('./product');
 
 module.exports = class Vehicle {
 
@@ -12,5 +13,9 @@ module.exports = class Vehicle {
 
     @autowired
     @type(Driver)
-    accessor driver
+    accessor driver;
+
+    @autowired
+    @type(Product)
+    accessor productPackage;
 }

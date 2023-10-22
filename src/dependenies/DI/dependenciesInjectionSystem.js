@@ -119,7 +119,7 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
         const kind = this.#classify(_unknown);
 
         const scope = context?.scope;
-
+        
         switch (kind) {
             case DependencyKind.UNKNOWN: return;
             case DependencyKind.FIELD: return;

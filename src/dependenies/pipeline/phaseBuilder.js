@@ -26,6 +26,11 @@ module.exports = class PhaseBuilder {
         return this;
     }
 
+    use(_pipeline) {
+
+        
+    }
+
     #_dispose() {
 
         this.#handler = undefined;

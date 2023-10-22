@@ -1,8 +1,8 @@
-module.exports = class Garage {
+module.exports = class Product {
 
     static count = 0;
 
     id = ++this.constructor.count;
 
-    name = 'garage';
+    name = 'package';
 }

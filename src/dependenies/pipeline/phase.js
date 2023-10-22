@@ -12,6 +12,7 @@ const PhaseError = require('../errors/pipeline/phaseError.js');
 //const Context = require('../context/context.js');
 
 /**
+ * @typedef {import('../handler/constextHandler.js')} ContextHandler
  * @typedef {import('../context/context.js')} Context
  * @typedef {import('reflectype/src/metadata/ReflectionParameter.js')} ReflectionParameter
  */
@@ -41,6 +42,32 @@ function catchError(phase, _payload) {
         phase.accquireError(_error, _payload);
     }
 }
+
+
+const traps = {
+    /**
+     * @param {ContextHandler} target 
+     * @param {string} prop 
+     * @returns 
+     */
+    get: function(target, prop) {
+
+        const theProp = target[prop];
+
+        if (typeof theProp !== 'function') {
+
+            return theProp;
+        }
+
+        /**@type {Context} */
+        const context = target.context;
+        const DI = context.global.DI;
+
+        DI.inject(target, theProp);
+
+        return theProp;
+    }
+};
 
 module.exports = class Phase extends T_WeakTypeNode {
 
@@ -137,8 +164,16 @@ module.exports = class Phase extends T_WeakTypeNode {
 
             return handler;
         }
+        else if (this.#kind === HandlerKind.ES6_CLASS) {
 
-        return handler.handle.bind(handler);
+            return handler.handle.bind(handler);
+        }
+        else {
+
+            const wrapper = new Proxy(handler, traps)
+
+            return handler.handle.bind(wrapper);
+        }
     }
 
     /**
@@ -157,17 +192,18 @@ module.exports = class Phase extends T_WeakTypeNode {
             }
 
             globalContext.DI?.inject(_handlerInstance, config);  
+
             
-            /**
-             * if inject mode is fullyInjectt
-             * this means all methods of object is injected
-             */
-            if (!globalContext.fullyInject) {
+            // /**
+            //  * if inject mode is fullyInjectt
+            //  * this means all methods of object is injected
+            //  */
+            // if (!globalContext.fullyInject) {
 
-                config.method = 'handle';
+            //     config.method = 'handle';
 
-                globalContext.DI?.inject(_handlerInstance, config);
-            }
+            //     globalContext.DI?.inject(_handlerInstance, config);
+            // }
         }
     }
 
