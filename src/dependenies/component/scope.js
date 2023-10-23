@@ -78,7 +78,7 @@ class Scope {
 
         //if (!this.#components.has(component)) return;
 
-        const instance = _container.get(component);
+        const instance = _container.build(component, this);
         //const instance = _container.get(component, this);
         
         this.#components.set(component, instance);
@@ -183,7 +183,6 @@ class Scope {
         // to get refernce reach type checking for _instance
         // in case there is no fixedContext setted to BindingContext
 
-
         if (!this.#scope.has(_component)) {
 
             throw new Error(`scope does not bind ` + _component.name);
@@ -195,11 +194,6 @@ class Scope {
         }
 
         const instanceConstructor = _instance.constructor;
-
-        // if (!_container._isParent(_component, instanceConstructor)) {
-
-        //     throw new Error('the loaded instance is not inherit ' + _component.name);
-        // }
 
         checkType(_component, instanceConstructor);
 

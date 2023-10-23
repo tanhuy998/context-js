@@ -1,3 +1,4 @@
+const ObjectInjectorEngine = require('../injector/objectInjectorEngine.js');
 const IocContainer = require('../ioc/iocContainer.js');
 const Scope = require('./scope.js');
 //const {Type} = require('../../libs/type.js');
@@ -31,8 +32,15 @@ class ComponentContainer extends IocContainer {
      */
     get(abstract, _scope) {
         
+        if (super.hasSingleton(abstract)) {
+
+            return super.get(abstract);
+        }
+
         return this.#lookup(abstract, _scope);
     }
+
+
 
     /**
      * 
@@ -47,12 +55,7 @@ class ComponentContainer extends IocContainer {
             return super.get(abstract);
         }
 
-        if (_scope.has(abstract)) {
-            
-            return this.#resolveComponentFromScope(abstract, _scope);
-        }
-
-        return super.get(abstract);
+        return this.#resolveComponent(abstract, _scope);
     }
 
     /**
@@ -61,14 +64,43 @@ class ComponentContainer extends IocContainer {
      * @param {Scope} _scope 
      * @returns {Object | undefined}
      */
-    #resolveComponentFromScope(abstract, _scope) {
-        
-        if (!_scope.isLoaded(abstract)) {
+    #resolveComponent(abstract, _scope) {
+        /**
+         *  if abstract is scope component
+         *  container leaves decision to the scope object to instantiate the instance
+         *  
+         *  if abstract is singleton component
+         *  just resolve component as usual, singleton components are related to any scope components
+         * 
+         *  if abstract is transient component
+         *  inside transient components might denpend on components that are marked as scope component
+         */
+
+        if (_scope.has(abstract)) {
+
+            if (!_scope.isLoaded(abstract)) {
+               
+                _scope.load(abstract, this);
+            }
             
-            _scope.load(abstract, this);
+            return _scope.get(abstract);
         }
+
+        return this.build(abstract, _scope);        
+    }
+
+    build(_abstract, _scope) {
+
+        /**@type {Function} */
+        const concrete = this.getConcreteOf(_abstract);
         
-        return _scope.get(abstract);
+        let instance = typeof concrete === 'function' ? new concrete() : new _abstract(); 
+
+        const injector = new ObjectInjectorEngine(this);
+
+        injector.inject(instance, _scope);
+
+        return instance;
     }
 
     // /**

@@ -5,10 +5,6 @@ const Vehicle = require('./vehicle');
 
 module.exports = class Bike extends Vehicle{
 
-    static count = 0;
-
-    id = ++this.constructor.count;
-
     name = 'bike';
 
 }

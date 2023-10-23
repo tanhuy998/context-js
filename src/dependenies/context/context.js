@@ -40,21 +40,6 @@ class Context {
         return this.DI_System;
     }
 
-    // static get pipeline() {
-
-    //     return this.pipeline;
-    // }
-
-    // static get items() {
-
-    //     return this.items;
-    // }
-
-    // static get fullyInject() {
-
-    //     return typeof this.fullyInject === 'boolean' ? this.fullyInject : false;
-    // }
-
     static get components() {
 
         return this.componentManager;
@@ -85,11 +70,15 @@ class Context {
 
 
     /**
+     * ------------------- END OF STATIC DECLARATION -----------------------------
+     */
+
+    /**
      *  scope of components
      * 
      *  @type {Scope}
      */
-    #scope;
+    #scope = self(this).components.get(Scope);;
 
     /**
      *  store annything
@@ -115,7 +104,7 @@ class Context {
 
     constructor() {
 
-        this.#scope = self(this).components.get(Scope);
+        
     }
 
     getComponent(_abstract) {

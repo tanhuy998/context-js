@@ -5,6 +5,7 @@ const AutoAccessorInjectorEngine = require('./autoAccessorInjectorEngine');
 const {isAbstract} = require('../../utils/type.js');
 const CouldNotInjectError = require('../errors/couldNotInjectError.js');
 const {CONSTRUCTOR} = require('../constants.js');
+const { metaOf, property_metadata_t } = require("reflectype/src/reflection/metadata");
 
 module.exports = class ObjectInjectorEngine extends Injector {
 
@@ -45,12 +46,13 @@ module.exports = class ObjectInjectorEngine extends Injector {
 
             if (typeof pseudoConstructor === 'function') {
 
-                functionInjector.inject(pseudoConstructor, _scope);
+                const args = functionInjector.resolveComponentsFor(pseudoConstructor, _scope);
+                
                 /**
                  *  this line is confusing
                  */
                 //pseudoConstructor.call(proto);
-                pseudoConstructor.call(_object); // this line is confusing;
+                pseudoConstructor.call(_object, ...args); // this line is confusing;
 
             }
         }

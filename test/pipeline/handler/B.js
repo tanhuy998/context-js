@@ -20,13 +20,14 @@ module.exports = class B extends ContextHandler{
 
     constructor(context) {
 
-        super(...arguments);
+        super(...arguments);    
     }
 
-    // @autowired
-    // @paramsType(Driver, Bike)
-    handle(_v, _b) {
+    @autowired
+    @paramsType(Bike)
+    handle(_v,) {
 
-        console.log('+ phase B: routing region using', this.vehicle);
+        console.log('++++++++++++++++++++ phase B: routing region using', this.vehicle);
+        console.log('need one bike', _v)
     }
 }

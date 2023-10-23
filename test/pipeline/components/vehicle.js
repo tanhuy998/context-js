@@ -2,12 +2,9 @@ const {type} = require('reflectype/src/decorators');
 const autowired = require('../../../decorators/autowired');
 const Driver = require('./driver.js');
 const Product = require('./product');
+const Countable = require('./countable');
 
-module.exports = class Vehicle {
-
-    static count = 0;
-
-    id = ++this.constructor.count;
+module.exports = class Vehicle extends Countable {
 
     name = 'vehicle';
 

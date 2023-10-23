@@ -61,6 +61,8 @@ function classifyMethodsOf(_object) {
     }
 }
 
+
+
 module.exports = class DependenciesInjectionSystem extends Contextual{
 
     /**@type {FunctionInjectorEngine} */
@@ -140,6 +142,63 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
         }
     }
 
+    /**
+     * 
+     * @param {Object} _object 
+     * @param {Function | String | Symbol} _method 
+     * @param {Context?} _context 
+     * @returns 
+     */
+    invoke(_object, _method, _context) {
+
+        const actualFunction = this.#verifyAndResolveMethod(_object, _method);
+
+        const injector = this.#functionInjector;
+
+        const scope = _context?.scope;
+
+        const args = injector.resolveComponentsFor(actualFunction, scope);
+
+        if (typeof _object === 'object') {
+
+            return actualFunction.call(_object, ...args);
+        }
+        else {
+
+            return actualFunction(args);
+        }
+    }
+
+    #verifyAndResolveMethod(_object, _method) {
+
+        const type = typeof _method;
+
+        if (type === 'string' || type === 'symbol') {
+
+            if (typeof _object !== 'object') {
+
+                throw new Error('invalid arguments');
+            }
+
+            theMethod = _object[_method];
+
+            if (typeof theMethod !== 'function') {
+
+                throw new Error('invalid arguments');
+            }
+            else {
+
+                return theMethod;
+            }
+        }
+        else if (type === 'function') {
+
+            return _method;
+        }
+
+        throw new Error('invalid arguments');
+    }
+
     #classify(_unknown) {
 
         if (typeof _unknown === 'function') {
@@ -183,7 +242,7 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
     #resolveObject(_object, _scope) {
 
         const injector = this.#objectInjector;
-
+        
         injector.inject(_object, _scope);
 
         if (this.#fullyInject) {
@@ -193,14 +252,14 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
     }
 
     #resolveFunction(_func, _scope) {
-
+        
         const injector = this.#functionInjector;
 
         injector.inject(_func, _scope);
     }
 
     #resolveMethod(_object, _methodName, _scope) {
-
+        
         this.#methodInjector.inject(_object, _methodName, _scope);
     }
 

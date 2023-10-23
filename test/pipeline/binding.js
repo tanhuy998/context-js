@@ -12,18 +12,20 @@ const B = require('./handler/B.js');
  
 function first() {
     console.log('----------------------')
-    console.log('first phase:', 'loads product');
+    console.log('++++++++++++++++++++++++first phase:', 'loads product');
 }
 
 function statistic() {
 
-    console.log('+ phase 4: vehicle launched:');
+    console.log('++++++++++++++++++++++++ phase 4: vehicle launched:');
     console.log(`
         ----- Car: ${Car.count}
         ----- Bike: ${Bike.count}
         ----- Driver: ${Driver.count}
 
-        ----- Gross total products: ${Product.count};
+        ----- Gross total products: ${Product.count}
+
+        ----- Warehouse: ${Warehouse.count}
     `)
 }
 module.exports = class TransportContext extends Context{

@@ -18,9 +18,10 @@ module.exports = class A {
     }
 
     // @autowired
-    // @paramsType(Driver)
+    // @paramsType(Bike)
     handle(_v) {
-
-        console.log('+ phase A: deliver to customer using', this.vehicle);
+        
+        console.log('+++++++++++++++++++++++++ phase A: deliver to customer using', this.vehicle);
+        
     }
 }

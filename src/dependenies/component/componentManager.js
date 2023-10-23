@@ -62,8 +62,7 @@ class ComponentManager {
         const Scope = require('./scope.js');
         const pseudoConstructor = Scope.prototype[CONSTRUCTOR];
         
-        this.container.bind(Scope, Scope);
-        //this.bindScope(Scope, Scope);
+        this.bindScope(Scope, Scope);
         
 
         initTypePropertyField(pseudoConstructor);
@@ -95,9 +94,11 @@ class ComponentManager {
 
     getScope() {
 
-        const shallowCopy = Array.from(this.#scope);
+        // const shallowCopy = Array.from(this.#scope);
         
-        return new Set(shallowCopy);
+        // return new Set(shallowCopy);
+
+        return this.#scope;
     }
 
     getByKey(_key) {

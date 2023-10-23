@@ -76,11 +76,11 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
             const {type} = propMeta;
             const isPrivate = propMeta.private;
             const setter = propAccessor?.set;
+            
+            const theDependency = this.iocContainer.get(type, _scope);
 
             if (typeof setter === 'function') {
-
-                const theDependency = this.iocContainer.get(type, _scope);
-
+                
                 /**
                  *  check if the setter of the field is bound with the object
                  *  this operation happens because of changes
@@ -97,10 +97,9 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
 
             }
             else if (isPrivate !== false) {
-
+                
                 _object[name] = theDependency;
             }
-
         }
     }
 }

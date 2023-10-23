@@ -1,8 +1,6 @@
-module.exports = class Warehouse {
+const Countable = require("./countable");
 
-    static count = 0;
-
-    id = ++this.constructor.count;
+module.exports = class Warehouse extends Countable {
 
     name = 'garage';
 }

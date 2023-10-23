@@ -43,6 +43,28 @@ function catchError(phase, _payload) {
     }
 }
 
+const functionTraps = {
+    /**
+     * 
+     * @param {Function} target 
+     * @param {Object} _this 
+     * @param {Iterable} args 
+     * @returns 
+     */
+    apply: function(target, _this, args) {
+
+        /**@type {Context} */
+        const context = _this.context;
+        const DI = context?.global?.DI;
+
+        if (args.length > 0 || typeof DI !== 'object') {
+
+            return target.call(_this, ...args);
+        }
+
+        return DI.invoke(_this, target, context);
+    }
+}
 
 const traps = {
     /**
@@ -59,15 +81,15 @@ const traps = {
             return theProp;
         }
 
-        /**@type {Context} */
-        const context = target.context;
-        const DI = context.global.DI;
+        // /**@type {Context} */
+        // const context = target.context;
+        // const DI = context.global.DI;
 
-        DI.inject(target, theProp);
-
-        return theProp;
+        return new Proxy(theProp, functionTraps);
     }
 };
+
+
 
 module.exports = class Phase extends T_WeakTypeNode {
 
@@ -113,11 +135,11 @@ module.exports = class Phase extends T_WeakTypeNode {
      * @param {Context} _payload 
      */
     accquire(_payload) {
-        
+
         try {
-
+            
             const handle = this.#prepare(_payload);
-
+            
             const result = handle();
 
             if (result instanceof Promise) {
@@ -190,9 +212,11 @@ module.exports = class Phase extends T_WeakTypeNode {
             const config = {
                 context: _payload
             }
+            // inject fields first
+            globalContext.DI?.inject(_handlerInstance, config);
 
-            globalContext.DI?.inject(_handlerInstance, config);  
-
+            config.method = 'handle';
+            globalContext.DI?.inject(_handlerInstance, config);
             
             // /**
             //  * if inject mode is fullyInjectt
