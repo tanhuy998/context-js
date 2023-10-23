@@ -1,11 +1,30 @@
 const self = require("reflectype/src/utils/self");
-const preventModifyProp = require("../proxyTraps/preventModifyProp");
+//const preventModifyProp = require("../proxyTraps/preventModifyProp");
 const Any = require('reflectype/src/type/any.js');
+const subCoordination = require('../proxyTraps/subCoordination.js');
+
+/**
+ * @typedef {import('../itemsManager.js')} ItemsManager
+ */
 
 
-class Coordinator extends Any {
+/**
+ *  Coordinator is class to help dependency injector resolves dependencies
+ *  that are not in relationship with others, or arbitrary datas that are placed
+ *  somewhere on particular section of a context.
+ *  each class places data on a specific fragment of the section and is called "field"
+ */
+module.exports = class Coordinator extends Any {
 
+    /**
+     *  the address of the section
+     */
     static key = Symbol(Date.now());
+
+    /**
+     *  the section that places the data we want to get
+     */
+    /**@type {ItemsManager} */
     static field;
 
     static _init(_field) {
@@ -14,7 +33,10 @@ class Coordinator extends Any {
     }
 
     #key = self(this).key;
-    #field = self(this).field;
+
+    /**@type {ItemsManager} */
+    field = self(this).field;
+
 
     #value;
     
@@ -28,19 +50,24 @@ class Coordinator extends Any {
         return this.#key;
     }
 
-    get field() {
+    // get field() {
 
-        return this.#field;
-    }
+    //     return this.#field;
+    // }
     
     #resolveValue() {
 
         const key = self(this).key;
 
-        return this.#field?.get(key);
+        return this.field?.get(key);
     }
 
     _evaluate(_key) {
+
+        if (_key === undefined || _key === null) {
+
+            this.#value = this.#resolveValue();
+        }
 
         const isValidKey = typeof _key === 'string' || typeof _key === 'symbol';
 
@@ -51,8 +78,8 @@ class Coordinator extends Any {
             return;
         }
 
-        this.value = (isValidKey) ? value[_key] : value;
+        this.#value = (isValidKey) ? value[_key] : value;
     }
 }
 
-module.exports = new Proxy(Coordinator, preventModifyProp);
+//module.exports = new Proxy(Coordinator, subCoordination);

@@ -7,6 +7,7 @@ const paramsType = require('reflectype/src/decorators/paramsType.js');
 const Driver = require('../components/driver.js');
 const Bike = require('../components/bike.js');
 const Warehouse = require('../components/warehouse.js');
+const DeliveryRequest = require('../components/DeliveryRequest.js');
 
 module.exports = class B extends ContextHandler{
 
@@ -24,10 +25,11 @@ module.exports = class B extends ContextHandler{
     }
 
     @autowired
-    @paramsType(Bike)
-    handle(_v,) {
+    @paramsType(Bike, DeliveryRequest)
+    handle(_v, req) {
 
-        console.log('++++++++++++++++++++ phase B: routing region using', this.vehicle);
+        console.log('++++++++++++++++++++ phase B: routing region using', this.vehicle.name);
+        console.log('deliver to city', req.city);
         console.log('need one bike', _v)
     }
 }

@@ -1,9 +1,10 @@
 const {CONSTRUCTOR} = require('../constants.js');
 const {hasRelationShip, checkType} = require('../../utils/type.js');
+const { decorateFunction, getTypeMetadata, decoratePseudoConstructor } = require('../../utils/metadata.js');
 
 /**
  *  @typedef {import('./componentContainer.js')} ComponentContainer
- * 
+ *  @typedef {import('reflectype/src/reflection/metadata.js').property_metadata_t} property_metadata_t
  */
 
 /**

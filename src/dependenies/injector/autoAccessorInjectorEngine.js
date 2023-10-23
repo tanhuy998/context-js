@@ -77,7 +77,8 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
             const isPrivate = propMeta.private;
             const setter = propAccessor?.set;
             
-            const theDependency = this.iocContainer.get(type, _scope);
+            //const theDependency = this.iocContainer.get(type, _scope);
+            const theDependency = this.resolveComponent(type, _scope);
 
             if (typeof setter === 'function') {
                 

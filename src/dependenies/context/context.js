@@ -8,6 +8,9 @@ const Scope = require('../component/scope.js');
 const self = require('reflectype/src/utils/self.js');
 const preventModifyProp = require('../proxyTraps/preventModifyProp.js');
 
+const SessionCoordinator = require('../coordinator/sessionCoordinator.js');
+const { decoratePseudoConstructor } = require('../../utils/metadata.js');
+
 /**
  * @typedef {import('../component/scope.js')} Scope
  */
@@ -17,7 +20,7 @@ const preventModifyProp = require('../proxyTraps/preventModifyProp.js');
 /**
  *  a configuration class
  */
-class Context {
+module.exports = class Context {
 
     /** 
      * flag for fully inject when initiating components 
@@ -64,6 +67,14 @@ class Context {
         this.items ??= new ItemsManager();
     
         this.DI_System ??= new DependenciesInjectionSystem(this);        
+
+        /**
+         *  binding components
+         */
+        this.componentManager.bindScope(this);
+        this.componentManager.bindScope(Context, this);
+
+        decoratePseudoConstructor(SessionCoordinator, {paramsType: [Context]});
     }
 
     static configure() {
@@ -117,22 +128,10 @@ class Context {
         return iocContainer.get(_abstract, this.#scope);
     }
 
-    /**
-     * 
-     * @param {Object} _component 
-     * _component is the instance not the abstract
-     */
-    #injectComponentMethods(_component) {
-
-        
-    }
-
     overrideScope(_abstract, _concrete, {defaultInstance, componentKey, iocContainer}) {
 
         this.#scope.overide(_abstract, _concrete, {defaultInstance, componentKey, iocContainer});
     }
-
-
 } 
 
-module.exports = new Proxy(Context, preventModifyProp);
+//module.exports = new Proxy(Context, preventModifyProp);

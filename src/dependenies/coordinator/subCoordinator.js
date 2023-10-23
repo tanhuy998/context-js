@@ -1,15 +1,29 @@
-function sub_coordinator(_coordinator, _key) {
+/**
+ * @typedef {import('../coordinator/coodinator.js')} Coordinator
+ */
 
-    return function() {
+const { CONSTRUCTOR } = require('../constants.js');
 
-        this.
+/**
+ * 
+ * @param {Coordinator} _Coordinator 
+ * @param {string | Symbol} _subField 
+ * @returns 
+ */
+function sub_coordinator(_Coordinator, _subField) {
+
+    return class extends _Coordinator {
+
+        [CONSTRUCTOR]() {
+
+            this.#init();
+        }
+
+        #init() {
+
+            this._evaluate(_subField);
+        }
     }
 }
 
-
-class SubCoordinator {
-
-    constructor() 
-}
-
-module.exports = {sub_coordinator, SubCoordinator};
+module.exports = sub_coordinator;

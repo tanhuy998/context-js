@@ -4,10 +4,11 @@ const ComponentContainer = require('./componentContainer.js');
 const {CONSTRUCTOR, METADATA, TYPE_JS} = require('../constants.js');
 
 //const Scope = require('./scope.js');
-const {initTypePropertyField, getTypeMetadata, initMetadataField} = require('../../utils/metadata.js');
+const {initTypePropertyField, getTypeMetadata, initMetadataField, decoratePseudoConstructor} = require('../../utils/metadata.js');
 const { property_metadata_t } = require('reflectype/src/reflection/metadata.js');
 const {decorateMethod} = require('reflectype/src/libs/methodDecorator.js');
 const initFootPrint = require('reflectype/src/libs/initFootPrint.js');
+const self = require('reflectype/src/utils/self.js');
 class ComponentManager {
 
     /**
@@ -57,31 +58,17 @@ class ComponentManager {
 
     #initPresetComponent() {
 
-        const componentManagerClass = this.constructor;
+        //const componentManagerClass = this.constructor;
         
         const Scope = require('./scope.js');
-        const pseudoConstructor = Scope.prototype[CONSTRUCTOR];
+
+        decoratePseudoConstructor(Scope, {paramsType: [self(this)]});
+        // const pseudoConstructor = Scope.prototype[CONSTRUCTOR];
+        // /**@type {property_metadata_t} */
+        // const meta = getTypeMetadata(pseudoConstructor);
         
+        // meta.defaultParamsType = [componentManagerClass];
         this.bindScope(Scope, Scope);
-        
-
-        initTypePropertyField(pseudoConstructor);
-
-        /**@type {property_metadata_t} */
-        const meta = getTypeMetadata(pseudoConstructor);
-        meta.isMethod = true;
-        meta.defaultParamsType = [componentManagerClass];
-        meta.static = false;
-        meta.private = false;
-
-        initFootPrint(meta);
-        decorateMethod(pseudoConstructor);
-
-        const decoratedConstructor = meta.footPrint.decoratedMethod;
-        initMetadataField(decorateMethod);
-        decorateMethod[METADATA][TYPE_JS] = meta;
-        
-        Scope.prototype[CONSTRUCTOR] = decoratedConstructor;
     }
 
     #checkState() {

@@ -52,7 +52,7 @@ module.exports = class ObjectInjectorEngine extends Injector {
                  *  this line is confusing
                  */
                 //pseudoConstructor.call(proto);
-                pseudoConstructor.call(_object, ...args); // this line is confusing;
+                pseudoConstructor.call(_object, ...(args ?? [])); // this line is confusing;
 
             }
         }

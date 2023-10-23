@@ -1,23 +1,42 @@
 const self = require('reflectype/src/utils/self.js');
 const {set} = require('../proxyTraps/preventModifyProp.js');
+const {get} = require('../proxyTraps/subCoordination.js')
 const Coordinator = require('./coodinator.js');
 
+const {CONSTRUCTOR} = require('../constants.js');
+const { decoratePseudoConstructor, decorateFunction } = require('../../utils/metadata.js');
 
 /**
  * @typedef {import('../context/context.js')} Context
  * @typedef {import('../itemsManager.js')} ItemsManager
  */
 
-module.exports = class SessionCoordinator extends Coordinator {
 
-    /**@type {ItemsManager} */
-    #lookupField;
+/**
+ *  Coordinate data of Context.session field, the fragment that holds the data 
+ *  depends on the static 'key' field of the class.
+ *  An example of SessionCoordinator is that the Express's Request and Response obj,
+ *  these objects has no relationship so we could not bind them as scope components.
+ *  Therefore, session coordination is the way inject these objects to the control flow.
+ */
+module.exports = class SessionCoordinator extends Coordinator {
     
     /**@type {Context} */
     #context;
 
     //#value;
 
+    /**
+     * 
+     * @param {Context} _context 
+     */
+    [CONSTRUCTOR](_context) {
+
+        this.#context = _context;
+
+        this.#init();
+    }
+    
     get context() {
 
         return this.#context;
@@ -27,40 +46,19 @@ module.exports = class SessionCoordinator extends Coordinator {
      * 
      * @param {Context} _context 
      */
-    constructor(_context, _key) {
+    constructor(_context) {
 
         super(...arguments);
 
         this.#context = _context;
 
-        this.#init();
+        //this.#init();
     }
 
     #init() {
-
-        this.#lookupField = this.#context.session;
-    }
-
-    #resolveValue() {
-
-        const key = self(this).key;
-
-        return this.#lookupField.get(key);
-    }
-
-    _evaluate(_key) {
-
-        const isValidKey = typeof _key === 'string' || typeof _key === 'symbol';
-
-        const value = this.#resolveValue();
-
-        if (!(value instanceof Object)) {
-
-            return;
-        }
-
-        this.value = (isValidKey) ? value[_key] : value;
+        
+        this.field = this.#context.session;
+        
+        super._evaluate();
     }
 }
-
-//module.exports = new Proxy(SessionCoordinator, traps);

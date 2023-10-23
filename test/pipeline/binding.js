@@ -9,6 +9,7 @@ const Vehicle = require('./components/vehicle.js')
 
 const A = require('./handler/A.js');
 const B = require('./handler/B.js');
+const DeliveryRequest = require('./components/DeliveryRequest.js');
  
 function first() {
     console.log('----------------------')
@@ -28,6 +29,7 @@ function statistic() {
         ----- Warehouse: ${Warehouse.count}
     `)
 }
+
 module.exports = class TransportContext extends Context{
 
     static {
@@ -46,5 +48,21 @@ module.exports = class TransportContext extends Context{
         pipeline.addPhase().setHandler(B).build();
         pipeline.addPhase().setHandler(A).build();
         pipeline.addPhase().setHandler(statistic).build();
+    }
+
+    constructor() {
+
+        super();
+
+        const deliveryInfo = {
+            customerName: 'John',
+            city: 'NY',
+            address: '22 jump street'
+        }
+
+        /**
+         *  Register session fragment for DeliveryRequest
+         */
+        this.session.save(DeliveryRequest.key , deliveryInfo);
     }
 }

@@ -78,4 +78,22 @@ function isParent(base, derived) {
     } 
 }
 
-module.exports = {isParent, hasRelationShip, checkType, isAbstract}
+function useTrait(_class, _trait) {
+
+    if (typeof _class !== 'function') {
+
+        return;
+    }
+
+    for (const name in _trait || {}) {
+
+        if (name === 'constructor') {
+
+            continue;
+        }
+
+        _class.prototype[name] = _trait[name];
+    }
+}
+
+module.exports = {isParent, hasRelationShip, checkType, isAbstract, useTrait};

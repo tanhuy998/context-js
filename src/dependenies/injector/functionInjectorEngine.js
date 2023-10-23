@@ -117,7 +117,8 @@ module.exports = class FunctionInjectorEngine extends Injector {
 
             if (paramType !== undefined && paramType !== null && paramType !== Void) {
 
-                const component = this.iocContainer.get(paramType, _scope);
+                //const component = this.iocContainer.get(paramType, _scope);
+                const component = this.resolveComponent(paramType, _scope);
 
                 ret[i] = component ?? ret[i];
             }
