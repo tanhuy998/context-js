@@ -6,10 +6,13 @@ const Pipeline = require('../pipeline/pipeline.js');
 const Scope = require('../component/scope.js');
 
 const self = require('reflectype/src/utils/self.js');
+const preventModifyProp = require('../proxyTraps/preventModifyProp.js');
 
 /**
  * @typedef {import('../component/scope.js')} Scope
  */
+
+
 
 /**
  *  a configuration class
@@ -132,4 +135,4 @@ class Context {
 
 } 
 
-module.exports = Context;
+module.exports = new Proxy(Context, preventModifyProp);

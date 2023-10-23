@@ -7,7 +7,7 @@ class ItemsManager {
 
     }
 
-    get(_name) {
+    get(_key) {
 
         if (!this.#list.has(_name)) {
 
@@ -17,7 +17,7 @@ class ItemsManager {
         this.#list.get(_name);
     }
 
-    add(_name, _newItem) {
+    save(_key, _newItem) {
 
         if (this.#list.has(_name)) {
 
