@@ -13,6 +13,14 @@ const TransportContext = require('./binding.js');
 
 const pipeline = TransportContext.pipeline;
 
+console.time('test');
+
+for (let i = 0; i < 1000; ++i) {
+
+    pipeline.run(new TransportContext());
+}
+
+
 pipeline.run(new TransportContext());
 pipeline.run(new TransportContext());
-pipeline.run(new TransportContext());
+console.timeEnd('test');

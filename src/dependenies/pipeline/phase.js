@@ -7,6 +7,7 @@ const HandlerKind = require('./handlerKind.js');
 const HanlderInitializeError = require('../errors/pipeline/handlerInitializeError.js');
 const AbortPipelineError = require('../errors/pipeline/abortPipelineError.js');
 const PhaseError = require('../errors/pipeline/phaseError.js');
+const { END_OF_PIPELINE, ABORT_PIPELINE } = require('../constants.js');
 
 
 //const Context = require('../context/context.js');
@@ -15,24 +16,42 @@ const PhaseError = require('../errors/pipeline/phaseError.js');
  * @typedef {import('../handler/constextHandler.js')} ContextHandler
  * @typedef {import('../context/context.js')} Context
  * @typedef {import('reflectype/src/metadata/ReflectionParameter.js')} ReflectionParameter
+ * @typedef {import('./payload.js')} Payload
+ * @typedef {import('../DI/dependenciesInjectionSystem.js')} DependenciesInjectionSystem
+ * @typedef {import('./pipeline.js')} Pipeline
  */
 
 
 
-
+/**
+ * 
+ * @param {Phase} phase 
+ * @param {Payload} _payload 
+ * @returns 
+ */
 function dispatchNext(phase, _payload) {
 
-    return function () {
+    function next(_result) {
         
+        _payload.trace.push(_result);
+
         const next = phase.next;
 
         if (!next) {
 
+            _payload.switchPhase(END_OF_PIPELINE);
             return;
         }
 
         next.accquire(_payload);
     }
+
+    next.rollback = function() {
+
+        phase.accquire(_payload);
+    }
+
+    return next;
 }
 
 function catchError(phase, _payload) {
@@ -56,12 +75,12 @@ const functionTraps = {
         /**@type {Context} */
         const context = _this.context;
         const DI = context?.global?.DI;
-
-        if (args.length > 0 || typeof DI !== 'object') {
-
+        
+        if (args.length > 0 || typeof DI?.invoke !== 'function') {
+            
             return target.call(_this, ...args);
         }
-
+        
         return DI.invoke(_this, target, context);
     }
 }
@@ -81,10 +100,6 @@ const traps = {
             return theProp;
         }
 
-        // /**@type {Context} */
-        // const context = target.context;
-        // const DI = context.global.DI;
-
         return new Proxy(theProp, functionTraps);
     }
 };
@@ -100,6 +115,7 @@ module.exports = class Phase extends T_WeakTypeNode {
 
     #kind
 
+    /**@type {Pipeline} */
     #pipeline;
 
     constructor(_handler, kind) {
@@ -132,14 +148,18 @@ module.exports = class Phase extends T_WeakTypeNode {
     /**
      * accquire a payload
      * 
-     * @param {Context} _payload 
+     * @param {Payload} _payload 
      */
     accquire(_payload) {
 
+        const context = _payload.context;
+
         try {
             
-            const handle = this.#prepare(_payload);
+            const [handler, handle] = this.#prepare(_payload);
             
+            _payload.switchPhase(this, handler);
+
             const result = handle();
 
             if (result instanceof Promise) {
@@ -147,8 +167,10 @@ module.exports = class Phase extends T_WeakTypeNode {
                 result.then(dispatchNext(this, _payload))
                 .catch(catchError(this, _payload));
             }
+            else {
 
-            dispatchNext(this, _payload)();
+                dispatchNext(this, _payload)(result);
+            }
         }
         catch (error) {
 
@@ -156,8 +178,16 @@ module.exports = class Phase extends T_WeakTypeNode {
         }
     }
 
+    /**
+     * 
+     * @param {Error | any} error 
+     * @param {Payload} _payload 
+     */
     accquireError(error, _payload) {
 
+        const currentPhase = _payload.currentPhase;
+
+        const handlerInstance = _payload.handler;
         // ovaride the error
         if (!(error instanceof PhaseError)) {
 
@@ -169,54 +199,73 @@ module.exports = class Phase extends T_WeakTypeNode {
 
     /**
      * 
-     * @param {Context} _payload 
+     * @param {Payload} _payload 
      */
     #prepare(_payload) {
 
         const handler = this.#initiateHandler(_payload);
 
+        const context = _payload.context;
+
         if (handler === undefined) {
 
-            throw new HanlderInitializeError(this, this._pipeline, _payload, this.handler)
+            throw new HanlderInitializeError(this, this._pipeline, context, this.handler)
         }
 
-        this.#injectComponents(handler, _payload);
-        
+        this.#injectComponents(handler, context);
+
+        /**@type {DependenciesInjectionSystem} */
+        const DI = context.global.DI;
+
+        let ret;
+
         if (this.#kind === HandlerKind.FUNCTION) {
 
-            return handler;
+            const args = DI.resolveArguments(handler, context) ?? [];
+
+            ret =  [null, handler.bind(null, ...args)];
         }
         else if (this.#kind === HandlerKind.ES6_CLASS) {
 
-            return handler.handle.bind(handler);
+            const args = DI.resolveArguments(handler.handle, context) ?? [];
+            console.log(args)
+            ret = [handler, handler.handle.bind(handler, ...args)];
+            //return handler.handle.bind(handler);
         }
         else {
 
             const wrapper = new Proxy(handler, traps)
-
-            return handler.handle.bind(wrapper);
+            ret = [wrapper, wrapper.handle.bind(wrapper)];
         }
+
+        return ret;
     }
 
     /**
      * 
      * @param {Object | Function} _handlerInstance 
-     * @param {Context} _payload 
+     * @param {Context} _context 
      */
-    #injectComponents(_handlerInstance, _payload) {
+    #injectComponents(_handlerInstance, _context) {
         
-        const globalContext = _payload.global;
+        const globalContext = _context.global;
 
         if (typeof globalContext === 'function') {
 
             const config = {
-                context: _payload
+                context: _context
             }
+
+            if (this.#kind === HandlerKind.FUNCTION || this.#kind === HandlerKind.PIPELINE) {
+
+                return;
+            }
+
             // inject fields first
             globalContext.DI?.inject(_handlerInstance, config);
 
-            config.method = 'handle';
-            globalContext.DI?.inject(_handlerInstance, config);
+            // config.method = 'handle';
+            // globalContext.DI?.inject(_handlerInstance, config);
             
             // /**
             //  * if inject mode is fullyInjectt
@@ -231,17 +280,26 @@ module.exports = class Phase extends T_WeakTypeNode {
         }
     }
 
+    /**
+     * 
+     * @param {Payload} _payload 
+     * @returns 
+     */
     #initiateHandler(_payload) {
 
         const kind = this.#kind;
 
         const handlerAbstract = this.handler;
 
+        const devise = _payload.last;
+
+        const context = _payload.context;
+
         switch (kind) {
             case HandlerKind.ES6_CLASS:
                 return new handlerAbstract();
             case HandlerKind.REGULAR:
-                return new handlerAbstract(_payload);
+                return new handlerAbstract(context, devise);
             case HandlerKind.FUNCTION:
                 return handlerAbstract;
             default:

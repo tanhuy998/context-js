@@ -170,6 +170,18 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
         }
     }
 
+    /**
+     * 
+     * @param {Function} _func 
+     * @param {Context} _context 
+     */
+    resolveArguments(_func, _context) {
+
+        const injector = this.#functionInjector;
+
+        return injector.resolveComponentsFor(_func, _context.scope);
+    }
+
     #verifyAndResolveMethod(_object, _method) {
 
         const type = typeof _method;

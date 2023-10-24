@@ -1,16 +1,37 @@
+const { ABORT_PIPELINE } = require("../constants");
 const AbortPipelineError = require("../errors/pipeline/abortPipelineError");
 const HanlderInitializeError = require("../errors/pipeline/handlerInitializeError");
 const PhaseError = require("../errors/pipeline/phaseError");
+const Payload = require("./payload");
 const PhaseBuilder = require("./phaseBuilder");
+const PipelineController = require("./pipelineController");
 
 /**
  * @typedef {import('../context/context')} Context
+ */
+
+/**
+ *  Pipeline Manage phases and errors handler.
+ *  when a context arrived, pipeline initiates a PipelineController
+ *  and then dispatches the context as payload to it
  */
 module.exports = class Pipeline {
 
     #firstPhase;
 
+    #errorHandlers = [];
+
     #global
+
+    get errorHandlers() {
+
+        return this.#errorHandlers;
+    }
+
+    get firstPhase() {
+
+        return this.#firstPhase;
+    }
 
     get global() {
 
@@ -31,7 +52,7 @@ module.exports = class Pipeline {
 
     #init() {
 
-
+        
     }
 
     pipe(_phase) {
@@ -46,7 +67,10 @@ module.exports = class Pipeline {
 
             return;
         }
+
         this.#firstPhase.pushBack(_phase);
+
+        return this;
     }
 
     addPhase() {
@@ -59,21 +83,38 @@ module.exports = class Pipeline {
      * @param {Context} _payload 
      * @returns 
      */
-    run(_payload) {
+    run(_context) {
 
-        if (this.#global && this.#global !== _payload.global) {
+        if (this.#global && this.#global !== _context.global) {
 
             return;
         }
 
-        const firstPhase = this.#firstPhase;
+        const payload = new Payload(_context);
 
-        if (!firstPhase) {
+        const controller = new PipelineController(this);
+
+        controller.setPayload(payload);
+
+        controller.startHandle();
+        // const firstPhase = this.#firstPhase;
+
+        // if (!firstPhase) {
             
-            return;
-        }
+        //     return;
+        // }
 
-        firstPhase.accquire(_payload);
+        // firstPhase.accquire(_payload);
+    }
+
+    
+    /**
+     * 
+     * @param {Function} _handler 
+     */
+    onError(_handler) {
+
+
     }
 
     catchError(error, payload) {
@@ -87,7 +128,7 @@ module.exports = class Pipeline {
             return;
         }
 
-        if (error instanceof AbortPipelineError) {
+        if (error === ABORT_PIPELINE) {
 
             return;
         }

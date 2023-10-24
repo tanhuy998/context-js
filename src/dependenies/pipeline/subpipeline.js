@@ -1,12 +1,16 @@
-const Pipeline = require("./pipeline");
+const Phase = require("./phase");
 
 
 // A Pipeline's Phase that do multiple process
-module.exports = class SubPipeline extends Pipeline{
+module.exports = class SubPipeline extends Phase{
 
-    constructor(_globalContext) {
+
+
+    constructor(_context, _pipeline) {
 
         super(...arguments);
+
+        const globalContext = _context.global;
 
         this.#init();
     }

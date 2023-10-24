@@ -853,6 +853,12 @@ There are three types of binding components (also called as component's lifecycl
   - Scope: the component lives only in a particular scope, there's no the same unless outside its scope.
   - Transient: components live anywhere even though which context it stand.
 
+When a singleton is initiated, It's dependencies are also singleton or transient component. 
+
+When a transient component is initiated, It's dependencies could be transient, singleton or scope component depends on the context that the transient component is initiated. If transient compoent is initiated without a "scope", It's dependencies are singleton and transient. Otherwise, the dependencies would be both singleton, scope and transient. 
+
+About scope component. Like transient, It's dependencies are the same. There's just a difference on it life's cycle. If a scope component is initiated without scope, It would be treated like a transient component and otherwise in "scope".
+
 ```js
 const {ApplicationContext} = require('express-controller-js');
 
@@ -867,8 +873,11 @@ ApplicationContext.components.bindScope(abstract, concrete);
 // bind transient
 ApplicationContext.components.bind(abstract, concrete);
 
-// abstract and concrete are classes or functions. The concrete must inherits the abstract.
+// abstract and concrete are classes or functions. The concrete must inherits the abstract. 
 ```
+
+
+
 
 ### Autobinding
 
@@ -905,7 +914,7 @@ Thanks to package "reflectype" (also my own package :haha) that contributes a me
 
 ### Constructor Injection (pseudo constructor)
 
-Define a pseudo constructor to let the instance's dependencies injected by the iocContainer.
+use constant macro `CONSTRUCTOR` to define a pseudo constructor to let the instance's dependencies injected by the iocContainer.
 
 Make sure the base's contructor can invoke properly without arguments;
 
