@@ -1,13 +1,13 @@
 const Phase = require('./phase.js');
-const HandlerKind = require('./handlerKind.js');
-const ContextHandler = require('../handler/constextHandler.js');
+const HandlerKind = require('../handlerKind.js');
+const ContextHandler = require('../../handler/constextHandler.js');
 
 const SubPipeline = require('./subpipeline.js');
-const isPipeline = require('./isPipeline.js');
+const isPipeline = require('../isPipeline.js');
 
 
 /**
- *  @typedef {import('./pipeline.js')} Pipeline
+ *  @typedef {import('../pipeline.js')} Pipeline
  */
 module.exports = class PhaseBuilder {
 

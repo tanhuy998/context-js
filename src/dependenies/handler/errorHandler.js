@@ -1,18 +1,32 @@
+const { ABORT_PIPELINE } = require("../constants");
 const ContextHandler = require("./constextHandler");
 
 module.exports = class ErrorHandler extends ContextHandler {
 
-    #error;
+    //#error;
 
     get error() {
 
-        return this.#error;
+        return this.devise;
     }
 
     constructor(_payload, _error) {
 
-        super(_payload.context);
+        super(_payload.context, _error);
+    }
 
-        this.#error = undefined;
+    handle() {
+
+        
+    }
+
+    abort() {
+
+        throw ABORT_PIPELINE;
+    }
+
+    rollBack() {
+
+
     }
 }

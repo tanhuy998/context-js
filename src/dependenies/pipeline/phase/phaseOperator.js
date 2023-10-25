@@ -1,9 +1,9 @@
-const HandlerKind = require('./handlerKind.js');
-const HanlderInitializeError = require('../errors/pipeline/handlerInitializeError.js');
+const HandlerKind = require('../handlerKind.js');
+const HanlderInitializeError = require('../../errors/pipeline/handlerInitializeError.js');
 
 /**
- * @typedef {import('../handler/constextHandler.js')} ContextHandler
- * @typedef {import('./payload.js')} Payload
+ * @typedef {import('../../handler/constextHandler.js')} ContextHandler
+ * @typedef {import('../payload/payload.js')} Payload
  */
 
 
@@ -105,11 +105,11 @@ module.exports = class PhaseOperator {
 
             const handle = this.#prepare();
 
-            return handle();
+            return await handle();
         }
         catch (error) {
 
-            return this.#handleInternalError(error);
+            return await this.#handleInternalError(error);
         }
     }
 

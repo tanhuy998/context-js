@@ -2,9 +2,11 @@ const { ABORT_PIPELINE } = require("../constants");
 const AbortPipelineError = require("../errors/pipeline/abortPipelineError");
 const HanlderInitializeError = require("../errors/pipeline/handlerInitializeError");
 const PhaseError = require("../errors/pipeline/phaseError");
-const Payload = require("./payload");
-const PhaseBuilder = require("./phaseBuilder");
-const PipelineController = require("./pipelineController");
+const Payload = require("./payload/payload");
+const PhaseBuilder = require("./phase/phaseBuilder");
+const PipelineController = require("./controller/pipelineController");
+const ErrorController = require('./controller/errorController.js');
+const ErrorPayload = require("./payload/errorPayload");
 
 /**
  * @typedef {import('../context/context')} Context
@@ -19,13 +21,13 @@ module.exports = class Pipeline {
 
     #firstPhase;
 
-    #errorHandlers = [];
+    #errorHandler;
 
     #global
 
-    get errorHandlers() {
+    get errorHandler() {
 
-        return this.#errorHandlers;
+        return this.#errorHandler;
     }
 
     get firstPhase() {
@@ -92,7 +94,7 @@ module.exports = class Pipeline {
 
         const controller = new PipelineController(this);
 
-        const payload = new Payload(_context, controller);
+        const payload = new Payload(_context, controller, this);
 
         console.time(payload.id);
 
@@ -101,6 +103,28 @@ module.exports = class Pipeline {
         controller.startHandle();
     }
 
+    /**
+     * 
+     * @param {Payload} _payload 
+     * @param {any} _error 
+     */
+    catchError(_payload, _error) {
+
+        if (_payload.pipeline !== this) {
+
+            return;
+        }
+
+        const controller = new ErrorController(this);
+
+        const payload = new ErrorPayload(_payload.context, controller, this, _payload);
+
+        payload.trace.push(_error);
+
+        controller.setPayload(payload);
+
+        controller.startHandle();
+    }
     
     /**
      * 
@@ -111,29 +135,7 @@ module.exports = class Pipeline {
 
     }
 
-    catchError(error, payload) {
-        console.log(error.reason);
-        /**
-         *  error validation
-         *  check if the error caught by this's managed phases
-         */
-        if (!this.#isValidError(error, payload)) {
-
-            return;
-        }
-
-        if (error === ABORT_PIPELINE) {
-
-            return;
-        }
-
-        if (error instanceof HanlderInitializeError) {
-
-            throw error;
-        }
-
-        
-    }
+    
 
     /**
      * 

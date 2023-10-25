@@ -1,13 +1,16 @@
-const isPipeline = require("./isPipeline");
+const { ABORT_PIPELINE } = require("../../constants");
+const ErrorPayload = require("../payload/errorPayload");
+const isPipeline = require("../isPipeline");
+const Payload = require("../payload/payload.js");
 //const Payload = require("./payload");
 
 /**
- * @typedef {import('../context/context.js')} Context
- * @typedef {import('./pipeline.js')} Pipeline
- * @typedef {import('../handler/constextHandler')} ContextHandler
- * @typedef {import('./phase.js')} Phase
- * @typedef {import('./payload.js')} Payload
- * @typedef {import('./phaseOperator')} PhaseOperator
+ * @typedef {import('../../context/context.js')} Context
+ * @typedef {import('../pipeline.js')} Pipeline
+ * @typedef {import('../../handler/constextHandler')} ContextHandler
+ * @typedef {import('../phase/phase.js')} Phase
+ * @typedef {import('../payload/payload.js')} Payload
+ * @typedef {import('../phase/phaseOperator')} PhaseOperator
  */
 
 module.exports = class PipelineController {
@@ -76,6 +79,11 @@ module.exports = class PipelineController {
      * @param {*} param1 
      */
     trace(_payload, {currentPhase, occurError, value, opperator} = {}) {
+        /**
+         *  occurError parameter detemines that the phase thrown an exception
+         *  base on type of the _payload parameter, controller will decide what to do next
+         */
+
 
         const payloadController = _payload.controller;
 
@@ -84,14 +92,23 @@ module.exports = class PipelineController {
             return;
         }
 
-        if (occurError) {
+        if (occurError === true) {
 
-            this.#handleError(_payload, currentPhase, value, opperator);
+            this.#pipeline.catchError(_payload, value);
         }
         else {
 
             this.#nextPhase(_payload, value);
         }
+
+        // if ((_payload.constructor === Payload && occurError === true) || _payload instanceof ErrorPayload) {
+
+        //     this.#handleError(_payload, currentPhase, value, opperator);
+        // }
+        // else {
+
+        //     this.#nextPhase(_payload, value);
+        // }
     }
 
     /**
@@ -103,7 +120,35 @@ module.exports = class PipelineController {
      */
     #handleError(_payload, _currentPhase, _error) {
 
+        if (_payload.constructor === Payload) {
+
+            return this.#operateErrorPhases(_payload, _error);
+        }
         
+        if (_payload instanceof ErrorPayload) {
+
+            return this.#analyzeErrorSignal(_payload, _error);
+        }
+    }
+
+    #analyzeErrorSignal(_payload, _error) {
+
+        if (_error === ABORT_PIPELINE) {
+
+            return this.#pipeline.approve(this);
+        }
+
+        this.#nextPhase(_payload);
+    }
+
+    #operateErrorPhases(_payload, _error) {
+
+        /**@type {Phase} */
+        const firstErrorPhase = this.#pipeline.errorHandler;
+
+        const payload = new ErrorPayload(_payload.context, this, _payload.currentPhase);
+
+        firstErrorPhase.accquire(payload);
     }
 
     /**

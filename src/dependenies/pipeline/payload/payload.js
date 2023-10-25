@@ -1,7 +1,7 @@
 /**
- * @typedef {import('./phase.js')} Phase
- * @typedef {import('../context/context.js')} Context
- * @typedef {import('../handler/constextHandler.js')} ContextHandler
+ * @typedef {import('../phase/phase.js')} Phase
+ * @typedef {import('../../context/context.js')} Context
+ * @typedef {import('../../handler/constextHandler.js')} ContextHandler
  */
 
 module.exports = class Payload {
@@ -19,6 +19,13 @@ module.exports = class Payload {
     #handleInstannce;
 
     #controller;
+
+    #pipeline;
+
+    get pipeline() {
+
+        return this.#pipeline;
+    }
 
     get controller() {
 
@@ -63,7 +70,7 @@ module.exports = class Payload {
      * 
      * @param {Context} _context 
      */
-    constructor(_context, _controller) {
+    constructor(_context, _controller, _pipeline) {
 
         this.#context = _context;
         this.#controller = _controller;
