@@ -27,6 +27,6 @@ module.exports = class A {
     handle(req) {
 
         console.log('+++++++++++++++++++++++++ phase A: deliver to customer using', this.vehicle.name);
-        console.log('deliver to address: ', req.address);
+        console.log('deliver to address: ', req);
     }
 }

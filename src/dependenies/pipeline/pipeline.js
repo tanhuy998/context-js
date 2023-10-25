@@ -90,21 +90,15 @@ module.exports = class Pipeline {
             return;
         }
 
-        const payload = new Payload(_context);
-
         const controller = new PipelineController(this);
+
+        const payload = new Payload(_context, controller);
+
+        console.time(payload.id);
 
         controller.setPayload(payload);
 
         controller.startHandle();
-        // const firstPhase = this.#firstPhase;
-
-        // if (!firstPhase) {
-            
-        //     return;
-        // }
-
-        // firstPhase.accquire(_payload);
     }
 
     
@@ -176,4 +170,20 @@ module.exports = class Pipeline {
 
         return false;
     }   
+
+    /**
+     * 
+     * @param {PipelineController} _controller 
+     */
+    approve(_controller) {
+
+        if (_controller.pipeline !== this) {
+
+            return;
+        }
+
+        const payload = _controller.payload;
+
+        console.timeEnd(payload.id);
+    }
 }

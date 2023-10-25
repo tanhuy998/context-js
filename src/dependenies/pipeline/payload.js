@@ -6,6 +6,8 @@
 
 module.exports = class Payload {
 
+    #id = Date.now();
+
     /**@type {Context} */
     #context;
 
@@ -15,6 +17,13 @@ module.exports = class Payload {
     #currenPhase;
 
     #handleInstannce;
+
+    #controller;
+
+    get controller() {
+
+        return this.#controller;
+    }
 
     get trace() {
 
@@ -44,13 +53,20 @@ module.exports = class Payload {
 
         return this.#handleInstannce;
     }
+
+    get id() {
+
+        return this.#id;
+    }
+
     /**
      * 
      * @param {Context} _context 
      */
-    constructor(_context) {
+    constructor(_context, _controller) {
 
         this.#context = _context;
+        this.#controller = _controller;
     }
 
     /**
@@ -58,9 +74,8 @@ module.exports = class Payload {
      * @param {Phase} _phase 
      * @param {ContextHandler?} _handler 
      */
-    switchPhase(_phase, _handler) {
+    switchPhase(_phase) {
 
         this.#currenPhase = _phase;
-        this.#handleInstannce = _handler;
     }
 }

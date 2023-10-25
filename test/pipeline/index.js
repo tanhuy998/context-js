@@ -5,22 +5,20 @@ require('@babel/register')({
     ]
 })
 
-const A = require('./handler/A.js');
-const B = require('./handler/B.js');
+console.time('init time');
 
 const TransportContext = require('./binding.js');
-
+console.timeEnd('init time');
 
 const pipeline = TransportContext.pipeline;
 
-console.time('test');
 
-for (let i = 0; i < 1000; ++i) {
 
-    pipeline.run(new TransportContext());
-}
+// for (let i = 0; i < 1000; ++i) {
+
+//     pipeline.run(new TransportContext());
+// }
 
 
 pipeline.run(new TransportContext());
-pipeline.run(new TransportContext());
-console.timeEnd('test');
+// pipeline.run(new TransportContext());
