@@ -8,6 +8,7 @@ const PipelineController = require("./controller/pipelineController");
 const ErrorController = require('./controller/errorController.js');
 const ErrorPayload = require("./payload/errorPayload");
 const ErrorPhaseBuilder = require("./phase/errorPhaseBuilder");
+const self = require("reflectype/src/utils/self");
 
 /**
  * @typedef {import('../context/context')} Context
@@ -20,6 +21,13 @@ const ErrorPhaseBuilder = require("./phase/errorPhaseBuilder");
  */
 module.exports = class Pipeline {
 
+    static #maxSyncTask = 100;
+
+    static get maxSyncTask() {
+
+        return this.#maxSyncTask;
+    }
+
     /**@type {Phase} */
     #firstPhase;
 
@@ -27,6 +35,23 @@ module.exports = class Pipeline {
     #errorHandler;
 
     #global
+
+    #maxSyncTask;
+
+    get maxSyncTask() {
+
+        return this.#maxSyncTask;
+    }
+
+    set maxSyncTask(_number) {
+
+        if (_number <= 0) {
+
+            throw new Error('max sync task of pipeline must be greater than 0');
+        }
+
+        this.#maxSyncTask = _number;
+    }
 
     get errorHandler() {
 
@@ -57,7 +82,7 @@ module.exports = class Pipeline {
 
     #init() {
 
-        
+        this.#maxSyncTask = self(this).maxSyncTask;
     }
 
     pipe(_phase) {

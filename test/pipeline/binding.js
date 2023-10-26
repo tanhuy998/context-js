@@ -59,7 +59,7 @@ module.exports = class TransportContext extends Context{
         pipeline.onError(function (error, next) {
 
             console.log('########## transportation failed')
-
+            console.log(error);
             next.abort();
         })
     }

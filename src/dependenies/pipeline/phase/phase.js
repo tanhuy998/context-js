@@ -69,7 +69,19 @@ module.exports = class Phase extends T_WeakTypeNode {
             // or function that return Promise
             const result = await executor.operate(_additionalArgs);
             
-            this.report(_payload, result);
+            if (result instanceof Promise) {
+
+                const _this = this;
+
+                result.then(value => _this.report(_payload, value))
+                    .catch(error => _this.reportError(_payload, error, executor));
+
+                return;
+            }
+            else {
+
+                this.report(_payload, result);
+            }
         }
         catch (error) {
 

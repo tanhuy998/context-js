@@ -40,12 +40,12 @@ module.exports = class B extends ContextHandler{
 
             setTimeout(() => {
                 
-                if (Math.random) {
+                if (Math.random()) {
 
                     return resolve();
                 }
                 
-                return reject;
+                return reject(new Error());
             }, random(5000, 10000));
         })
     }

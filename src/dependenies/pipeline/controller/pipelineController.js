@@ -21,6 +21,10 @@ module.exports = class PipelineController {
     /**@type {Payload} */
     #payload;
 
+    #maxSyncTask;
+
+    #taskIndex = 0;
+
     get pipeline() {
 
         return this.#pipeline;
@@ -50,6 +54,8 @@ module.exports = class PipelineController {
 
             throw new TypeError('PipelineController just only manages instance of pipeline');
         }
+
+        this.#maxSyncTask = pipeline.maxSyncTask;
     }
 
     /**
@@ -121,6 +127,10 @@ module.exports = class PipelineController {
      */
     #nextPhase(_payload, previousValue) {
 
+        const maxSyncTask = this.#maxSyncTask
+
+        this.#taskIndex = (++this.#taskIndex) % maxSyncTask;
+
         _payload.trace.push(previousValue);
 
         const nextPhase = _payload.currentPhase.next;
@@ -128,10 +138,23 @@ module.exports = class PipelineController {
         if (nextPhase === undefined || nextPhase === null) {
 
             this.#pipeline.approve(this);
+
+            return;
+        }
+
+        const taskIndex = this.#taskIndex;
+
+
+        if (taskIndex === 1) {
+
+            setImmediate((nextPhase, payload) => {
+
+                nextPhase.accquire(_payload);
+            }, nextPhase, _payload)
         }
         else {
 
-            nextPhase.accquire(_payload);
+            nextPhase.accquire(_payload);    
         }
     }
 

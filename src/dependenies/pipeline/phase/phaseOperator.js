@@ -104,18 +104,11 @@ module.exports = class PhaseOperator {
      * @param {Array<any>} _additionalArgs 
      * @returns 
      */
-    async operate(_additionalArgs = []) {
+    operate(_additionalArgs = []) {
 
         const handle = this.#prepare('handle', _additionalArgs);
 
-        try {
-            
-            return await handle();
-        }
-        catch (error) {
-            
-            return await this.#handleInternalError(error);
-        }
+        return handle();
     }
 
     #handleInternalError(_error) {
