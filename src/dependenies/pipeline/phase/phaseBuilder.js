@@ -8,14 +8,32 @@ const isPipeline = require('../isPipeline.js');
 
 /**
  *  @typedef {import('../pipeline.js')} Pipeline
+ * 
  */
 module.exports = class PhaseBuilder {
 
+    /**@type {Phase} */
     #phaseObj
 
     #handler;
 
+    /**@type {Pipeline} */
     #pipeline;
+
+    get pipeline() {
+
+        return this.#pipeline;
+    }
+
+    get handler() {
+
+        return this.#handler;
+    }
+
+    get phaseObj() {
+
+        return this.#phaseObj;
+    }
 
     constructor(_pipeline) {
 
@@ -33,9 +51,9 @@ module.exports = class PhaseBuilder {
         const hadlerKind = HandlerKind.classify(_unknown);
 
         this.#handler = _unknown;
-
+        
         this.#phaseObj = new Phase(_unknown, hadlerKind);
-
+        
         return this;
     }
 
@@ -57,7 +75,7 @@ module.exports = class PhaseBuilder {
         this.#phaseObj = new SubPipeline(undefined, _pipeline);
     }
 
-    #_dispose() {
+    _dispose() {
 
         this.#phaseObj = undefined;
         this.#handler = undefined;
@@ -97,6 +115,6 @@ module.exports = class PhaseBuilder {
 
         this.#pipeline.pipe(phase);
 
-        this.#_dispose();
+        this._dispose();
     }
 }

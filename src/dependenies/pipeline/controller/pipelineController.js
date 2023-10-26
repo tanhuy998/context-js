@@ -62,7 +62,7 @@ module.exports = class PipelineController {
     }
 
     startHandle() {
-
+        
         this.#initializeHandleEnv();
 
         /**@type {Phase}*/
@@ -93,63 +93,16 @@ module.exports = class PipelineController {
         }
 
         if (occurError === true) {
-
+            
             this.#pipeline.catchError(_payload, value);
         }
         else {
 
             this.#nextPhase(_payload, value);
         }
-
-        // if ((_payload.constructor === Payload && occurError === true) || _payload instanceof ErrorPayload) {
-
-        //     this.#handleError(_payload, currentPhase, value, opperator);
-        // }
-        // else {
-
-        //     this.#nextPhase(_payload, value);
-        // }
     }
 
-    /**
-     * 
-     * @param {Payload} _payload 
-     * @param {Phase} _currentPhase 
-     * @param {any} _error 
-     * @param {PhaseOperator} _operator 
-     */
-    #handleError(_payload, _currentPhase, _error) {
-
-        if (_payload.constructor === Payload) {
-
-            return this.#operateErrorPhases(_payload, _error);
-        }
-        
-        if (_payload instanceof ErrorPayload) {
-
-            return this.#analyzeErrorSignal(_payload, _error);
-        }
-    }
-
-    #analyzeErrorSignal(_payload, _error) {
-
-        if (_error === ABORT_PIPELINE) {
-
-            return this.#pipeline.approve(this);
-        }
-
-        this.#nextPhase(_payload);
-    }
-
-    #operateErrorPhases(_payload, _error) {
-
-        /**@type {Phase} */
-        const firstErrorPhase = this.#pipeline.errorHandler;
-
-        const payload = new ErrorPayload(_payload.context, this, _payload.currentPhase);
-
-        firstErrorPhase.accquire(payload);
-    }
+    
 
     /**
      * 

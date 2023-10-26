@@ -4,6 +4,15 @@ module.exports = class ErrorPayload extends Payload {
 
     #rollbackPoint;
 
+    #rollbackPayload;
+
+    #originError;
+
+    get originError() {
+
+        return this.#originError;
+    }
+
     get lastError() {
 
         return super.last;
@@ -12,6 +21,11 @@ module.exports = class ErrorPayload extends Payload {
     get rollbackPoint() {
 
         return this.#rollbackPoint;
+    }
+
+    get rollbackPayload() {
+
+        return this.#rollbackPayload;
     }
 
     /**
@@ -25,6 +39,13 @@ module.exports = class ErrorPayload extends Payload {
 
         super(...arguments);
 
+        this.#rollbackPayload = _payload;
+
         this.#rollbackPoint = _payload.currentPhase;
+    }
+
+    setOriginError(_e) {
+
+        this.#originError = _e;
     }
 }

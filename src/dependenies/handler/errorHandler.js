@@ -1,4 +1,4 @@
-const { ABORT_PIPELINE } = require("../constants");
+const { ABORT_PIPELINE, ROLL_BACK, DISMISS } = require("../constants");
 const ContextHandler = require("./constextHandler");
 
 module.exports = class ErrorHandler extends ContextHandler {
@@ -27,6 +27,11 @@ module.exports = class ErrorHandler extends ContextHandler {
 
     rollBack() {
 
+        throw ROLL_BACK;
+    }
 
+    dismiss() {
+
+        throw DISMISS;
     }
 }

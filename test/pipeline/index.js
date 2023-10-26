@@ -13,11 +13,19 @@ console.timeEnd('init time');
 const pipeline = TransportContext.pipeline;
 
 
+function random(min, max) {
+    return Math.random() * (max - min) + min;
+  }
 
-// for (let i = 0; i < 1000; ++i) {
+for (let i = 0; i < 10; ++i) {
 
-//     pipeline.run(new TransportContext());
-// }
+
+
+    setTimeout(() => {
+
+        pipeline.run(new TransportContext());
+    }, random(0, 20000));
+}
 
 
 pipeline.run(new TransportContext());

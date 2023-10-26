@@ -1,11 +1,50 @@
-const { ROLL_BACK, ABORT_PIPELINE } = require("../constant");
+const { ROLL_BACK, ABORT_PIPELINE, DISMISS } = require("../constant");
 const PipelineController = require("./pipelineController");
 
 /**
  * @typedef {import('../payload/errorPayload')} ErrorPayload
  */
 
+
+function generateNext() {
+
+    function next(error) {
+
+        if (error === undefined) {
+
+
+        }
+
+        throw error;
+    }
+
+    next.abort = function() {
+
+        throw ABORT_PIPELINE;
+    }
+
+    next.rollback = function() {
+
+        throw ROLL_BACK;
+    }
+    
+    next.dismiss = function() {
+
+        throw DISMISS;
+    }
+
+    return next;
+}
+
 module.exports = class ErrorController extends PipelineController {
+
+    /**
+     * @return {ErrorPayload}
+     */
+    get payload() {
+
+        return super.payload;
+    }
 
     constructor(_pipeline) {
 
@@ -13,17 +52,17 @@ module.exports = class ErrorController extends PipelineController {
     }
 
     startHandle() {
-
+        
         const firstPhase = this.pipeline.errorHandler;
-
+        
         if (!firstPhase) {
-
-            return console.log(this.payload.last);
+            
+            return 
         }
 
         const payload = this.payload;
 
-        firstPhase.accquire(payload);
+        firstPhase.accquire(payload, [generateNext()]);
     }
 
     /**
@@ -53,11 +92,18 @@ module.exports = class ErrorController extends PipelineController {
             return this.pipeline.approve(this);
         }
 
+        if (value === DISMISS) {
+
+            const rollbackPayload = _payload.rollbackPayload;
+
+            return _payload.rollbackPoint.report(rollbackPayload, {DISMISS, reason: _payload.last});
+        }
+
         if (value === ROLL_BACK) {
 
-            const context = _payload.context;
+            const rollbackPayload = _payload.rollbackPayload;
 
-            return _payload.rollbackPoint.accquire();
+            return _payload.rollbackPoint.accquire(rollbackPayload);
         }
 
         super.trace(...arguments);

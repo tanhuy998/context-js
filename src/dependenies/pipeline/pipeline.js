@@ -7,6 +7,7 @@ const PhaseBuilder = require("./phase/phaseBuilder");
 const PipelineController = require("./controller/pipelineController");
 const ErrorController = require('./controller/errorController.js');
 const ErrorPayload = require("./payload/errorPayload");
+const ErrorPhaseBuilder = require("./phase/errorPhaseBuilder");
 
 /**
  * @typedef {import('../context/context')} Context
@@ -19,8 +20,10 @@ const ErrorPayload = require("./payload/errorPayload");
  */
 module.exports = class Pipeline {
 
+    /**@type {Phase} */
     #firstPhase;
 
+    /**@type {Phase} */
     #errorHandler;
 
     #global
@@ -75,6 +78,24 @@ module.exports = class Pipeline {
         return this;
     }
 
+    pipeError(_phase) {
+
+        const firstPhase = this.#errorHandler;
+
+        _phase.join(this);
+        
+        if (firstPhase === undefined || firstPhase === null) {
+            
+            this.#errorHandler = _phase;
+
+            return;
+        }
+
+        this.#errorHandler.pushBack(_phase);
+
+        return this;
+    }
+
     addPhase() {
 
         return new PhaseBuilder(this);
@@ -96,7 +117,7 @@ module.exports = class Pipeline {
 
         const payload = new Payload(_context, controller, this);
 
-        console.time(payload.id);
+        //console.time(payload.id);
 
         controller.setPayload(payload);
 
@@ -109,7 +130,7 @@ module.exports = class Pipeline {
      * @param {any} _error 
      */
     catchError(_payload, _error) {
-
+        
         if (_payload.pipeline !== this) {
 
             return;
@@ -128,11 +149,16 @@ module.exports = class Pipeline {
     
     /**
      * 
-     * @param {Function} _handler 
+     * @param {...Function} _handler 
      */
-    onError(_handler) {
+    onError(..._handler) {
 
+        _handler = _handler.flat(Infinity);
 
+        for (const handler of _handler) {
+            
+            new ErrorPhaseBuilder(this).setHandler(handler).build();
+        }
     }
 
     
@@ -186,6 +212,6 @@ module.exports = class Pipeline {
 
         const payload = _controller.payload;
 
-        console.timeEnd(payload.id);
+        //console.timeEnd(payload.id);
     }
 }

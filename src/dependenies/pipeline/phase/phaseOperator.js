@@ -39,7 +39,7 @@ const traps = {
     get: function(target, prop) {
 
         const theProp = target[prop];
-
+        
         if (typeof theProp !== 'function') {
 
             return theProp;
@@ -99,16 +99,21 @@ module.exports = class PhaseOperator {
         }
     }
 
-    async operate() {
+    /**
+     * 
+     * @param {Array<any>} _additionalArgs 
+     * @returns 
+     */
+    async operate(_additionalArgs = []) {
+
+        const handle = this.#prepare('handle', _additionalArgs);
 
         try {
-
-            const handle = this.#prepare();
-
+            
             return await handle();
         }
         catch (error) {
-
+            
             return await this.#handleInternalError(error);
         }
     }
@@ -127,14 +132,16 @@ module.exports = class PhaseOperator {
             throw _error;
         }
 
-        return this.#prepare('onError')
+        const _fn = this.#prepare('onError');
+
+        return _fn();
     }
 
     /**
      * 
      * @param {Payload} _payload 
      */
-    #prepare(_methodName = 'handle') {
+    #prepare(_methodName = 'handle', _additionalArgs = []) {
 
         const _payload = this.#payload;
 
@@ -143,30 +150,32 @@ module.exports = class PhaseOperator {
         const context = _payload.context;
         
         if (handler === undefined) {
-
+            
             throw new HanlderInitializeError(this, this._pipeline, context, this.#handlerAbstract)
         }
 
         this.#injectComponents(handler, context);
-
-        return this.#classifyThenReturnHandleFunction(handler, _methodName);
+        
+        return this.#classifyThenReturnFunction(handler, _methodName, _additionalArgs);
     }
 
-    #classifyThenReturnHandleFunction(handler, _methodName) {
+    #classifyThenReturnFunction(handler, _methodName, _additionalArgs = []) {
 
         const _payload = this.#payload;
 
         const context = _payload.context;
 
         const DI = _payload.context.global.DI;
-
+       
         if (this.#kind === HandlerKind.FUNCTION) {
 
-            const args = DI.resolveArguments(handler, context) ?? [];
+            let args = DI.resolveArguments(handler, context) ?? [];
 
             this.#handlerInstance = null;
 
-            return handler.bind(null, ...(args.length > 0 ? args : [_payload]));
+            args = (args.length > 0) ? [...args, ..._additionalArgs] : [_payload.last, _additionalArgs].flat();             
+            
+            return handler.bind(null, ...args);
         }
         else if (this.#kind === HandlerKind.ES6_CLASS) {
 
@@ -179,9 +188,9 @@ module.exports = class PhaseOperator {
         else {
 
             const wrapper = new Proxy(handler, traps);
-
+            
             this.#handlerInstance = wrapper;
-
+            
             return wrapper[_methodName].bind(wrapper);
         }
     }

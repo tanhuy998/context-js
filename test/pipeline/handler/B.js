@@ -9,6 +9,10 @@ const Bike = require('../components/bike.js');
 const Warehouse = require('../components/warehouse.js');
 const DeliveryRequest = require('../components/DeliveryRequest.js');
 
+
+function random(min, max) {
+    return Math.random() * (max - min) + min;
+  }
 module.exports = class B extends ContextHandler{
 
     @autowired
@@ -26,11 +30,24 @@ module.exports = class B extends ContextHandler{
 
     @autowired
     @paramsType(Bike, DeliveryRequest)
-    handle(_v, req) {
+    async handle(_v, req) {
 
         console.log('++++++++++++++++++++ phase B: routing region using', this.vehicle.name);
         console.log('deliver to city', req.city);
         console.log('need one bike', _v)
+
+        return new Promise((resolve, reject) => {
+
+            setTimeout(() => {
+                
+                if (Math.random) {
+
+                    return resolve();
+                }
+                
+                return reject;
+            }, random(5000, 10000));
+        })
     }
 
     

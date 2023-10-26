@@ -11,12 +11,16 @@ const A = require('./handler/A.js');
 const B = require('./handler/B.js');
 const DeliveryRequest = require('./components/DeliveryRequest.js');
  
+/**
+ * @typedef {import('../../src/dependenies/pipeline/pipeline.js')} Pipeline
+ */
+
 function first() {
     console.log('----------------------')
     console.log('++++++++++++++++++++++++first phase:', 'loads product');
 }
 
-function statistic() {
+function statistic(lastValue) {
 
     console.log('++++++++++++++++++++++++ phase 4: vehicle launched:');
     console.log(`
@@ -28,6 +32,8 @@ function statistic() {
 
         ----- Warehouse: ${Warehouse.count}
     `)
+
+    console.log(lastValue)
 }
 
 module.exports = class TransportContext extends Context{
@@ -36,6 +42,7 @@ module.exports = class TransportContext extends Context{
 
         this.__init();
 
+        /**@type {Pipeline} */
         const pipeline = this.pipeline;
 
         super.components.bindSingleton(Warehouse);
@@ -48,6 +55,13 @@ module.exports = class TransportContext extends Context{
         pipeline.addPhase().setHandler(B).build();
         pipeline.addPhase().setHandler(A).build();
         pipeline.addPhase().setHandler(statistic).build();
+
+        pipeline.onError(function (error, next) {
+
+            console.log('########## transportation failed')
+
+            next.abort();
+        })
     }
 
     constructor() {

@@ -74,6 +74,7 @@ module.exports = class Payload {
 
         this.#context = _context;
         this.#controller = _controller;
+        this.#pipeline = _pipeline;
     }
 
     /**
