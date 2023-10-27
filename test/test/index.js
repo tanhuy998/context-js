@@ -1,16 +1,15 @@
-class A {
+const arr = [1, Promise.resolve(2), 3];
 
-    static prop = 1;
+async function test() {
 
-    static init() {
+    const ret = [];
 
-        this.prop = 4;
+    for await (const a of arr) {
+
+        ret.push(a);
     }
 
-    name = 'a';
-
-    constructor() {
-
-        this.constructor.prop = 2;
-    }
+    console.log(ret);
 }
+
+test();

@@ -21,6 +21,11 @@ class ItemsManager {
         this.#keysTable.set(_newKey, _targetKey);
     }
 
+    has(_key) {
+
+        return this.#pool.has(_key);
+    }
+
     get(_key) {
 
         _key = this.#resolveKey(_key);

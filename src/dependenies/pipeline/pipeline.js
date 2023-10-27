@@ -36,11 +36,11 @@ module.exports = class Pipeline {
 
     #global
 
-    #maxSyncTask;
+    #maxSync;
 
     get maxSyncTask() {
 
-        return this.#maxSyncTask;
+        return this.#maxSync;
     }
 
     set maxSyncTask(_number) {
@@ -50,7 +50,7 @@ module.exports = class Pipeline {
             throw new Error('max sync task of pipeline must be greater than 0');
         }
 
-        this.#maxSyncTask = _number;
+        this.#maxSync = _number;
     }
 
     get errorHandler() {
@@ -82,7 +82,7 @@ module.exports = class Pipeline {
 
     #init() {
 
-        this.#maxSyncTask = self(this).maxSyncTask;
+        this.#maxSync = self(this).maxSyncTask;
     }
 
     pipe(_phase) {

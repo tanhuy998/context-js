@@ -126,17 +126,17 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
         switch (kind) {
             case DependencyKind.UNKNOWN: return;
             case DependencyKind.FIELD: return;
-            case DependencyKind.FUNCTION: this.#resolveFunction(_unknown, scope);
-            case DependencyKind.CLASS: this.#resolveClass(_unknown, scope);
+            case DependencyKind.FUNCTION: return this.#resolveFunction(_unknown, scope);
+            case DependencyKind.CLASS: return this.#resolveClass(_unknown, scope);
             case DependencyKind.OBJECT: {
 
                 if (method) {
 
-                    this.#resolveMethod(_unknown, method, scope)
+                    return this.#resolveMethod(_unknown, method, scope)
                 }
                 else {
 
-                    this.#resolveObject(_unknown, scope);
+                    return this.#resolveObject(_unknown, scope);
                 }
             };
             default: return;
@@ -160,14 +160,27 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
 
         const args = injector.resolveComponentsFor(actualFunction, scope);
 
-        if (typeof _object === 'object') {
+        if (this.#hasAsyncArgument(args)) {
 
-            return actualFunction.call(_object, ...args);
+            return this.#invokeAsync(actualFunction, _object, args);
         }
         else {
 
-            return actualFunction(args);
+            return actualFunction.call(_object, ...args);
         }
+    }
+
+    #hasAsyncArgument(_args) {
+
+        for (const arg of _args || []) {
+
+            if (arg instanceof Promise) {
+
+                return true;
+            } 
+        }
+
+        return false;
     }
 
     /**
@@ -179,7 +192,51 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
 
         const injector = this.#functionInjector;
 
-        return injector.resolveComponentsFor(_func, _context.scope);
+        const args = injector.resolveComponentsFor(_func, _context.scope) ?? [];
+
+        if (this.#hasAsyncArgument(args)) {
+            
+            return this.#await(...args);
+        }
+        else {
+            
+            return args;
+        }
+    }
+
+    /**
+     *  when a funtionn argument needs async component,
+     *  it has to await for the asyn argument to be resolved
+     *  then invoke it
+     * 
+     * @param {Funtion} _func 
+     * @param {any} _this 
+     * @param {Iterable} _args 
+     * @returns 
+     */
+    async #invokeAsync(_func, _this, _args = []) {
+        console.log('[invoke async]')
+        const args = [];
+
+        for await (const currentArg of _args) {
+    
+            args.push(currentArg);
+        }
+    
+        return _func.call(this, ...args);
+    }
+
+    /**
+     * async generator
+     * 
+     * @param  {...any} list 
+     */
+    async* #await(...list) {
+
+        for (const element of list) {
+
+            yield await element;
+        }
     }
 
     #verifyAndResolveMethod(_object, _method) {

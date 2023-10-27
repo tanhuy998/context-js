@@ -106,35 +106,33 @@ module.exports = class PhaseOperator {
      */
     operate(_additionalArgs = []) {
 
-        const handle = this.#prepare('handle', _additionalArgs);
-
-        return handle();
+        return this.#prepareThenInvoke('handle', _additionalArgs);
     }
 
-    #handleInternalError(_error) {
+    // #handleInternalError(_error) {
 
-        if (!this.hasErrorHandler) {
+    //     if (!this.hasErrorHandler) {
 
-            throw _error;
-        }
+    //         throw _error;
+    //     }
 
-        const handlerInstance = this.#handlerInstance;
+    //     const handlerInstance = this.#handlerInstance;
         
-        if (!handlerInstance) {
+    //     if (!handlerInstance) {
 
-            throw _error;
-        }
+    //         throw _error;
+    //     }
 
-        const _fn = this.#prepare('onError');
+    //     const _fn = this.#prepare('onError');
 
-        return _fn();
-    }
+    //     return _fn();
+    // }
 
     /**
      * 
      * @param {Payload} _payload 
      */
-    #prepare(_methodName = 'handle', _additionalArgs = []) {
+    #prepareThenInvoke(_methodName = 'handle', _additionalArgs = []) {
 
         const _payload = this.#payload;
 
@@ -160,31 +158,47 @@ module.exports = class PhaseOperator {
 
         const DI = _payload.context.global.DI;
        
-        if (this.#kind === HandlerKind.FUNCTION) {
-
-            let args = DI.resolveArguments(handler, context) ?? [];
-
-            this.#handlerInstance = null;
-
-            args = (args.length > 0) ? [...args, ..._additionalArgs] : [_payload.last, _additionalArgs].flat();             
+        if (this.#kind === HandlerKind.REGULAR) {
             
-            return handler.bind(null, ...args);
-        }
-        else if (this.#kind === HandlerKind.ES6_CLASS) {
-
-            this.#handlerInstance = handler;
-
-            const args = DI.resolveArguments(handler[_methodName], context) ?? [];
-            
-            return handler[_methodName].bind(handler, ...args);
-        }
-        else {
-
             const wrapper = new Proxy(handler, traps);
             
             this.#handlerInstance = wrapper;
             
-            return wrapper[_methodName].bind(wrapper);
+            return wrapper[_methodName].call(wrapper);
+        }
+
+        let fn, args, obj;
+
+        if (this.#kind === HandlerKind.FUNCTION) {
+            
+            args = DI.resolveArguments(handler, context) ?? [];
+
+            args = (args.length > 0) ? [...args, ..._additionalArgs] : [_payload.last, _additionalArgs].flat();             
+            
+            obj = null;
+
+            fn = handler;
+        }
+        else if (this.#kind === HandlerKind.ES6_CLASS) {
+            
+            args = DI.resolveArguments(handler[_methodName], context) ?? [];
+
+            obj = handler;
+
+            fn = handler[_methodName];
+        }
+
+        
+        if (args instanceof Promise) {
+            
+            return Promise.resolve(args).then((_args = []) => {
+
+                return fn.call(obj, ...args);
+            })
+        }
+        else {
+            
+            return fn.call(obj, ...args);
         }
     }
 

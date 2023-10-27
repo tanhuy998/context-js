@@ -57,29 +57,32 @@ module.exports = class Phase extends T_WeakTypeNode {
      * 
      * @param {Payload} _payload 
      */
-    async accquire(_payload, _additionalArgs = []) {
+    accquire(_payload, _additionalArgs = []) {
 
         const executor = new PhaseOperator(_payload, this.handlerAbstract, this.#kind);
-
+            console.log(['last'], _payload.last)
         try {
 
             _payload.switchPhase(this);
 
             // executor.operate() invoke the ContextHandler.handle() method that can be an async function 
             // or function that return Promise
-            const result = await executor.operate(_additionalArgs);
-            
+            const result = executor.operate(_additionalArgs);
+            console.log(['prepare'], result, _payload.last);
             if (result instanceof Promise) {
 
                 const _this = this;
 
-                result.then(value => _this.report(_payload, value))
+                result.then(value => {
+                    console.log(['async'])
+                    _this.report(_payload, value)
+                })
                     .catch(error => _this.reportError(_payload, error, executor));
 
                 return;
             }
             else {
-
+                console.log(['sync'])
                 this.report(_payload, result);
             }
         }
@@ -96,7 +99,7 @@ module.exports = class Phase extends T_WeakTypeNode {
     report(_payload, value) {
 
         const controller = _payload.controller;
-
+        console.log(['report phase'])
         controller.trace(_payload, {
             currentPhase: this,
             occurError: false,
