@@ -188,12 +188,19 @@ module.exports = class PhaseOperator {
             fn = handler[_methodName];
         }
 
-        
+       
         if (args instanceof Promise) {
-            
-            return Promise.resolve(args).then((_args = []) => {
+           
+            return args.then(async (_asyncArgs = []) => {
+                
+                const _args = [];
 
-                return fn.call(obj, ...args);
+                for (const e of _asyncArgs) {
+                    
+                    _args.push(await e);
+                }
+                
+                return fn.call(obj, ..._args);
             })
         }
         else {

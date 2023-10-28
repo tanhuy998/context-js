@@ -196,7 +196,7 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
 
         if (this.#hasAsyncArgument(args)) {
             
-            return this.#await(...args);
+            return Promise.resolve(args);
         }
         else {
             
@@ -215,7 +215,7 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
      * @returns 
      */
     async #invokeAsync(_func, _this, _args = []) {
-        console.log('[invoke async]')
+        
         const args = [];
 
         for await (const currentArg of _args) {
@@ -231,12 +231,9 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
      * 
      * @param  {...any} list 
      */
-    async* #await(...list) {
+    async #await(...list) {
 
-        for (const element of list) {
-
-            yield await element;
-        }
+        return list;
     }
 
     #verifyAndResolveMethod(_object, _method) {

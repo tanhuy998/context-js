@@ -126,7 +126,7 @@ module.exports = class PipelineController {
      * @param {any} previousValue 
      */
     #nextPhase(_payload, previousValue) {
-        console.log(['next phase'])
+        
         const maxSyncTask = this.#maxSyncTask
 
         this.#taskIndex = (++this.#taskIndex) % maxSyncTask;
