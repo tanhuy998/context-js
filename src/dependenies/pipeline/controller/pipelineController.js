@@ -1,7 +1,8 @@
-const { ABORT_PIPELINE } = require("../../constants");
-const ErrorPayload = require("../payload/errorPayload");
+const { ABORT_PIPELINE, ROLL_BACK, DISMISS } = require("../../constants");
+const ErrorPayload = require("../payload/breakpoint");
 const isPipeline = require("../isPipeline");
 const Payload = require("../payload/payload.js");
+const { EventEmitter } = require("../../ioc/iocContainer");
 //const Payload = require("./payload");
 
 /**
@@ -11,6 +12,8 @@ const Payload = require("../payload/payload.js");
  * @typedef {import('../phase/phase.js')} Phase
  * @typedef {import('../payload/payload.js')} Payload
  * @typedef {import('../phase/phaseOperator')} PhaseOperator
+ * @typedef {import('../payload/breakpoint.js')} Breakpoint
+ * 
  */
 
 module.exports = class PipelineController {
@@ -25,6 +28,15 @@ module.exports = class PipelineController {
 
     #taskIndex = 0;
 
+    /**@type {Promise} */
+    #state;
+
+    /**@type {EventEmitter} */
+    #eventController;
+
+    /**@type {boolean} */
+    #isDisposed;
+
     get pipeline() {
 
         return this.#pipeline;
@@ -33,6 +45,21 @@ module.exports = class PipelineController {
     get payload() {
 
         return this.#payload;
+    }
+
+    get state() {
+
+        return this.#state;
+    }
+
+    get firstPhase() {
+
+        return this.#pipeline.firstPhase;
+    }
+
+    get event() {
+
+        return this.#eventController;
     }
 
     /**
@@ -65,18 +92,32 @@ module.exports = class PipelineController {
     setPayload(_payload) {
 
         this.#payload = _payload;
+
+        this.#isDisposed = false;
     }
 
     startHandle() {
+
+        if (this.#isDisposed) {
+
+            throw new Error('the pipeline controller has been disposed');
+        }
+
         
         this.#initializeHandleEnv();
 
         /**@type {Phase}*/
-        const firstPhase = this.#pipeline.firstPhase;
+        const firstPhase = this.firstPhase;
+        
+        const payload = this.payload;
+        const event = this.#eventController = new EventEmitter();
+        
+        return this.#state = new Promise(function (resolve, reject) {
 
-        const payload = this.#payload;
+            firstPhase.accquire(payload);
 
-        firstPhase.accquire(payload); 
+            event.once('resolve', resolve).once('abort', reject);
+        })
     }
 
     /**
@@ -84,13 +125,13 @@ module.exports = class PipelineController {
      * @param {Payload} _payload 
      * @param {*} param1 
      */
-    trace(_payload, {currentPhase, occurError, value, opperator} = {}) {
+    async trace(_payload, {currentPhase, occurError, value, opperator} = {}) {
         /**
          *  occurError parameter detemines that the phase thrown an exception
          *  base on type of the _payload parameter, controller will decide what to do next
          */
 
-
+        
         const payloadController = _payload.controller;
 
         if (payloadController !== this) {
@@ -99,16 +140,48 @@ module.exports = class PipelineController {
         }
 
         if (occurError === true) {
-            
-            this.#pipeline.catchError(_payload, value);
+
+            const breakpoint = await this.#pipeline.catchError(_payload, value);
+
+            this.#handleSignal(breakpoint);
         }
         else {
-
+            
             this.#nextPhase(_payload, value);
         }
     }
 
-    
+
+    /**
+     * 
+     * @param {Breakpoint} _breakPoint 
+     */
+    #handleSignal(_breakPoint) {
+
+        const signal = _breakPoint.last;
+
+        if (signal === ROLL_BACK) {
+
+            const rollbackPhase = _breakPoint.rollbackPoint;
+            const rollbackPayload = _breakPoint.rollbackPayload;
+
+            rollbackPhase.accquire(rollbackPayload, _breakPoint);
+        }
+        else if (signal === ABORT_PIPELINE) {
+
+            this.#abort(_breakPoint);
+        }
+        else if (signal === DISMISS) {
+
+            const payload = _breakPoint.rollbackPayload;
+
+            this.#nextPhase(payload, _breakPoint);
+        }
+        else {
+
+            this.#resolve(_breakPoint.last);
+        }
+    }    
 
     /**
      * 
@@ -137,7 +210,9 @@ module.exports = class PipelineController {
 
         if (nextPhase === undefined || nextPhase === null) {
 
-            this.#pipeline.approve(this);
+            this.#resolve(_payload);
+
+            //this.#pipeline.approve(this);
 
             return;
         }
@@ -158,6 +233,27 @@ module.exports = class PipelineController {
         }
     }
 
+    #abort(_reason) {
+
+        this.#eventController.emit('abort', _reason);
+
+        this._dispose();
+    }
+
+    #resolve(_payload) {
+
+        this.#eventController.emit('resolve', _payload);
+
+        this._dispose();
+    }
+
+    _dispose() {
+
+        this.#state = undefined;
+        this.#payload = undefined;
+
+        this.#isDisposed = true;
+    }
     #initializeHandleEnv() {
 
         /**@type {Context} */

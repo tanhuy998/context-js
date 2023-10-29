@@ -10,6 +10,7 @@ const Vehicle = require('./components/vehicle.js')
 const A = require('./handler/A.js');
 const B = require('./handler/B.js');
 const DeliveryRequest = require('./components/DeliveryRequest.js');
+const { ABORT_PIPELINE } = require('../../src/dependenies/constants.js');
  
 /**
  * @typedef {import('../../src/dependenies/pipeline/pipeline.js')} Pipeline
@@ -56,11 +57,13 @@ module.exports = class TransportContext extends Context{
         pipeline.addPhase().setHandler(A).build();
         pipeline.addPhase().setHandler(statistic).build();
 
-        pipeline.onError(function (error, next) {
+        pipeline.onError(function hadnlerError(error, next) {
 
             console.log('########## transportation failed')
             console.log(error);
-            next.abort();
+
+            throw ABORT_PIPELINE;
+            //next.abort();
         })
     }
 

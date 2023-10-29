@@ -1,6 +1,6 @@
 const Payload = require("./payload");
 
-module.exports = class ErrorPayload extends Payload {
+module.exports = class Breakpoint extends Payload {
 
     #rollbackPoint;
 

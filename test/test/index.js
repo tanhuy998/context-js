@@ -1,24 +1,34 @@
-const arr = [1, Promise.resolve(2), 3];
+class A {
 
-const old = arr[Symbol.iterator]; 
-
-arr[Symbol.iterator] = async function*() {
-    console.log(1, this)
-    for await (const element of old.call(this)) {
-        console.log(2)
-        yield element;
+    func() {
+        console.log(this);
+        console.log(1);
     }
-    
+
+    #private() {
+
+        this.func();
+    }
+
+    public() {
+
+        this.#private();
+    }
 }
 
-const newArr = [...arr];
+class B extends A {
 
-// async function test(arr) {
+    func() {
+        console.log(this);
+        console.log(2);
+    }
 
-//     for await(const a of old.call(arr)) {
+    public() {
 
-//         console.log(a);
-//     }
-// }
+        super.public();
+    }
+}
 
-// test(arr)
+const obj = new B();
+
+obj.public();

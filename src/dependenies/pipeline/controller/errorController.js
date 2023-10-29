@@ -2,7 +2,7 @@ const { ROLL_BACK, ABORT_PIPELINE, DISMISS } = require("../constant");
 const PipelineController = require("./pipelineController");
 
 /**
- * @typedef {import('../payload/errorPayload')} ErrorPayload
+ * @typedef {import('../payload/breakpoint')} ErrorPayload
  */
 
 
@@ -46,66 +46,89 @@ module.exports = class ErrorController extends PipelineController {
         return super.payload;
     }
 
+    get firstPhase() {
+
+        return this.pipeline.errorHandler;
+    }
+
     constructor(_pipeline) {
 
         super(...arguments);
     }
 
-    startHandle() {
+    // startHandle() {
         
-        const firstPhase = this.pipeline.errorHandler;
+    //     const firstPhase = this.pipeline.errorHandler;
         
-        if (!firstPhase) {
+    //     if (!firstPhase) {
             
-            return 
-        }
+    //         return 
+    //     }
 
-        const payload = this.payload;
+    //     const payload = this.payload;
 
-        firstPhase.accquire(payload, [generateNext()]);
-    }
+    //     firstPhase.accquire(payload, [generateNext()]);
 
-    /**
-     * 
-     * @param {ErrorPayload} _payload 
-     * @param {*} param1 
-     */
-    trace(_payload, {currentPhase, occurError, value, opperator} = {}) {
-
-        occurError = undefined;
-
-        this.#analyzeErrorSignal(...arguments);
-
-        //super.trace(...arguments);
-    }
+    //     return this.state;
+    // }
 
     /**
      * 
-     * @param {ErrorPayload} _payload 
+     * @param {ErrorPayload} _breakPoint 
      * @param {*} param1 
-     * @returns 
      */
-    #analyzeErrorSignal(_payload, {currentPhase, occurError, value, opperator} = {}) {
+    trace(_breakPoint, {currentPhase, occurError, value, opperator} = {}) {
 
-        if (value === ABORT_PIPELINE) {
+        
+        if (occurError === false || this.#isSignal(value)) {
 
-            return this.pipeline.approve(this);
+            _breakPoint.trace.push(value);
+
+            this.event.emit('resolve', _breakPoint);
+
+            return;
         }
+        else {
 
-        if (value === DISMISS) {
-
-            const rollbackPayload = _payload.rollbackPayload;
-
-            return _payload.rollbackPoint.report(rollbackPayload, {DISMISS, reason: _payload.last});
+            occurError = false;
+        
+            super.trace(...arguments);
         }
-
-        if (value === ROLL_BACK) {
-
-            const rollbackPayload = _payload.rollbackPayload;
-
-            return _payload.rollbackPoint.accquire(rollbackPayload);
-        }
-
-        super.trace(...arguments);
     }
+
+    #isSignal(value) {
+
+        return [ABORT_PIPELINE, DISMISS, ROLL_BACK].includes(value);
+    }
+
+    // /**
+    //  * 
+    //  * @param {ErrorPayload} _breakPoint 
+    //  * @param {*} param1 
+    //  * @returns 
+    //  */
+    // #analyzeErrorSignal(_breakPoint, {currentPhase, occurError, value, opperator} = {}) {
+
+        
+
+    //     // if (value === DISMISS) {
+
+    //     //     const rollbackPayload = _breakPoint.rollbackPayload;
+
+    //     //     //return _breakPoint.rollbackPoint.report(rollbackPayload, {DISMISS, reason: _breakPoint.last});
+
+    //     //     this.event.emit('dismiss', DISMISS);
+    //     // }
+
+    //     // if (value === ROLL_BACK) {
+
+    //     //     const rollbackPayload = _breakPoint.rollbackPayload;
+
+    //     //     // return _breakPoint.rollbackPoint.accquire(rollbackPayload);
+
+    //     //     this.event.emit('rollback', ROLL_BACK);
+    //     // }
+
+    //     super.trace(...arguments);
+    // }
 }

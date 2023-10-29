@@ -17,16 +17,23 @@ function random(min, max) {
     return Math.random() * (max - min) + min;
   }
 
-for (let i = 0; i < 3; ++i) {
+// for (let i = 0; i < 3; ++i) {
 
-    pipeline.run(new TransportContext());
+//     pipeline.run(new TransportContext());
 
-    // setTimeout(() => {
+//     // setTimeout(() => {
 
-    //     pipeline.run(new TransportContext());
-    // }, random(0, 20000));
-}
+//     //     pipeline.run(new TransportContext());
+//     // }, random(0, 20000));
+// }
 
+const result = pipeline.run(new TransportContext());
 
+result.then((value) => {
 
+    console.log(value);
+}).catch((error) => {
+
+    console.log(error);
+})
 // pipeline.run(new TransportContext());

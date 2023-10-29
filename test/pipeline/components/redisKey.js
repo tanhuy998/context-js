@@ -10,7 +10,7 @@ const redisClient = {
         'customers': ['alex', 'bob']
     },
     get(key) {
-        console.log('redis get', key)
+        
         return new Promise((resolve, resject) => {
     
             setTimeout(() => {
@@ -49,7 +49,7 @@ function RedisKey(_key) {
             
             super._evaluate();
 
-            console.log(this.value)
+            
         }
     }
 }

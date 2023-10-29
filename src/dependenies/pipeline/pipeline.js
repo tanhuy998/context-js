@@ -6,10 +6,10 @@ const Payload = require("./payload/payload");
 const PhaseBuilder = require("./phase/phaseBuilder");
 const PipelineController = require("./controller/pipelineController");
 const ErrorController = require('./controller/errorController.js');
-const ErrorPayload = require("./payload/errorPayload");
+const ErrorPayload = require("./payload/breakpoint");
 const ErrorPhaseBuilder = require("./phase/errorPhaseBuilder");
 const self = require("reflectype/src/utils/self");
-
+const Breakpoint = require('./payload/breakpoint.js');
 /**
  * @typedef {import('../context/context')} Context
  */
@@ -129,7 +129,7 @@ module.exports = class Pipeline {
     /**
      * 
      * @param {Context} _payload 
-     * @returns 
+     * @returns {Promise<any>}
      */
     run(_context) {
 
@@ -146,7 +146,7 @@ module.exports = class Pipeline {
 
         controller.setPayload(payload);
 
-        controller.startHandle();
+        return controller.startHandle();
     }
 
     /**
@@ -154,22 +154,27 @@ module.exports = class Pipeline {
      * @param {Payload} _payload 
      * @param {any} _error 
      */
-    catchError(_payload, _error) {
+    async catchError(_payload, _error) {
         
         if (_payload.pipeline !== this) {
 
             return;
         }
 
+
         const controller = new ErrorController(this);
 
-        const payload = new ErrorPayload(_payload.context, controller, this, _payload);
+        const breakpoint = new Breakpoint(_payload.context, controller, this, _payload);
 
-        payload.trace.push(_error);
+        //const payload = new ErrorPayload(_payload.context, controller, this, _payload);
 
-        controller.setPayload(payload);
+        breakpoint.trace.push(_error);
 
-        controller.startHandle();
+        breakpoint.setOriginError(_error);
+
+        controller.setPayload(breakpoint);
+        
+        return controller.startHandle();
     }
     
     /**
@@ -228,7 +233,7 @@ module.exports = class Pipeline {
      * 
      * @param {PipelineController} _controller 
      */
-    approve(_controller) {
+    approve() {
 
         if (_controller.pipeline !== this) {
 
