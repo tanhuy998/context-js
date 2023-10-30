@@ -103,7 +103,7 @@ for (let i = 0; i < 5; ++i) {
 
 ## Isolation of contexts
 
-the `Context` is considered a super classe (also known as abstract class in Java and PHP). This is the definition of the class.
+the `Context` is considered a super class (also known as abstract class in Java and PHP). This is the definition of the class.
 
 ```javascript
 class Context {
@@ -169,14 +169,14 @@ class CustomContext extends Context {
 ```
 A more realistic illustation
 
-
 ```javascript
 const Context = require('@tanhuy998/context-js/context');
 const {autowired} = require('@tanhuy998/context-js/decorator');
 const {paramsType, implement} = require('reflectype/decorator');
 const {Interface} = require('reflectype/interface');
 
-class IGettabel extends Interface {
+// define IGettable interface by reflectype package
+class IGettable extends Interface {
 
   get() {
 
@@ -184,28 +184,231 @@ class IGettabel extends Interface {
 }
 
 @implement(IGettable)
-class MySqlEngine {
+class UserRepository {
 
+  /**
+   * this class is just an illustration
+   */
   #dbConnection 
 
   get(id) {
 
-    return this.#dbConnection.getById(id);
+    return this.#dbConnection.get('user').getById(id);
   }
 }
 
-class DataBaseOperationContext extends Context {
+class HttpHandler extends ContextHandler {
+
+  @autowired
+  @paramsType(IGettable)
+  async handle(_db) {
+
+    const user = await _db.get(1);
+  }
+}
+
+class HttpContext extends Context {
 
   static {
     this.__init();
 
-    this.componets.bindScope(IGettable, MySqlEngine);
+    this.componets.bindScope(IGettable, UserRepository);
+
+
+    this.pipeline.addPhase().setHandler(HttpHandler);
+  }
+
+  #request;
+
+  constructor(_req) {
+
+    this.#request = _req;
   }
 }
+
+/**
+ *  this is an express like handle function
+ */
+async function incommingRequest(req, res, next) {
+
+  const pipeline = HttpRequestContext.pipeline;
+
+  const httpContext = new HttpContext(req);
+
+  try {
+
+    await pipeline.run(httpContext);
+
+    next();
+  }
+  catch(err) {
+
+    next(err);
+  }
+}
+
+
 ```
 
 ## Pipeline of handling
 
+Context-js defines the `Pipeline` class which is used to handle a particular context. A pipeline is a sequence of actions. Each action is called `Phase`. When a pipeline is requested to handle a context, It dispatches the context phase to phase to handle and then resolve the result back.
+
+### Context handler
+
+A pipeline phase's handler can be either a function, ES6 classes, or concrete class of 'Contexthandler'. Any ES6 classes can be a phase handler if they there exist the `handle()` method in their prototype. Functions is not treated as class event if their prototype also have the `hadnle()` method.
+
+Like `Context` class, `ContextHandler` is determined as abstract class.
+
+#### Define handler
+
+Extend ContextHandler
+```javascript
+const ContextHandler = require('@tanhuy998/context-js/handler');
+
+class CustomHandler extends ContextHandler {
+
+  handle() {
+
+    console.log('this is a custom handler');
+  }
+}
+```
+ES6 class
+
+```javascript
+class handler {
+
+  handler() {
+
+    console.log('this is an ES6 handler');
+  }
+}
+```
+
+Function
+
+```javascript
+/**
+ * @param {any} _lastValue last returned value of the previous phase
+ */ 
+function handle(_lastValue) {
+
+  console.log('this ')
+}
+```
+
+#### Differences between ContextHandler, ES6 classes and functions in handling context
+
+ContextHandler is regular way of handling contexts. Inside the context of ContextHandler, we could get information about the `Context` object. With `ContextHandler`, all methods is fully injected if they have metadata (excepts private methods).
+
+```javascript
+const ContextHandler = require('@tanhuy998/context-js/handler');
+const {autowired} = require('@tanhuy998/context-js/decorator');
+const {paramsType} = require('reflectype/decorator');
+
+
+class CustomHandler extends ContextHandler {
+
+
+  handle() {
+
+    /**
+     * getRequestHeaders() is injected.
+     */
+    console.log(this.getRequestHeaders());
+  }
+
+  @autowired
+  @paramsType(Request)
+  getRequestHeaders(_req) {
+
+    return _req.header;
+  }
+}
+```
+
+ES6 class is just a way to to apply dependency injection to `handler()` method, because the current stage of decorators just support on class properties. 
+
+
+
+
+### Define Pipeline phases
+
+```javascript
+const Pipeline = require('@tanhuy998/context-js/pipeline');
+const Context = require('@tanhuy998/context-js/context');
+
+class MartiniRequestContext extends Context {
+
+  static {
+
+    this._init();
+  }
+}
+
+const martiniMaking = new Pipeline();
+
+function prepare() {
+
+  return [];
+}
+
+function addGin(currentMxture) {
+
+  currentMxture.push('2 1/2 ounces gin')
+
+  return currentMxture;
+}
+
+function addDryVermouth(currentMxture) {
+
+  currentMxture.push('1/2 ounce dry vermouth')
+
+   return currentMxture;
+}
+
+function shake(currentMxture) {
+
+  currentMxture.push('put ice and shake')
+
+   return currentMxture;
+}
+
+function putOlives(currentMxture) {
+
+  currentMxture.push('olives')
+
+   return currentMxture;
+}
+
+martiniMaking.addPhase().setHandler(prepare).build();
+martiniMaking.addPhase().setHandler(addGin).build();
+martiniMaking.addPhase().setHandler(addDryVermouth).build();
+martiniMaking.addPhase().setHandler(shake).build();
+martiniMaking.addPhase().setHandler(putOlives).build();
+
+const martiniClass = await martiniMaking.run(new MartiniRequestContext);
+
+console.log(maritniClass);
+
+/**
+ * output
+ *  [ 
+ *    '2 1/2 ounces gin',
+ *    '1/2 ounce dry vermouth',
+ *    'put ice and shake',
+ *    'olives'
+ *  ]
+ */
+
+```
+
+### Handling pipeline error
+
+```javascript
+
+```
 
 ## Dependency Injection
 
@@ -246,31 +449,6 @@ ApplicationContext.components.bind(abstract, concrete);
 
 
 
-
-### Autobinding
-
-Autobinding is the way class binds itself as abastract and concreate
-
-```js
-const {autoBind, BindType} = require('express-controller-js');
-
-@autoBind()  // bind itself as Transient component
-class Transient {
-
-}
-
-@autoBind(BindType.SCOPE) // bind itself as Scope component
-class Scope {
-    
-}
-
-@autoBind(BindType.SINGLETON) // bind itself as Singleton component
-class Singleton {
-    
-}
-```
-
-
 ## Injecting dependencies
 
 The two rules of dependencise injection in this package is:
@@ -278,7 +456,9 @@ The two rules of dependencise injection in this package is:
   + The dependency (instance of a class) must be registered to to iocContainer before another dependencies (instances) needs (initiation) it.
   + Dependency Injection just work when the component's dependency's type well-defined (also have alternative way).
 
-Thanks to package "reflectype" (also my own package :haha) that contributes a method to redefine metadatas of classes and objects. therefore, Dependency Injection in Javascript can become more complex than it should be.
+Thanks to package "reflectype" (also my own package :haha) that contributes a method to set metadata to classes and objects.
+
+There two type of injection that context-js inplements.
 
 ### Constructor Injection (pseudo constructor)
 
@@ -291,10 +471,10 @@ const {autoBind, HttpController, CONSTRUCTOR, autowired} = require('@tanhuy998/c
 
 const {paramsType} = requie('reflectype');
 
-@autoBind()
+
 class ComponentA {}
 
-@autoBind()
+
 class Controller extends HttpController {
     
     prop;
@@ -360,10 +540,9 @@ const {HttpController, CONSTRUCTOR, paramsType, autowired} = require('@tanhuy998
 
 const {type} = require('reflectype');
 
-@autoBind()
 class ComponentA {}
 
-@autoBind()
+
 class Controller extends HttpController {
 
   @autowired
@@ -387,7 +566,7 @@ const {autoBind, HttpController, CONSTRUCTOR, autowired} = require('@tanhuy998/c
 
 const {paramsType, type} = requie('reflectype');
 
-@autoBind()
+
 class ComponentA {
 
   static count = 0;
@@ -400,7 +579,7 @@ class ComponentA {
   }
 }
 
-@autoBind()
+
 class Controller extends HttpController {
   
   @autowired
@@ -429,7 +608,7 @@ An important point to note, the progression of how ioc Container inititating a c
 ```
   instance := new Class();
   inject -> instance[fields];
-  inject -> instanstance[pseudo constructor];
+  inject -> instance[pseudo constructor];
 ```
 
 
