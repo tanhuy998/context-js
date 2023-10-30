@@ -17,6 +17,11 @@ module.exports = class Breakpoint extends Payload {
 
         return super.last;
     }
+
+    get reason() {
+
+        
+    }
  
     get rollbackPoint() {
 

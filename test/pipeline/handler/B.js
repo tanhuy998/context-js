@@ -7,7 +7,7 @@ const paramsType = require('reflectype/src/decorators/paramsType.js');
 const Driver = require('../components/driver.js');
 const Bike = require('../components/bike.js');
 const Warehouse = require('../components/warehouse.js');
-const DeliveryRequest = require('../components/DeliveryRequest.js');
+const DeliveryRequest = require('../components/coordinator.js/DeliveryRequest.js');
 
 
 function random(min, max) {
@@ -36,20 +36,19 @@ module.exports = class B extends ContextHandler{
         console.log('deliver to city', req.city);
         console.log('need one bike', _v)
 
-        throw new Error('missing');
 
-        // return new Promise((resolve, reject) => {
+        return await new Promise((resolve, reject) => {
 
-        //     setTimeout(() => {
+            setTimeout(() => {
                 
-        //         if (Math.random()) {
+                if (Math.random()) {
 
-        //             return resolve();
-        //         }
+                    return resolve();
+                }
                 
-        //         return reject(new Error());
-        //     }, random(5000, 10000));
-        // })
+                return reject(new Error());
+            }, random(0, 3000));
+        })
     }
 
     

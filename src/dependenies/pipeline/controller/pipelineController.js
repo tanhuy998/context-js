@@ -3,6 +3,7 @@ const ErrorPayload = require("../payload/breakpoint");
 const isPipeline = require("../isPipeline");
 const Payload = require("../payload/payload.js");
 const { EventEmitter } = require("../../ioc/iocContainer");
+const NoPhaseError = require("../../errors/pipeline/noPhaseError");
 //const Payload = require("./payload");
 
 /**
@@ -96,7 +97,7 @@ module.exports = class PipelineController {
         this.#isDisposed = false;
     }
 
-    startHandle() {
+    startHandle(_additionalArgs = []) {
 
         if (this.#isDisposed) {
 
@@ -114,9 +115,16 @@ module.exports = class PipelineController {
         
         return this.#state = new Promise(function (resolve, reject) {
 
-            firstPhase.accquire(payload);
-
             event.once('resolve', resolve).once('abort', reject);
+
+            if (firstPhase === undefined || firstPhase === null) {
+
+                reject(new NoPhaseError());
+
+                return;
+            }
+
+            firstPhase.accquire(payload, _additionalArgs);
         })
     }
 
@@ -140,10 +148,10 @@ module.exports = class PipelineController {
         }
 
         if (occurError === true) {
-
+            
             const breakpoint = await this.#pipeline.catchError(_payload, value);
 
-            this.#handleSignal(breakpoint);
+            this.#handleControlSignal(breakpoint);
         }
         else {
             
@@ -156,43 +164,34 @@ module.exports = class PipelineController {
      * 
      * @param {Breakpoint} _breakPoint 
      */
-    #handleSignal(_breakPoint) {
+    #handleControlSignal(_breakPoint) {
 
         const signal = _breakPoint.last;
-
+        
         if (signal === ROLL_BACK) {
-
+            
             const rollbackPhase = _breakPoint.rollbackPoint;
             const rollbackPayload = _breakPoint.rollbackPayload;
 
             rollbackPhase.accquire(rollbackPayload, _breakPoint);
         }
         else if (signal === ABORT_PIPELINE) {
-
+            
             this.#abort(_breakPoint);
         }
         else if (signal === DISMISS) {
-
+            
             const payload = _breakPoint.rollbackPayload;
 
             this.#nextPhase(payload, _breakPoint);
         }
         else {
-
-            this.#resolve(_breakPoint.last);
+            
+            this.#abort(_breakPoint);
         }
     }    
 
-    /**
-     * 
-     * @param {Payload} _payload 
-     * @param {Phase} _currentPhase 
-     * @param {any} _error 
-     */
-    #runPipelineErrorHandler(_payload, _currentPhase, _error) {
 
-
-    }
     /**
      * 
      * @param {Payload} _payload 
@@ -209,7 +208,7 @@ module.exports = class PipelineController {
         const nextPhase = _payload.currentPhase.next;
 
         if (nextPhase === undefined || nextPhase === null) {
-
+            
             this.#resolve(_payload);
 
             //this.#pipeline.approve(this);
@@ -234,7 +233,7 @@ module.exports = class PipelineController {
     }
 
     #abort(_reason) {
-
+        
         this.#eventController.emit('abort', _reason);
 
         this._dispose();

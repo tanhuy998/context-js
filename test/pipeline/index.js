@@ -7,6 +7,7 @@ require('@babel/register')({
 
 console.time('init time');
 
+
 const TransportContext = require('./binding.js');
 console.timeEnd('init time');
 
@@ -27,13 +28,33 @@ function random(min, max) {
 //     // }, random(0, 20000));
 // }
 
-const result = pipeline.run(new TransportContext());
+function run() {
 
-result.then((value) => {
+    const arr = [];
 
-    console.log(value);
-}).catch((error) => {
+    for(let i = 0; i < 1000; ++i) {
 
-    console.log(error);
+        const result =  pipeline.run(new TransportContext());
+
+        arr.push(result);
+    }
+
+    return arr;
+}
+
+const results = run();
+
+console.log(results);
+
+Promise.allSettled(results).then(resolve => {
+    console.log(1);
+    console.log(resolve);
+}).catch(rejected => {
+
+    for (const br of rejected) {
+
+        console.log(br);
+    }
 })
-// pipeline.run(new TransportContext());
+
+//pipeline.run(new TransportContext());

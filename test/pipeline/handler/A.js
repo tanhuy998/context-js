@@ -5,9 +5,9 @@ const Bike = require('../components/bike.js');
 const paramsType = require('reflectype/src/decorators/paramsType');
 const Driver = require('../components/driver');
 const Garage = require('../components/warehouse');
-const DeliveryRequest = require('../components/DeliveryRequest');
+const DeliveryRequest = require('../components/coordinator.js/DeliveryRequest');
 const Context = require('../../../src/dependenies/context/context');
-const RedisKey = require('../components/redisKey');
+const RedisKey = require('../components/coordinator.js/redisKey');
 
 
 

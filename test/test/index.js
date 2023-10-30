@@ -1,34 +1,20 @@
-class A {
 
-    func() {
-        console.log(this);
-        console.log(1);
-    }
+function doSomthing() {
 
-    #private() {
 
-        this.func();
-    }
-
-    public() {
-
-        this.#private();
-    }
 }
 
-class B extends A {
+function loop(max) {
 
-    func() {
-        console.log(this);
-        console.log(2);
-    }
+    let i = 0;
 
-    public() {
+    setImmediate(function callAgain() {
 
-        super.public();
-    }
+        doSomthing();
+
+        if (++i < max) {
+
+            setImmediate(callAgain);
+        }
+    })
 }
-
-const obj = new B();
-
-obj.public();

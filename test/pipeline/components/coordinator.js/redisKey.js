@@ -1,7 +1,7 @@
 const self = require("reflectype/src/utils/self");
-const { CONSTRUCTOR } = require("../../../src/dependenies/constants");
-const SessionCoordinator = require("../../../src/dependenies/coordinator/sessionCoordinator");
-const Coordinator = require("../../../src/dependenies/coordinator/coodinator");
+const { CONSTRUCTOR } = require("../../../../src/dependenies/constants");
+const SessionCoordinator = require("../../../../src/dependenies/coordinator/sessionCoordinator");
+const Coordinator = require("../../../../src/dependenies/coordinator/coodinator");
 
 
 const redisClient = {
