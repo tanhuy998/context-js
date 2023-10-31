@@ -57,10 +57,10 @@ module.exports = class TransportContext extends Context{
         pipeline.addPhase().setHandler(A).build();
         pipeline.addPhase().setHandler(statistic).build();
 
-        pipeline.onError(function hadnlerError(error, next) {
+        pipeline.onError(function hadnlerError(error, context, breakpoint, next) {
 
             console.log('########## transportation failed')
-            console.log(next);
+            console.log(context);
 
         })
     }

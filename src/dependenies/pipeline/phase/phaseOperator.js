@@ -173,7 +173,7 @@ module.exports = class PhaseOperator {
             
             args = DI.resolveArguments(handler, context) ?? [];
 
-            args = (args.length > 0) ? [...args, ..._additionalArgs] : [_payload.last, _additionalArgs].flat();             
+            args = (args.length > 0) ? [...args, ..._additionalArgs] : [_payload.last, context, _payload, ..._additionalArgs];             
             
             obj = null;
 

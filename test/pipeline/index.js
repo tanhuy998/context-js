@@ -28,33 +28,33 @@ function random(min, max) {
 //     // }, random(0, 20000));
 // }
 
-function run() {
+// function run() {
 
-    const arr = [];
+//     const arr = [];
 
-    for(let i = 0; i < 1000; ++i) {
+//     for(let i = 0; i < 1000; ++i) {
 
-        const result =  pipeline.run(new TransportContext());
+//         const result =  pipeline.run(new TransportContext());
 
-        arr.push(result);
-    }
+//         arr.push(result);
+//     }
 
-    return arr;
-}
+//     return arr;
+// }
 
-const results = run();
+// const results = run();
 
-console.log(results);
+// console.log(results);
 
-Promise.allSettled(results).then(resolve => {
-    console.log(1);
-    console.log(resolve);
-}).catch(rejected => {
+// Promise.allSettled(results).then(resolve => {
+//     console.log(1);
+//     console.log(resolve);
+// }).catch(rejected => {
 
-    for (const br of rejected) {
+//     for (const br of rejected) {
 
-        console.log(br);
-    }
-})
+//         console.log(br);
+//     }
+// })
 
-//pipeline.run(new TransportContext());
+pipeline.run(new TransportContext());
