@@ -794,6 +794,8 @@ That's not enough. In reality, there is a variety of Martini combination. More t
 This package provides Dependency Injection by using an ioc container to help Javascript users on wiring dependencies across components. Dependency Injection in this package just support two types of injection is Constructor Injection and Property Injection.
 Borrowing mostly the concept Dependency Injection of ASP.NET and Laravel's Service Container, Components has it's own lifecycle depends on which type they are bound.
 
+Context classes have their own ioc container (but it is hidden behide a ComponenManager). Finally, dependency injection is the important factor that the word "context" avaluated.
+
 
 ## Binding components
 
