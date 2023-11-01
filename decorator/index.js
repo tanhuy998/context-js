@@ -1,4 +1,4 @@
 const autowiređ = require('./autowired.js');
-//const type = require('reflectype');
+const type = require('reflectype');
 
-module.exports = {autowiređ} //, ...type};
+module.exports = {autowiređ, ...type};
