@@ -1,5 +1,5 @@
 /**
- * @typedef {import('../coordinator/coodinator.js')} Coordinator
+ * @typedef {import('./coodinator.js')} Coordinator
  */
 
 const { CONSTRUCTOR } = require('../constants.js');

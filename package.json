@@ -14,7 +14,8 @@
     "test-component": "npx babel ./test/componentManager > ./test/componentManager/compile.js && node ./test/componentManager/compile",
     "test-injector": "npx babel ./test/injector > ./test/injector/compile.js && node ./test/injector/compile",
     "test-DI": "npx babel ./test/DI > ./test/DI/compile.js && node ./test/DI/compile",
-    "test-pipeline": "node ./test/pipeline"
+    "test-pipeline": "node ./test/pipeline",
+    "test-import": "node ./test/import/index.js"
   },
   "keywords": [
     "expressjs",

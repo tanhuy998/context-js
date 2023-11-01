@@ -1,6 +1,6 @@
-const { CONSTRUCTOR } = require("../../dependenies/constants");
-const SessionCoordinator = require("../../dependenies/coordinator/sessionCoordinator");
-const subCoordination = require("../../dependenies/proxyTraps/subCoordination");
+const { CONSTRUCTOR } = require("../../dependencies/constants");
+const SessionCoordinator = require("../../dependencies/coordinator/sessionCoordinator");
+const subCoordination = require("../../dependencies/proxyTraps/subCoordination");
 
 class Session extends SessionCoordinator {
 

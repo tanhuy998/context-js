@@ -1,6 +1,6 @@
 const {metadata_t, property_metadata_t, metaOf} = require('reflectype/src/reflection/metadata.js');
 const isAbstract = require('reflectype/src/utils/isAbstract.js');
-const {CONSTRUCTOR, METADATA, TYPE_JS} = require('../dependenies/constants.js');
+const {CONSTRUCTOR, METADATA, TYPE_JS} = require('../dependencies/constants.js');
 const {decorateMethod} = require('reflectype/src/libs/methodDecorator.js');
 const initFootPrint = require('reflectype/src/libs/initFootPrint.js');
 const { compareArgsWithType } = require('reflectype/src/libs/argumentType.js');

@@ -1,4 +1,4 @@
-const Context = require('../../src/dependenies/context/context.js');
+const Context = require('../../src/dependencies/context/context.js');
 const Bike = require('./components/bike.js');
 const Car = require('./components/car.js');
 const Warehouse = require('./components/warehouse.js');
@@ -10,10 +10,10 @@ const Vehicle = require('./components/vehicle.js')
 const A = require('./handler/A.js');
 const B = require('./handler/B.js');
 const DeliveryRequest = require('./components/coordinator.js/DeliveryRequest.js');
-const { ABORT_PIPELINE, DISMISS, ROLL_BACK } = require('../../src/dependenies/constants.js');
+const { ABORT_PIPELINE, DISMISS, ROLL_BACK } = require('../../src/dependencies/constants.js');
  
 /**
- * @typedef {import('../../src/dependenies/pipeline/pipeline.js')} Pipeline
+ * @typedef {import('../../src/dependencies/pipeline/pipeline.js')} Pipeline
  */
 
 function first() {

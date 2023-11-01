@@ -1,7 +1,7 @@
 
 
 
-const ComponentManager = require('../../src/dependenies/component/componentManager.js');
+const ComponentManager = require('../../src/dependencies/component/componentManager.js');
 
 const components = new ComponentManager();
 const Interface = require('reflectype/src/interface/interface.js');
@@ -33,7 +33,7 @@ class A {
     }
 }
 
-const Scope = require('../../src/dependenies/component/scope.js');
+const Scope = require('../../src/dependencies/component/scope.js');
 
 components.bindScope(A, A);
 components.bindScope(ITest, A);

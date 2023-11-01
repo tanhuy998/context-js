@@ -1,5 +1,5 @@
-const { CONSTRUCTOR } = require("../../../../src/dependenies/constants");
-const SessionCoordinator = require("../../../../src/dependenies/coordinator/sessionCoordinator");
+const { CONSTRUCTOR } = require("../../../../src/dependencies/constants");
+const SessionCoordinator = require("../../../../src/dependencies/coordinator/sessionCoordinator");
 
 module.exports = class DeliveryRequest extends SessionCoordinator {
 

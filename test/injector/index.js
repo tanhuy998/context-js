@@ -1,7 +1,7 @@
-const ObjectInjectorEngine = require('../../src/dependenies/injector/objectInjectorEngine');
-const {CONSTRUCTOR} = require('../../src/dependenies/constants.js');
+const ObjectInjectorEngine = require('../../src/dependencies/injector/objectInjectorEngine');
+const {CONSTRUCTOR} = require('../../src/dependencies/constants.js');
 
-const ComponentManager = require('../../src/dependenies/component/componentManager');
+const ComponentManager = require('../../src/dependencies/component/componentManager');
 
 const Interface = require('reflectype/src/interface/interface.js');
 //const {implement} = require('reflectype/src/interface/interface.js');
@@ -84,7 +84,7 @@ const obj = new B();
 injector.inject(obj);
 
 
-const MethodInjectorEngine = require('../../src/dependenies/injector/methodInjectorEngine.js');
+const MethodInjectorEngine = require('../../src/dependencies/injector/methodInjectorEngine.js');
 
 const methodInjector = new MethodInjectorEngine(components.container);
 

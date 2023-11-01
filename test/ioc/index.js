@@ -1,4 +1,4 @@
-const IocContainer = require('../../src/dependenies/ioc/iocContainer.js');
+const IocContainer = require('../../src/dependencies/ioc/iocContainer.js');
 const {type, paramsType} = require('reflectype/src/decorators')
 
 const container = new IocContainer();
@@ -20,7 +20,7 @@ class Component {
     }
 }
 
-const {CONSTRUCTOR} = require('../../src/dependenies/constants.js');
+const {CONSTRUCTOR} = require('../../src/dependencies/constants.js');
 
 //@bind
 class B extends A {

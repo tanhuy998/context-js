@@ -1,11 +1,11 @@
-const ComponentManager = require('../../src/dependenies/component/componentManager.js');
-const {CONSTRUCTOR} = require('../../src/dependenies/constants.js');
+const ComponentManager = require('../../src/dependencies/component/componentManager.js');
+const {CONSTRUCTOR} = require('../../src/dependencies/constants.js');
 
 
 const Interface = require('reflectype/src/interface/interface.js');
 const implement = require('reflectype/src/decorators/implement.js');
 const {type, paramsType} = require('reflectype/src/decorators/index.js');
-const autowired = require('../../decorators/autowired.js');
+const autowired = require('../../decorator/autowired.js');
 
 
 class Bike {

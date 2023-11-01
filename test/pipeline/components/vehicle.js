@@ -1,5 +1,5 @@
 const {type} = require('reflectype/src/decorators');
-const autowired = require('../../../decorators/autowired');
+const autowired = require('../../../decorator/autowired');
 const Driver = require('./driver.js');
 const Product = require('./product');
 const Countable = require('./countable');
