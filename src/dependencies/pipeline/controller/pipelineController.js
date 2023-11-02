@@ -166,7 +166,7 @@ module.exports = class PipelineController {
      */
     #handleControlSignal(_breakPoint) {
 
-        const signal = _breakPoint.last;
+        const signal = _breakPoint.lastCaughtError;
         
         if (signal === ROLL_BACK) {
             

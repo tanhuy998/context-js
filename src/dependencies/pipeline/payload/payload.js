@@ -37,7 +37,7 @@ module.exports = class Payload {
         return this.#stackStrace;
     }
 
-    get last() {
+    get lastHandledValue() {
 
         const length = this.#stackStrace.length;
 

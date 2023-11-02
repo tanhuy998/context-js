@@ -173,7 +173,7 @@ module.exports = class PhaseOperator {
             
             args = DI.resolveArguments(handler, context) ?? [];
 
-            args = (args.length > 0) ? [...args, ..._additionalArgs] : [_payload.last, context, _payload, ..._additionalArgs];             
+            args = (args.length > 0) ? [...args, ..._additionalArgs] : [_payload.lastHandledValue, context, _payload, ..._additionalArgs];             
             
             obj = null;
 
@@ -249,7 +249,7 @@ module.exports = class PhaseOperator {
 
         const handlerAbstract = this.#handlerAbstract;
         
-        const devise = _payload.last;
+        const devise = _payload.lastHandledValue;
 
         const context = _payload.context;
 

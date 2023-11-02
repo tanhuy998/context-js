@@ -13,9 +13,9 @@ module.exports = class Breakpoint extends Payload {
         return this.#originError;
     }
 
-    get lastError() {
+    get lastCaughtError() {
 
-        return super.last;
+        return super.lastHandledValue;
     }
 
     get reason() {
