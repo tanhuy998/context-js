@@ -31,10 +31,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
 function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
-var ObjectInjectorEngine = require('../../src/dependenies/injector/objectInjectorEngine');
-var _require = require('../../src/dependenies/constants.js'),
+var ObjectInjectorEngine = require('../../src/dependencies/injector/objectInjectorEngine');
+var _require = require('../../src/dependencies/constants.js'),
   CONSTRUCTOR = _require.CONSTRUCTOR;
-var ComponentManager = require('../../src/dependenies/component/componentManager');
+var ComponentManager = require('../../src/dependencies/component/componentManager');
 var Interface = require('reflectype/src/interface/interface.js');
 //const {implement} = require('reflectype/src/interface/interface.js');
 var _require2 = require('reflectype/src/decorators/index.js'),
@@ -163,7 +163,7 @@ components.bind(Component, Component);
 var injector = new ObjectInjectorEngine(components.container);
 var obj = new B();
 injector.inject(obj);
-var MethodInjectorEngine = require('../../src/dependenies/injector/methodInjectorEngine.js');
+var MethodInjectorEngine = require('../../src/dependencies/injector/methodInjectorEngine.js');
 var methodInjector = new MethodInjectorEngine(components.container);
 methodInjector.inject(obj, 'doSomething');
 obj.doSomething();
