@@ -20,7 +20,7 @@ module.exports = class ObjectInjectorEngine extends Injector {
      */
     #traceProtoPseudoConstructorChain(_object, _scope) {
 
-        let proto = _object.constructor;
+        let proto = _object;
 
         const protoOrder = [];
 
@@ -40,12 +40,7 @@ module.exports = class ObjectInjectorEngine extends Injector {
         // to insure the consitence and integrity of data
         for (const proto of protoStack || []) {
 
-            if (typeof proto.prototype !== 'object') {
-
-                continue;
-            }
-
-            const pseudoConstructor = proto.prototype[CONSTRUCTOR];
+            const pseudoConstructor = proto[CONSTRUCTOR];
 
             fieldInjector.inject(proto, _scope);
 
