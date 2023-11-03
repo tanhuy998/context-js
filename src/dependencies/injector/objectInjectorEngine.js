@@ -20,40 +20,42 @@ module.exports = class ObjectInjectorEngine extends Injector {
      */
     #traceProtoPseudoConstructorChain(_object, _scope) {
 
-        let proto = _object;
+        let classProto = _object.constructor;
+
+        let objectProto = _object;
 
         const protoOrder = [];
 
-        while (proto !== null && proto !== undefined && proto?.constructor !== Object) {
+        
+        while (classProto !== null && classProto !== undefined && classProto?.constructor !== Object) {
+            
+            
+            protoOrder.push([classProto, objectProto]);
 
-            protoOrder.push(proto);
-
-            proto = proto.__proto__;
+            classProto = classProto.__proto__;
+            objectProto = objectProto.__proto__;
         }
 
         const protoStack = protoOrder.reverse();
 
-
         const functionInjector = new FunctionInjectorEngine(this.iocContainer);
         const fieldInjector = new AutoAccessorInjectorEngine(this.iocContainer);
+
+        fieldInjector.inject(_object, _scope);
         // the order of psudo constructor injection must be from base class to derived class
         // to insure the consitence and integrity of data
-        for (const proto of protoStack || []) {
+        for (const pair of protoStack || []) {
 
-            const pseudoConstructor = proto[CONSTRUCTOR];
-
-            fieldInjector.inject(proto, _scope);
-
+            const [classProto, objectProto] = pair;
+            
+            const pseudoConstructor = typeof classProto.prototype === 'object'? classProto.prototype[CONSTRUCTOR] : undefined;
+            
+            //fieldInjector.inject(_object, _scope);
             if (typeof pseudoConstructor === 'function') {
 
                 const args = functionInjector.resolveComponentsFor(pseudoConstructor, _scope);
                 
-                /**
-                 *  this line is confusing
-                 */
-                //pseudoConstructor.call(proto);
-                pseudoConstructor.call(_object, ...(args ?? [])); // this line is confusing;
-
+                pseudoConstructor.call(_object, ...(args ?? []));
             }
         }
     }

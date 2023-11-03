@@ -6,6 +6,7 @@ const ComponentManager = require('../../src/dependencies/component/componentMana
 const Interface = require('reflectype/src/interface/interface.js');
 //const {implement} = require('reflectype/src/interface/interface.js');
 const {type, paramsType} = require('reflectype/src/decorators/index.js');
+const autowired = require('../../decorator/autowired.js');
 
 
 class Bike {
@@ -27,6 +28,7 @@ class A {
 
     #secret;
 
+    @autowired
     @type(Bike)
     accessor vehicleA;
 
@@ -38,7 +40,7 @@ class A {
         
         this.#secret = bike;
 
-        this.vehicleA = bike;
+        //this.vehicleA = bike;
 
         console.log('A', this.vehicleA);
     }
@@ -51,8 +53,9 @@ class A {
 
 class B extends A {
 
+    @autowired
     @type(Car)
-    accessor vehicleB;
+    accessor vehicleA;
 
     @paramsType(Car)
     [CONSTRUCTOR](car) {
@@ -83,6 +86,7 @@ const obj = new B();
 
 injector.inject(obj);
 
+console.log(obj.vehicleA)
 
 const MethodInjectorEngine = require('../../src/dependencies/injector/methodInjectorEngine.js');
 

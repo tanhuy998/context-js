@@ -28,19 +28,24 @@ function random(min, max) {
 //     // }, random(0, 20000));
 // }
 
-// function run() {
+function run() {
 
-//     const arr = [];
+    for(let i = 0; i < 10; ++i) {
 
-//     for(let i = 0; i < 1000; ++i) {
+        (async function () {
 
-//         const result =  pipeline.run(new TransportContext());
+            try {
+                await pipeline.run(new TransportContext());
+            }
+            catch(e) {
+        
+                console.log(e.originError)
+            }
+        })();
+    }
+}
 
-//         arr.push(result);
-//     }
-
-//     return arr;
-// }
+run();
 
 // const results = run();
 
@@ -57,4 +62,4 @@ function random(min, max) {
 //     }
 // })
 
-pipeline.run(new TransportContext());
+

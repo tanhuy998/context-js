@@ -1,7 +1,7 @@
 "use strict";
 "use strict";
 
-var _dec, _init_vehicleA, _dec2, _init_drive, _dec3, _initProto, _dec4, _init_vehicleB, _dec5, _dec6, _initProto2;
+var _dec, _init_vehicleA, _dec2, _init_drive, _dec3, _initProto, _dec4, _init_vehicleA2, _dec5, _dec6, _initProto2;
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
@@ -31,15 +31,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
 function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
-var ObjectInjectorEngine = require('../../src/dependenies/injector/objectInjectorEngine');
-var _require = require('../../src/dependenies/constants.js'),
+var ObjectInjectorEngine = require('../../src/dependencies/injector/objectInjectorEngine');
+var _require = require('../../src/dependencies/constants.js'),
   CONSTRUCTOR = _require.CONSTRUCTOR;
-var ComponentManager = require('../../src/dependenies/component/componentManager');
+var ComponentManager = require('../../src/dependencies/component/componentManager');
 var Interface = require('reflectype/src/interface/interface.js');
 //const {implement} = require('reflectype/src/interface/interface.js');
 var _require2 = require('reflectype/src/decorators/index.js'),
   type = _require2.type,
   paramsType = _require2.paramsType;
+var autowired = require('../../decorator/autowired.js');
 var Bike = /*#__PURE__*/_createClass(function Bike() {
   _classCallCheck(this, Bike);
   _defineProperty(this, "name", 'bike');
@@ -94,7 +95,9 @@ var A = /*#__PURE__*/function () {
     key: CONSTRUCTOR,
     value: function value(bike) {
       _classPrivateFieldSet(this, _secret, bike);
-      this.vehicleA = bike;
+
+      //this.vehicleA = bike;
+
       console.log('A', this.vehicleA);
     }
   }, {
@@ -105,7 +108,7 @@ var A = /*#__PURE__*/function () {
   }]);
   return A;
 }();
-var _applyDecs2203R$e = _slicedToArray(_applyDecs2203R(A, [[_dec, 1, "vehicleA"], [_dec2, 1, "drive"], [_dec3, 2, CONSTRUCTOR]], []).e, 3);
+var _applyDecs2203R$e = _slicedToArray(_applyDecs2203R(A, [[[autowired, _dec], 1, "vehicleA"], [_dec2, 1, "drive"], [_dec3, 2, CONSTRUCTOR]], []).e, 3);
 _init_vehicleA = _applyDecs2203R$e[0];
 _init_drive = _applyDecs2203R$e[1];
 _initProto = _applyDecs2203R$e[2];
@@ -125,12 +128,12 @@ var B = /*#__PURE__*/function (_A3) {
     _this = _super.call.apply(_super, [this].concat(args));
     _classPrivateFieldInitSpec(_assertThisInitialized(_this), _A2, {
       writable: true,
-      value: (_initProto2(_assertThisInitialized(_this)), _init_vehicleB(_assertThisInitialized(_this)))
+      value: (_initProto2(_assertThisInitialized(_this)), _init_vehicleA2(_assertThisInitialized(_this)))
     });
     return _this;
   }
   _createClass(B, [{
-    key: "vehicleB",
+    key: "vehicleA",
     get: function get() {
       return _classPrivateFieldGet(this, _A2);
     },
@@ -151,8 +154,8 @@ var B = /*#__PURE__*/function (_A3) {
   }]);
   return B;
 }(A);
-var _applyDecs2203R$e2 = _slicedToArray(_applyDecs2203R(B, [[_dec4, 1, "vehicleB"], [_dec5, 2, CONSTRUCTOR], [_dec6, 2, "doSomething"]], []).e, 2);
-_init_vehicleB = _applyDecs2203R$e2[0];
+var _applyDecs2203R$e2 = _slicedToArray(_applyDecs2203R(B, [[[autowired, _dec4], 1, "vehicleA"], [_dec5, 2, CONSTRUCTOR], [_dec6, 2, "doSomething"]], []).e, 2);
+_init_vehicleA2 = _applyDecs2203R$e2[0];
 _initProto2 = _applyDecs2203R$e2[1];
 var components = new ComponentManager();
 components.bind(Bike, Bike);
@@ -163,7 +166,8 @@ components.bind(Component, Component);
 var injector = new ObjectInjectorEngine(components.container);
 var obj = new B();
 injector.inject(obj);
-var MethodInjectorEngine = require('../../src/dependenies/injector/methodInjectorEngine.js');
+console.log(obj.vehicleA);
+var MethodInjectorEngine = require('../../src/dependencies/injector/methodInjectorEngine.js');
 var methodInjector = new MethodInjectorEngine(components.container);
 methodInjector.inject(obj, 'doSomething');
 obj.doSomething();

@@ -36,19 +36,19 @@ module.exports = class B extends ContextHandler{
         console.log('deliver to city', req.city);
         console.log('need one bike', _v)
 
-        throw new Error('missing')
-        return await new Promise((resolve, reject) => {
+        //throw new Error('missing')
+        // return await new Promise((resolve, reject) => {
 
-            setTimeout(() => {
+        //     setTimeout(() => {
                 
-                if (Math.random()) {
+        //         if (Math.random()) {
 
-                    return resolve();
-                }
+        //             return resolve();
+        //         }
                 
-                return reject(new Error());
-            }, random(0, 3000));
-        })
+        //         return reject(new Error());
+        //     }, random(0, 3000));
+        // })
     }
 
     
