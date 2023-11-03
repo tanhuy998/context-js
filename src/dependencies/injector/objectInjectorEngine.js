@@ -29,7 +29,6 @@ module.exports = class ObjectInjectorEngine extends Injector {
         
         while (classProto !== null && classProto !== undefined && classProto?.constructor !== Object) {
             
-            
             protoOrder.push([classProto, objectProto]);
 
             classProto = classProto.__proto__;
