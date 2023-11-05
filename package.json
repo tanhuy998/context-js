@@ -1,7 +1,7 @@
 {
   "name": "@tanhuy998/context-js",
-  "version": "1.1.2",
-  "description": "",
+  "version": "0.0.1",
+  "description": "General purpose context",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -18,21 +18,20 @@
     "test-import": "node ./test/import/index.js"
   },
   "keywords": [
-    "expressjs",
-    "express",
-    "controller",
-    "controller-js",
-    "context-js",
-    "context",
-    "router",
-    "routing",
-    "express controller routing",
-    "controller routing",
     "decorators",
     "js decorator",
-    "express controller",
-    "controller decorator",
-    "meta programming"
+    "dependency injection",
+    "ioc",
+    "inversion of control",
+    "dependency inversion",
+    "contextual",
+    "context",
+    "pipeline",
+    "pipeline handler",
+    "meta programming",
+    "autowire",
+    "autowire dependencyies",
+    "component"
   ],
   "author": "Huy Tran - tanhuy998",
   "license": "MIT",

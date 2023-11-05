@@ -1,8 +1,0 @@
-version 0.1.0
-
-add route group
-    - grouping means a controller which needs to has constraints (middlewares) applied to it's routes.
-    - routing using sub router object for better group contraints isolation managemnet
-    - atomic route with no group will be declared immediately without using group
-    - if a controller has middleware that runs over routes, if will be grouped in default group '/'
-    

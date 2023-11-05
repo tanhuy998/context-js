@@ -1,19 +1,9 @@
-// const reflectClass = require('../libs/reflectClass.js');
-// const reflectFunction = require('../libs/reflectFunction.js');
-// const {ReflectionBabelDecoratorClass_Stage_0} = require('../libs/babelDecoratorClassReflection.js');
-// const { contentType } = require('../response/decorator.js');
-// const { PropertyDecorator } = require('../decorator/decoratorResult.js');
-const {EventEmitter} = require('node:events');
-const {Type} = require('../../libs/type.js');
-const {checkType, isParent} = require('../../utils/type.js');
-
-const FunctionInjectorEngine = require('../injector/functionInjectorEngine.js');
+const {checkType} = require('../../utils/type.js');
 const isAbstract = require('reflectype/src/utils/isAbstract.js');
-const {CONSTRUCTOR} = require('../constants.js');
 
 const Interface = require('reflectype/src/interface/interface.js');
 const ObjectInjectorEngine = require('../injector/objectInjectorEngine.js');
-const ClassInjectorEngine = require('../injector/classInjectorEngine.js');
+const IocContainerSetDefaultInstanceError = require('../errors/iocContainerSetDefaultInstanceError.js');
 
 class Empty {
 
@@ -22,39 +12,39 @@ class Empty {
     };
 }
 
-class IocContainerSetDefaultInstanceError extends Error {
 
-    constructor() {
+const EMPTY = 0;
 
-        super('can not set default to Transient Component');
-    }
-}
+module.exports = class IocContainer {
 
-class IocContainer extends EventEmitter {
+    /**
+     * the first offest of the objects pool is an empty object
+     */
+    #objectsPool = [new Empty()];
 
+    /**
+     * mapping table between abstracts and concretes
+     */
     #container = new WeakMap();
 
     #stringKeys = new Map();
 
+    /**
+     * singleton objects
+     */
     #singleton = new WeakMap();
 
-
-    /**@type {ClassInjectorEngine} */
-    #classInjector;
     /**@type {ObjectInjectorEngine} */
     #objectInjector;
 
     constructor() {
-
-        super();
-
+        
         this.#init();
     }
 
     #init() {
 
         this.#objectInjector = new ObjectInjectorEngine(this);
-        this.#classInjector = new ClassInjectorEngine(this);
     }
 
     bindArbitrary(key, value) {
@@ -82,11 +72,6 @@ class IocContainer extends EventEmitter {
             this.#container.delete(abstract);
         }
 
-        if (!(abstract instanceof Interface)) {
-
-            this.#classInjector.inject(abstract);
-        }
-
         this.#container.set(abstract, concrete);
     }
 
@@ -105,7 +90,9 @@ class IocContainer extends EventEmitter {
             this.#singleton.delete(abstract);
         }
 
-        this.#singleton.set(abstract, new Empty());
+        const empty = this.#objectsPool[EMPTY];
+
+        this.#singleton.set(abstract, empty);
     }
 
     /**
@@ -193,35 +180,38 @@ class IocContainer extends EventEmitter {
             
             return undefined;
         }
-        
-        const concrete = this.#container.get(abstract);
-        
-        let result;
 
         if (this.#singleton.has(abstract)) {
-            
-            const obj = this.#singleton.get(abstract);
 
-            if (obj.constructor.name === "Empty") {
-
-                const instance = this.build(concrete);
-
-                this.#singleton.delete(abstract);
-                this.#singleton.set(abstract, instance);
-
-                result = instance;
-            }
-            else {
-
-                result = obj;
-            }
+            return this.#resolveSingpleton(abstract);
         }
         else {
-            //return this.build(concrete);
-            result = this.build(concrete);
+
+            const concrete = this.#container.get(abstract);
+
+            return this.build(concrete);
         }
-        
-        return result;
+    }
+
+    #resolveSingpleton(abstract) {
+
+        const obj = this.#singleton.get(abstract);
+
+        if (obj.constructor === Empty) {
+
+            const concrete = this.#container.get(abstract);
+
+            const instance = this.build(concrete);
+
+            this.#singleton.delete(abstract);
+            this.#singleton.set(abstract, instance);
+
+            return instance;
+        }
+        else {
+
+            return obj;
+        }
     }
 
     // will overide the instantiated singleton instance
@@ -291,8 +281,6 @@ class IocContainer extends EventEmitter {
         return instance;
     }
 }
-
-module.exports = IocContainer;
 
 
 

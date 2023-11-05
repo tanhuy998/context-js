@@ -2,7 +2,7 @@ const { ABORT_PIPELINE, ROLL_BACK, DISMISS } = require("../../constants");
 const ErrorPayload = require("../payload/breakpoint");
 const isPipeline = require("../isPipeline");
 const Payload = require("../payload/payload.js");
-const { EventEmitter } = require("../../ioc/iocContainer");
+const { EventEmitter } = require('node:events');
 const NoPhaseError = require("../../errors/pipeline/noPhaseError");
 //const Payload = require("./payload");
 
@@ -17,6 +17,8 @@ const NoPhaseError = require("../../errors/pipeline/noPhaseError");
  * 
  */
 
+const START_INDEX = 0;
+
 module.exports = class PipelineController {
 
     /**@type {Pipeline} */
@@ -25,9 +27,10 @@ module.exports = class PipelineController {
     /**@type {Payload} */
     #payload;
 
+    /**@type {Number} */
     #maxSyncTask;
 
-    #taskIndex = 0;
+    #taskIndex = START_INDEX;
 
     /**@type {Promise} */
     #state;
@@ -138,8 +141,6 @@ module.exports = class PipelineController {
          *  occurError parameter detemines that the phase thrown an exception
          *  base on type of the _payload parameter, controller will decide what to do next
          */
-
-        
         const payloadController = _payload.controller;
 
         if (payloadController !== this) {
@@ -201,7 +202,7 @@ module.exports = class PipelineController {
         
         const maxSyncTask = this.#maxSyncTask
 
-        this.#taskIndex = (++this.#taskIndex) % maxSyncTask;
+        const taskIndex = this.#taskIndex = (++this.#taskIndex) % maxSyncTask;
 
         _payload.trace.push(previousValue);
 
@@ -216,18 +217,15 @@ module.exports = class PipelineController {
             return;
         }
 
-        const taskIndex = this.#taskIndex;
-
-
-        if (taskIndex === 1) {
+        if (taskIndex === START_INDEX) {
 
             setImmediate((nextPhase, payload) => {
-
+                
                 nextPhase.accquire(_payload);
             }, nextPhase, _payload)
         }
         else {
-
+            
             nextPhase.accquire(_payload);    
         }
     }

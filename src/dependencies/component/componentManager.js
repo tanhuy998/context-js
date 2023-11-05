@@ -1,15 +1,11 @@
-const AppState = require('../../appState.js');
 const IlegalRuntimeConfigError = require('../errors/IlegalRuntimeConfigError.js');
 const ComponentContainer = require('./componentContainer.js');
-const {CONSTRUCTOR, METADATA, TYPE_JS} = require('../constants.js');
 
-//const Scope = require('./scope.js');
-const {initTypePropertyField, getTypeMetadata, initMetadataField, decoratePseudoConstructor} = require('../../utils/metadata.js');
-const { property_metadata_t } = require('reflectype/src/reflection/metadata.js');
-const {decorateMethod} = require('reflectype/src/libs/methodDecorator.js');
-const initFootPrint = require('reflectype/src/libs/initFootPrint.js');
+const {decoratePseudoConstructor} = require('../../utils/metadata.js');
 const self = require('reflectype/src/utils/self.js');
-class ComponentManager {
+
+
+module.exports = class ComponentManager {
 
     /**
      *  @typedef {import('./componentContainer.js') ComponentContainer}
@@ -24,26 +20,28 @@ class ComponentManager {
 
     #scope = new Set();
 
-    #app;
+    #global;
 
     get container() {
 
         return this.#container;
     }
 
-    constructor(_container, {appContext} = {}) {
+    constructor(_container, _globalContext) {
 
         //this.#app = appContext;
 
         this.#container = _container instanceof ComponentContainer ? _container : new ComponentContainer();
+        this.#global = _globalContext;
 
+        this.#checkGlobal();
         this.#init();
         this.#initPresetComponent();
     }
 
-    get isRuntime() {
+    get isLocked() {
 
-        return this.#app?.state === AppState.RUNTIME;
+        return this.#global?.isLocked;
     }
 
     #init() {
@@ -54,6 +52,11 @@ class ComponentManager {
 
         container.bindSingleton(baseClass, baseClass);
         container.setDefaultInstanceFor(baseClass, this);
+    }
+
+    #checkGlobal() {
+
+        
     }
 
     #initPresetComponent() {
@@ -73,7 +76,7 @@ class ComponentManager {
 
     #checkState() {
 
-        if (this.isRuntime) {
+        if (this.isLocked) {
 
             throw new IlegalRuntimeConfigError();
         }
@@ -138,7 +141,3 @@ class ComponentManager {
         return this.#container.get(component, scope);
     }
 }
-
-
-
-module.exports = ComponentManager;

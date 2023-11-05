@@ -36,10 +36,12 @@ function run() {
 
             try {
                 await pipeline.run(new TransportContext());
+
+                console.log('awaited')
             }
             catch(e) {
         
-                console.log(e.originError)
+                console.log('error', e.originError)
             }
         })();
     }
@@ -61,5 +63,4 @@ run();
 //         console.log(br);
 //     }
 // })
-
 
