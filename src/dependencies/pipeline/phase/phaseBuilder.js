@@ -1,6 +1,6 @@
 const Phase = require('./phase.js');
 const HandlerKind = require('../handlerKind.js');
-const ContextHandler = require('../../handler/constextHandler.js');
+const ContextHandler = require('../../handler/contextHandler.js');
 
 const SubPipeline = require('./subpipeline.js');
 const isPipeline = require('../isPipeline.js');
@@ -15,34 +15,43 @@ module.exports = class PhaseBuilder {
     /**@type {Phase} */
     #phaseObj
 
+
     #handler;
 
     /**@type {Pipeline} */
     #pipeline;
 
+    /**@returns {Pipeline} */
     get pipeline() {
 
         return this.#pipeline;
     }
 
+    /**@returns {ContextHandler.constructor | Function} */
     get handler() {
 
         return this.#handler;
     }
 
+    /**@returns {Phase} */
     get phaseObj() {
 
         return this.#phaseObj;
     }
 
+    /**
+     * 
+     * @param {Pipeline} _pipeline 
+     */
     constructor(_pipeline) {
 
         this.#pipeline = _pipeline;
     }
     
     /**
+     * Set the handler class for the pipeline 
      * 
-     * @param {ContextHandler.constructor | Object.constructor | Function} _type 
+     * @param {ContextHandler.constructor | Object.constructor | Function} _unknown 
      */
     setHandler(_unknown) {
 
@@ -58,6 +67,7 @@ module.exports = class PhaseBuilder {
     }
 
     /**
+     * set a Pipeline as a phase
      * 
      * @param {Pipeline} _pipeline 
      */
@@ -104,6 +114,10 @@ module.exports = class PhaseBuilder {
         return true;
     }
 
+
+    /**
+     * 
+     */
     build() { 
 
         if (typeof this.#phaseObj !== 'object') {

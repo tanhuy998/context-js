@@ -2,8 +2,11 @@ const HandlerKind = require('../handlerKind.js');
 const HanlderInitializeError = require('../../errors/pipeline/handlerInitializeError.js');
 
 /**
- * @typedef {import('../../handler/constextHandler.js')} ContextHandler
+ * @typedef {import('../../handler/contextHandler.js')} ContextHandler
  * @typedef {import('../payload/payload.js')} Payload
+ * @typedef {import('../payload/breakpoint.js')} BreakPoint
+ * @typedef {import('../../handler/contextHandler.js')} ContextHandler
+ * @typedef {import('../../handler/errorHandler.js')} ErrorHandler
  */
 
 
@@ -51,7 +54,7 @@ const traps = {
 
 module.exports = class PhaseOperator {
 
-    /**@type {Payload} */
+    /**@type {Payload | BreakPoint} */
     #payload;
 
     /**@type {ContextHandler} */
@@ -60,18 +63,20 @@ module.exports = class PhaseOperator {
     #handlerAbstract;
 
     #kind;
-
+    
+    /**@returns {Payload | BreakPoint}*/
     get payload() {
 
         return this.#payload;
     }
 
+    /**@returns {ContextHandler | ErrorHandler | any} */
     get handlerInstance() {
 
         return this.#handlerInstance;
     }
 
-    
+    /**@returns {boolean} */
     get hasErrorHandler() {
 
         if (this.#kind === HandlerKind.FUNCTION) {
@@ -82,6 +87,12 @@ module.exports = class PhaseOperator {
         return typeof this.#handlerAbstract?.prototype.onError === 'function';
     }
 
+    /**
+     * 
+     * @param {Payload | BreakPoint} _payload 
+     * @param {*} _handlerAbstract 
+     * @param {*} _kindOfHandler 
+     */
     constructor(_payload, _handlerAbstract, _kindOfHandler) {
 
         this.#payload = _payload

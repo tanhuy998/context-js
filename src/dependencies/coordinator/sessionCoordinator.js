@@ -1,10 +1,6 @@
-const self = require('reflectype/src/utils/self.js');
-const {set} = require('../proxyTraps/preventModifyProp.js');
-const {get} = require('../proxyTraps/subCoordination.js')
 const Coordinator = require('./coodinator.js');
-
 const {CONSTRUCTOR} = require('../constants.js');
-const { decoratePseudoConstructor, decorateFunction } = require('../../utils/metadata.js');
+
 
 /**
  * @typedef {import('../context/context.js')} Context

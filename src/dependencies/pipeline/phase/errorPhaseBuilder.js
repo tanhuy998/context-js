@@ -1,8 +1,17 @@
 const isPipeline = require("../isPipeline");
 const PhaseBuilder = require("./phaseBuilder");
 
+/**
+ * @typedef {import('../../handler/errorHandler.js')} ErrorHandler
+ */
+
 module.exports = class ErrorPhaseBuilder extends PhaseBuilder {
 
+    /**
+     * 
+     * @param {Function | ErrorHandler.constructor} _unknown 
+     * @returns 
+     */
     setHandler(_unknown) {
 
         if (isPipeline(_unknown)) {

@@ -1,20 +1,8 @@
 const {T_WeakTypeNode} = require('../../../libs/linkedList.js');
-//const ContextHandler = require('../handler/constextHandler.js');
-
-const Void = require('reflectype/src/type/void.js');
-const {metaOf, property_metadata_t} = require('reflectype/src/reflection/metadata.js');
-const HandlerKind = require('../handlerKind.js');
-
-const AbortPipelineError = require('../../errors/pipeline/abortPipelineError.js');
-const PhaseError = require('../../errors/pipeline/phaseError.js');
-const { END_OF_PIPELINE, ABORT_PIPELINE } = require('../../constants.js');
 const PhaseOperator = require('./phaseOperator.js');
 
-
-//const Context = require('../context/context.js');
-
 /**
- * @typedef {import('../../handler/constextHandler.js')} ContextHandler
+ * @typedef {import('../../handler/contextHandler.js')} ContextHandler
  * @typedef {import('../../context/context.js')} Context
  * @typedef {import('reflectype/src/metadata/ReflectionParameter.js')} ReflectionParameter
  * @typedef {import('../payload/payload.js')} Payload
@@ -42,6 +30,10 @@ module.exports = class Phase extends T_WeakTypeNode {
         this.#kind = kind;
     }
 
+    /**
+     * 
+     * @param {Pipeline} _pipeline 
+     */
     join(_pipeline) {
 
         if (this.#pipeline) {
@@ -56,6 +48,7 @@ module.exports = class Phase extends T_WeakTypeNode {
      * accquire a payload
      * 
      * @param {Payload} _payload 
+     * @param {Array<any>} _additionalArgs
      */
     accquire(_payload, _additionalArgs = []) {
 
@@ -95,6 +88,7 @@ module.exports = class Phase extends T_WeakTypeNode {
     /**
      * 
      * @param {Payload} _payload 
+     * @param {any} value
      */
     report(_payload, value) {
 
@@ -107,6 +101,12 @@ module.exports = class Phase extends T_WeakTypeNode {
         });
     }
 
+    /**
+     * 
+     * @param {Payload} _payload 
+     * @param {any} error 
+     * @param {PhaseOperator} _operator 
+     */
     reportError(_payload, error, _operator) {
 
         const controller = _payload.controller;

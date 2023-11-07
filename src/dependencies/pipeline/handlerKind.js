@@ -1,5 +1,5 @@
 const isES6Class = require('../../utils/isES6Class.js');
-const ContextHandler = require('../handler/constextHandler.js');
+const ContextHandler = require('../handler/contextHandler.js');
 const isPipeline = require('./isPipeline.js');
 
 module.exports = class HandlerKind {

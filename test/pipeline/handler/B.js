@@ -1,4 +1,4 @@
-const ContextHandler = require('../../../src/dependencies/handler/constextHandler.js');
+const ContextHandler = require('../../../src/dependencies/handler/contextHandler.js');
 const {type} = require('reflectype/src/decorators');
 const autowired = require('../../../decorator/autowired.js');
 

@@ -1,7 +1,5 @@
 const self = require("reflectype/src/utils/self");
-//const preventModifyProp = require("../proxyTraps/preventModifyProp");
 const Any = require('reflectype/src/type/any.js');
-const subCoordination = require('../proxyTraps/subCoordination.js');
 
 /**
  * @typedef {import('../itemsManager.js')} ItemsManager

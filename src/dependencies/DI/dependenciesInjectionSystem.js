@@ -3,8 +3,6 @@ const FunctionInjectorEngine = require('../injector/functionInjectorEngine.js');
 const ObjectInjectorEngine = require('../injector/objectInjectorEngine.js');
 const MethodInjectorEngine = require('../injector/methodInjectorEngine.js');
 
-const {isAbstract} = require('../../utils/type.js');
-
 const {property_metadata_t, metadata_t, metaOf} = require('reflectype/src/reflection/metadata.js');
 const ClassInjectorEngine = require('../injector/classInjectorEngine.js');
 const Contextual = require('./contextual.js');

@@ -1,17 +1,18 @@
-const { ABORT_PIPELINE } = require("../constants");
-const AbortPipelineError = require("../errors/pipeline/abortPipelineError");
-const HanlderInitializeError = require("../errors/pipeline/handlerInitializeError");
 const PhaseError = require("../errors/pipeline/phaseError");
 const Payload = require("./payload/payload");
 const PhaseBuilder = require("./phase/phaseBuilder");
 const PipelineController = require("./controller/pipelineController");
 const ErrorController = require('./controller/errorController.js');
-const ErrorPayload = require("./payload/breakpoint");
 const ErrorPhaseBuilder = require("./phase/errorPhaseBuilder");
 const self = require("reflectype/src/utils/self");
 const Breakpoint = require('./payload/breakpoint.js');
+
+
 /**
  * @typedef {import('../context/context')} Context
+ * @typedef {import('../../libs/linkedList.js').T_WeakTypeNode} T_WeakTypeNode
+ * @typedef {import('./phase/phase.js')} Phase
+ * @typedef {import('../handler/errorHandler.js')} ErrorHandler
  */
 
 /**
@@ -21,8 +22,10 @@ const Breakpoint = require('./payload/breakpoint.js');
  */
 module.exports = class Pipeline {
 
+    /**@type {number} */
     static #maxSyncTask = 100;
 
+    /**@returns {number} */
     static get maxSyncTask() {
 
         return this.#maxSyncTask;
@@ -36,8 +39,10 @@ module.exports = class Pipeline {
 
     #global
 
+    /**@type {number} */
     #maxSync;
 
+    /**@returns {number} */
     get maxSyncTask() {
 
         return this.#maxSync;
@@ -53,11 +58,13 @@ module.exports = class Pipeline {
         this.#maxSync = _number;
     }
 
+    /**@returns {Phase} */
     get errorHandler() {
 
         return this.#errorHandler;
     }
 
+    /**@returns {Phase} */
     get firstPhase() {
 
         return this.#firstPhase;
@@ -68,6 +75,7 @@ module.exports = class Pipeline {
         return this.#global;
     }
 
+    /**@returns {boolean} */
     get isBlock() {
 
         return this.#global === undefined || this.#global === null ? false : true;
@@ -85,6 +93,11 @@ module.exports = class Pipeline {
         this.#maxSync = self(this).maxSyncTask;
     }
 
+    /**
+     * 
+     * @param {Phase} _phase 
+     * @returns {Pipeline}
+     */
     pipe(_phase) {
 
         const firstPhase = this.#firstPhase;
@@ -102,7 +115,12 @@ module.exports = class Pipeline {
 
         return this;
     }
-
+    
+    /**
+     * 
+     * @param {Phase} _phase 
+     * @returns {Pipeline}
+     */
     pipeError(_phase) {
 
         const firstPhase = this.#errorHandler;
@@ -121,6 +139,10 @@ module.exports = class Pipeline {
         return this;
     }
 
+    /**
+     * 
+     * @returns {PhaseBuilder}
+     */
     addPhase() {
 
         return new PhaseBuilder(this);
@@ -154,7 +176,7 @@ module.exports = class Pipeline {
      * @param {Payload} _payload 
      * @param {any} _error 
      */
-    async catchError(_payload, _error) {
+    catchError(_payload, _error) {
         
         if (_payload.pipeline !== this) {
 
@@ -179,7 +201,7 @@ module.exports = class Pipeline {
     
     /**
      * 
-     * @param {...Function} _handler 
+     * @param {...(Function | ErrorHandler)} _handler 
      */
     onError(..._handler) {
 

@@ -1,6 +1,5 @@
 const ComponentContainer = require('../component/componentContainer.js'); 
 const Scope = require('../component/scope');
-const AsyncCoordinator = require('../coordinator/asyncCoordinator.js');
 
 module.exports = class DependencyInjectionContainer {
 

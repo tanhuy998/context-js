@@ -6,7 +6,6 @@ const Pipeline = require('../pipeline/pipeline.js');
 const Scope = require('../component/scope.js');
 
 const self = require('reflectype/src/utils/self.js');
-const preventModifyProp = require('../proxyTraps/preventModifyProp.js');
 
 const SessionCoordinator = require('../coordinator/sessionCoordinator.js');
 const { decoratePseudoConstructor } = require('../../utils/metadata.js');
@@ -31,21 +30,27 @@ module.exports = class Context {
 
     //static #iocContainer //= new ComponentContainer();
 
+    /**@type {ComponentManager} */
     static componentManager //= new ComponentManager(this.#iocContainer);
 
     static configurator;
 
+    /**@type {Pipeline} */
     static pipeline //= new Pipeline(this);
 
+    /**@type {ItemsManager} */
     static items //= new ItemsManager();
 
+    /**@type {DependenciesInjectionSystem} */
     static DI_System //= new DependenciesInjectionSystem(this.#iocContainer);
 
+    /**@returns {DependenciesInjectionSystem} */
     static get DI() {
 
         return this.DI_System;
     }
 
+    /**@returns {ComponentManager} */
     static get components() {
 
         return this.componentManager;
@@ -96,21 +101,23 @@ module.exports = class Context {
 
     /**
      *  store annything
+     *  @type {ItemsManager}
      */
     #session = new ItemsManager();
 
+    /**@returns {ItemsManager} */
     get session() {
 
         return this.#session;
     }
 
-
-
+    /**@returns {typeof Context} */
     get global() {
 
         return this.constructor;
     }
 
+    /**@returns {Scope} */
     get scope() {
 
         return this.#scope;

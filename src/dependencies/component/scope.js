@@ -1,6 +1,5 @@
 const {CONSTRUCTOR} = require('../constants.js');
 const {hasRelationShip, checkType} = require('../../utils/type.js');
-const { decorateFunction, getTypeMetadata, decoratePseudoConstructor } = require('../../utils/metadata.js');
 
 /**
  *  @typedef {import('./componentContainer.js')} ComponentContainer
