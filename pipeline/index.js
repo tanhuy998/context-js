@@ -1,3 +1,3 @@
-const pipeline = require('../src/dependencies/pipeline/index.js');
+const {Pipeline, Payload, Breakpoint} = require('../src/dependencies/pipeline/index.js');
 
-module.exports = {...pipeline};
+module.exports = {Pipeline, Payload, Breakpoint};

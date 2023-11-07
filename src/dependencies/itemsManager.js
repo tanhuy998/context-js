@@ -44,7 +44,7 @@ class ItemsManager {
 
         if (this.#pool.has(_key)) {
 
-            throw new Error(`There has item called ${_key}, try another name`);
+            throw new Error(`There has item called "${_key.description ?? _key}", try another name`);
         }
 
         this.#pool.set(_key, _newItem);

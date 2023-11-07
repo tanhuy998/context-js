@@ -19,7 +19,7 @@ module.exports = class Coordinator extends Any {
     /**
      *  the address of the section
      */
-    static key = Symbol(Date.now());
+    static key
 
     /**
      *  the section that places the data we want to get
@@ -30,6 +30,8 @@ module.exports = class Coordinator extends Any {
     static _init(_field) {
 
         this.field ??= _field;
+
+        this.key = Symbol(Date.now());
     }
 
     #key = self(this).key;
