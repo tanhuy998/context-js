@@ -156,7 +156,7 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
 
         const scope = _context?.scope;
 
-        const args = injector.resolveComponentsFor(actualFunction, scope);
+        const args = injector.resolveComponentsFor(actualFunction, scope) ?? [];
 
         if (this.#hasAsyncArgument(args)) {
 
@@ -221,7 +221,8 @@ module.exports = class DependenciesInjectionSystem extends Contextual{
             args.push(currentArg);
         }
     
-        return _func.call(this, ...args);
+        // if the invoked function is async, just unwrap the return value
+        return await _func.call(this, ...args);
     }
 
     /**
