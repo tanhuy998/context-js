@@ -11,8 +11,13 @@ const PhaseOperator = require('./phaseOperator.js');
  */
 
 
+/**
+ * @class
+ * @template T
+ */
 module.exports = class Phase extends T_WeakTypeNode {
 
+    /**@returns {T} */
     get handlerAbstract() {
 
         return this.data;
@@ -23,6 +28,11 @@ module.exports = class Phase extends T_WeakTypeNode {
     /**@type {Pipeline} */
     #pipeline;
 
+    /**
+     * 
+     * @param {T} _handler 
+     * @param {*} kind 
+     */
     constructor(_handler, kind) {
 
         super(...arguments);

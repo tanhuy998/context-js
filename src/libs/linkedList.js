@@ -1,7 +1,12 @@
 const LAST_NODE = Infinity;
 
+/**
+ * @class
+ * @template T
+ */
 class T_WeakTypeNode {
 
+    /**@type {T_WeakTypeNode<any>} */
     #next;
 
     #data;
@@ -14,11 +19,17 @@ class T_WeakTypeNode {
         return this.#next;
     }
 
+    /**@returns {T} */
     get data() {
 
         return this.#data;
     }
 
+    /**
+     * 
+     * @param {T_WeakTypeNode<any>} _node 
+     * @returns {boolean}
+     */
     setNext(_node = null) {
 
         if (_node instanceof T_WeakTypeNode) {
@@ -44,7 +55,10 @@ class T_WeakTypeNode {
         throw new TypeError('_node is not type of T_WeakTypeNode');
     }
 
-    //constructor(_callback) {
+    /**
+     * 
+     * @param {T} _data 
+     */
     constructor(_data) {
 
         // if (typeof _callback !== 'function') {
@@ -62,7 +76,7 @@ class T_WeakTypeNode {
 
     /**
      * 
-     * @param {T_WeakTypeNode} _node 
+     * @param {T_WeakTypeNode<any>} _node 
      * 
      * @returns {boolean}
      */
@@ -86,7 +100,7 @@ class T_WeakTypeNode {
 
     /**
      * 
-     * @param {T_WeakTypeNode} _from 
+     * @param {T_WeakTypeNode<any>} _from 
      * @param {Number} _count
      * 
      * @returns {boolean} 
@@ -102,7 +116,7 @@ class T_WeakTypeNode {
      * in case insertion without removing any nodes
      * use the setNext and pushBack method instead.
      * 
-     * @param {number | T_WeakTypeNode} _from 
+     * @param {number | T_WeakTypeNode<any>} _from 
      * @param {number} _deleteCount 
      * @param  {...any} items 
      * 
@@ -152,7 +166,7 @@ class T_WeakTypeNode {
     /**
      * Calculate the vector of indexes that is bounding the subset of the chain
      * 
-     * @param {T_WeakTypeNode | number} _from 
+     * @param {T_WeakTypeNode<any> | number} _from 
      * @param {number} _count 
      * 
      * @returns {Array<T_WeakTypeNode>}
@@ -204,7 +218,7 @@ class T_WeakTypeNode {
 
     /**
      * 
-     * @param {number|T_WeakTypeNode} _upper 
+     * @param {number|T_WeakTypeNode<any>} _upper 
      * @param {number} _lower 
      */
     #splice_checkValidBound(_upper, _lower) {
@@ -253,7 +267,7 @@ class T_WeakTypeNode {
 
     /**
      * 
-     * @param {T_WeakTypeNode} _fromNode 
+     * @param {T_WeakTypeNode<any>} _fromNode 
      * @param {number} _deleteCount 
      * @param  {...T_StrictTypeNode} nodes 
      * 
@@ -273,7 +287,7 @@ class T_WeakTypeNode {
 
     /** 
      * 
-     * @param {T_WeakTypeNode} _node 
+     * @param {T_WeakTypeNode<any>} _node 
      * 
      * @returns {boolean}
      */
@@ -312,7 +326,7 @@ class T_WeakTypeNode {
      * 
      * @param {number|undefined} _destination 
      * 
-     * @returns {T_WeakTypeNode|undefined}
+     * @returns {T_WeakTypeNode<any>|undefined}
      */
     traverse(_destination) {
 
@@ -372,61 +386,28 @@ class T_WeakTypeNode {
         }
         
     }
-
-
-    //handle(_event, _socket, _args) {
-    // handle(_wsEvent, _taskCount = 0) {
-
-    //     const nextHandler = this.next;
-
-    //     const {response} = _wsEvent;
-
-    //     try {
-
-    //         this.#callback(_wsEvent, response, nextFunction.bind(this));
-    //     }
-    //     catch (error) {
-
-    //         const breakpoint = new BreakPoint();
-    //         const runtimeError = new RouteError(error, {breakpoint: breakpoint});
-
-    //         throw runtimeError;
-    //     }
-
-
-    //     function nextFunction(error) {
-
-    //         if (error) {
-
-    //             throw error;
-    //         }
-
-    //         if (!nextHandler) {
-
-    //             return;
-    //         }
-
-    //         if (++_taskCount === MAX_SYNC_TASK) {
-
-    //             setImmediate(nextHandler.handle.bind(nextHandler), _wsEvent);
-    //         }
-    //         else {
-
-    //             nextHandler.handle(_wsEvent, _taskCount);
-    //         }
-    //     }
-    // }
 }
 
+/**
+ * @class
+ * @template T
+ */
 class T_StrictTypeNode extends T_WeakTypeNode {
 
+    /**@type {typeof T} */
     #type;
 
+    /**@returns {typeof T} */
     get dataType() {
 
         return this.#type;
     }
 
+    /**
+     * 
+     * @param {T} _data 
+     * @param {*} _type 
+     */
     constructor(_data, _type) {
 
         super(_data);
@@ -435,6 +416,10 @@ class T_StrictTypeNode extends T_WeakTypeNode {
         
     }
 
+    /**
+     * 
+     * @param {T_StrictTypeNode<T>} _node 
+     */
     pushBack(_node) {
 
         if (this.isSimilarTo(_node)) {
@@ -447,6 +432,10 @@ class T_StrictTypeNode extends T_WeakTypeNode {
         }
     }
 
+    /**
+     * 
+     * @param {T_StrictTypeNode<T>} _node 
+     */
     setNext(_node) {
 
         if (this.isSimilarTo(_node)) {

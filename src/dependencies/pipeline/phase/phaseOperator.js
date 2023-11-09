@@ -10,47 +10,47 @@ const HanlderInitializeError = require('../../errors/pipeline/handlerInitializeE
  */
 
 
-const functionTraps = {
-    /**
-     * 
-     * @param {Function} target 
-     * @param {Object} _this 
-     * @param {Iterable} args 
-     * @returns 
-     */
-    apply: function(target, _this, args) {
+// const functionTraps = {
+//     /**
+//      * 
+//      * @param {Function} target 
+//      * @param {Object} _this 
+//      * @param {Iterable} args 
+//      * @returns 
+//      */
+//     apply: function(target, _this, args) {
 
-        /**@type {Context} */
-        const context = _this.context;
-        const DI = context?.global?.DI;
+//         /**@type {Context} */
+//         const context = _this.context;
+//         const DI = context?.global?.DI;
         
-        if (args.length > 0 || typeof DI?.invoke !== 'function') {
+//         if (args.length > 0 || typeof DI?.invoke !== 'function') {
             
-            return target.call(_this, ...args);
-        }
+//             return target.call(_this, ...args);
+//         }
         
-        return DI.invoke(_this, target, context);
-    }
-}
+//         return DI.invoke(_this, target, context);
+//     }
+// }
 
-const traps = {
-    /**
-     * @param {ContextHandler} target 
-     * @param {string} prop 
-     * @returns 
-     */
-    get: function(target, prop) {
+// const traps = {
+//     /**
+//      * @param {ContextHandler} target 
+//      * @param {string} prop 
+//      * @returns 
+//      */
+//     get: function(target, prop) {
 
-        const theProp = target[prop];
+//         const theProp = target[prop];
         
-        if (typeof theProp !== 'function') {
+//         if (typeof theProp !== 'function') {
 
-            return theProp;
-        }
+//             return theProp;
+//         }
 
-        return new Proxy(theProp, functionTraps);
-    }
-};
+//         return new Proxy(theProp, functionTraps);
+//     }
+// };
 
 module.exports = class PhaseOperator {
 
@@ -171,11 +171,11 @@ module.exports = class PhaseOperator {
        
         if (this.#kind === HandlerKind.REGULAR) {
             
-            const wrapper = new Proxy(handler, traps);
+            //const wrapper = new Proxy(handler, traps);
             
-            this.#handlerInstance = wrapper;
+            this.#handlerInstance = handler;
             
-            return wrapper[_methodName].call(wrapper);
+            return handler[_methodName].call(handler);
         }
 
         let fn, args, obj;

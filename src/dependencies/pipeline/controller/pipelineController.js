@@ -40,11 +40,13 @@ module.exports = class PipelineController {
     /**@type {boolean} */
     #isDisposed;
 
+    /**@returns {Pipeline} */
     get pipeline() {
 
         return this.#pipeline;
     }
 
+    /**@returns {Payload} */
     get payload() {
 
         return this.#payload;
@@ -55,8 +57,9 @@ module.exports = class PipelineController {
         return this.#state;
     }
 
+    /** */
     get firstPhase() {
-
+        
         return this.#pipeline.firstPhase;
     }
 

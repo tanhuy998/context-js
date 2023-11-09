@@ -9,8 +9,8 @@ module.exports = class ErrorPhaseBuilder extends PhaseBuilder {
 
     /**
      * 
-     * @param {Function | ErrorHandler.constructor} _unknown 
-     * @returns 
+     * @param {Function | typeof ErrorHandler} _unknown 
+     * @returns {ErrorPhaseBuilder}
      */
     setHandler(_unknown) {
 

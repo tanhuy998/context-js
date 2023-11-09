@@ -51,6 +51,11 @@ function setPseudoConstructor(_class, _func) {
     return true;
 }
 
+/**
+ * 
+ * @param {*} _object 
+ * @returns {property_metadata_t | metadata_t}
+ */
 function getTypeMetadata(_object) {
 
     return metaOf(_object);
@@ -60,7 +65,7 @@ function getTypeMetadata(_object) {
  * 
  * @param {Function} _func 
  * @param {property_metadata_t} param1 
- * @returns 
+ * @returns {Function}
  */
 function decorateFunction(_func, _ref = new property_metadata_t()) {
 

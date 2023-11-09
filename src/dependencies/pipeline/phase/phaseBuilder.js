@@ -8,7 +8,7 @@ const isPipeline = require('../isPipeline.js');
 
 /**
  *  @typedef {import('../pipeline.js')} Pipeline
- * 
+ *  @typedef {import('../../handler/errorHandler.js')} ErrorHandler
  */
 module.exports = class PhaseBuilder {
 
@@ -27,13 +27,13 @@ module.exports = class PhaseBuilder {
         return this.#pipeline;
     }
 
-    /**@returns {ContextHandler.constructor | Function} */
+    /**@returns {typeof ContextHandler | Function} */
     get handler() {
 
         return this.#handler;
     }
 
-    /**@returns {Phase} */
+    /**@returns {Phase<ContextHandler | ErrorHandler | Function>} */
     get phaseObj() {
 
         return this.#phaseObj;
@@ -51,7 +51,7 @@ module.exports = class PhaseBuilder {
     /**
      * Set the handler class for the pipeline 
      * 
-     * @param {ContextHandler.constructor | Object.constructor | Function} _unknown 
+     * @param {typeof ContextHandler | Function} _unknown 
      */
     setHandler(_unknown) {
 

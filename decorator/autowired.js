@@ -1,15 +1,22 @@
 const {initMetadata} = require('reflectype/src/libs/propertyDecorator.js');
+const {getTypeMetadata} = require('../src/utils/metadata.js');
 const initFootPrint = require('reflectype/src/libs/initFootPrint.js');
+const traps = require('../src/dependencies/proxyTraps/autowiredMethodTraps.js');
 
 function autowiređ(_prop, _context) {
 
-    //const {kind} = _context;
+    const {kind} = _context;
 
     const propMeta = initMetadata(_prop, _context);
 
     if (isApplied(propMeta)) {
 
         return _prop;
+    }
+
+    if (kind === 'method') {
+
+        _prop = wrappMethod(_prop);
     }
 
     initFootPrint(propMeta);
@@ -19,25 +26,15 @@ function autowiređ(_prop, _context) {
     return _prop;
 }
 
-// function handleMethod(_func, _context) {
+function wrappMethod(_func) {
 
-//     if (typeof _method !== 'function') {
+    if (typeof _func !== 'function') {
 
-//         return;
-//     }
+        throw new Error('invalid usage of @autowired');
+    }
 
-//     /**@type {property_metadata_t} */
-//     const propMeta = propertyDecorator.initMetadata(_method, context);
-
-//     if (!propMeta) {
-
-//         return;
-//     }
-
-//     propMeta.footPrint = true;
-
-//     return _func;
-// }
+    return new Proxy(_func, traps);
+}
 
 // function handleAccessor(_func, _concrete) {
 

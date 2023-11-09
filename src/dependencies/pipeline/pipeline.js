@@ -9,10 +9,11 @@ const Breakpoint = require('./payload/breakpoint.js');
 
 
 /**
- * @typedef {import('../context/context')} Context
+ * @typedef {import('../context/context.js')} Context
  * @typedef {import('../../libs/linkedList.js').T_WeakTypeNode} T_WeakTypeNode
  * @typedef {import('./phase/phase.js')} Phase
  * @typedef {import('../handler/errorHandler.js')} ErrorHandler
+ * @typedef {import('../handler/contextHandler.js')} ContextHandler
  */
 
 /**
@@ -31,12 +32,13 @@ module.exports = class Pipeline {
         return this.#maxSyncTask;
     }
 
-    /**@type {Phase} */
+    /**@type {Phase<ContextHandler | Function>} */
     #firstPhase;
 
-    /**@type {Phase} */
+    /**@type {Phase<ErrorHandler | Function>} */
     #errorHandler;
 
+    /**@type {typeof Context} */
     #global
 
     /**@type {number} */
@@ -58,18 +60,19 @@ module.exports = class Pipeline {
         this.#maxSync = _number;
     }
 
-    /**@returns {Phase} */
+    /**@returns {Phase<ErrorHandler | Function>} */
     get errorHandler() {
 
         return this.#errorHandler;
     }
 
-    /**@returns {Phase} */
+    /**@returns {Phase<ContextHandler | Function>} */
     get firstPhase() {
 
         return this.#firstPhase;
     }
 
+    /**@returns {typeof Context} */
     get global() {
 
         return this.#global;
@@ -95,7 +98,7 @@ module.exports = class Pipeline {
 
     /**
      * 
-     * @param {Phase} _phase 
+     * @param {Phase<ContextHandler | Function>} _phase 
      * @returns {Pipeline}
      */
     pipe(_phase) {
@@ -118,7 +121,7 @@ module.exports = class Pipeline {
     
     /**
      * 
-     * @param {Phase} _phase 
+     * @param {Phase<ErrorHandler | Function>} _phase 
      * @returns {Pipeline}
      */
     pipeError(_phase) {

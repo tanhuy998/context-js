@@ -51,6 +51,9 @@ module.exports = class ErrorController extends PipelineController {
         return super.payload;
     }
 
+    /**
+     * @returns {}
+     */
     get firstPhase() {
 
         return this.pipeline.errorHandler;
