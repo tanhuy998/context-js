@@ -1,5 +1,6 @@
 const HandlerKind = require('../handlerKind.js');
 const HanlderInitializeError = require('../../errors/pipeline/handlerInitializeError.js');
+const ContextHandler = require('../../handler/contextHandler.js');
 
 /**
  * @typedef {import('../../handler/contextHandler.js')} ContextHandler
@@ -7,6 +8,7 @@ const HanlderInitializeError = require('../../errors/pipeline/handlerInitializeE
  * @typedef {import('../payload/breakpoint.js')} BreakPoint
  * @typedef {import('../../handler/contextHandler.js')} ContextHandler
  * @typedef {import('../../handler/errorHandler.js')} ErrorHandler
+ * @typedef {import('../../context/context.js')} Context
  */
 
 
@@ -268,11 +270,31 @@ module.exports = class PhaseOperator {
             case HandlerKind.ES6_CLASS:
                 return new handlerAbstract();
             case HandlerKind.REGULAR:
-                return new handlerAbstract(context, devise);
+                return this.#resolveContextHandlerInstance(handlerAbstract, _payload);
             case HandlerKind.FUNCTION:
                 return handlerAbstract;
             default:
                 return undefined;
         }
+    }
+
+    /**
+     * 
+     * @param {ContextHandler} _HandlerClass 
+     * @param {Payload} _payload 
+     * 
+     * @returns {ContextHandler}
+     */
+    #resolveContextHandlerInstance(_HandlerClass, _payload) {
+
+        const context = _payload.context;
+
+        const handlerObj = new _HandlerClass(context, _payload.lastHandledValue);
+        
+        context.scope.override(ContextHandler, _HandlerClass, {
+            defaultInstance: handlerObj
+        });
+
+        return handlerObj;
     }
 }

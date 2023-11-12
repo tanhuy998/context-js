@@ -29,13 +29,14 @@ module.exports = class B extends ContextHandler{
     }
 
     @autowired
-    @paramsType(Bike, DeliveryRequest)
-    async handle(_v, req) {
+    @paramsType(Bike, DeliveryRequest, ContextHandler)
+    async handle(_v, req, handler) {
 
         console.log('++++++++++++++++++++ phase B: routing region using', this.vehicle.name);
         console.log('deliver to city', req.city);
         console.log('need one bike', _v)
 
+        console.log('scope overiding success', this === handler)
         throw new Error('missing');
         // return await new Promise((resolve, reject) => {
 

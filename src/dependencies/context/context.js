@@ -9,6 +9,7 @@ const self = require('reflectype/src/utils/self.js');
 
 const SessionCoordinator = require('../coordinator/sessionCoordinator.js');
 const { decoratePseudoConstructor } = require('../../utils/metadata.js');
+const ContextHandler = require('../handler/contextHandler.js');
 
 /**
  * @typedef {import('../component/scope.js')} Scope
@@ -78,6 +79,7 @@ module.exports = class Context {
          */
         this.componentManager.bindScope(this);
         this.componentManager.bindScope(Context, this);
+        this.componentManager.bindScope(ContextHandler);
 
         decoratePseudoConstructor(SessionCoordinator, {paramsType: [Context]});
     }

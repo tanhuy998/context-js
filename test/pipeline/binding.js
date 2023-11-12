@@ -11,7 +11,7 @@ const A = require('./handler/A.js');
 const B = require('./handler/B.js');
 const DeliveryRequest = require('./components/coordinator.js/DeliveryRequest.js');
 const { ABORT_PIPELINE, DISMISS, ROLL_BACK } = require('../../src/dependencies/constants.js');
-const AcceptableErrorHandler = require('./handler/acceptableErrorHandler.js');
+//const AcceptableErrorHandler = require('./handler/acceptableErrorHandler.js');
  
 /**
  * @typedef {import('../../src/dependencies/pipeline/pipeline.js')} Pipeline
@@ -61,11 +61,11 @@ module.exports = class TransportContext extends Context{
         pipeline.onError(function hadnlerError(error, context, breakpoint, next) {
 
             console.log('########## transportation failed')
-            //console.log(context);
+            console.log(error);
 
             return error;
-
-        }, AcceptableErrorHandler);
+        })
+        //}, AcceptableErrorHandler);
     }
 
     constructor() {

@@ -38,7 +38,7 @@ function hasRelationShip(lhs, rhs) {
 
     try {
 
-        this.checkType(lhs, rhs);
+        checkType(lhs, rhs);
 
         return true;
     }
@@ -46,13 +46,14 @@ function hasRelationShip(lhs, rhs) {
 
     try {
 
-        this.checkType(rhs, lhs);
+        checkType(rhs, lhs);
 
         return true;
     }
-    catch {}
+    catch {
 
-    return false;
+        return false;
+    }
 }
 
 /**
