@@ -30,7 +30,7 @@ function random(min, max) {
 
 function run() {
 
-    for(let i = 0; i < 10; ++i) {
+    for(let i = 0; i < 1; ++i) {
 
         (async function () {
 
@@ -41,7 +41,7 @@ function run() {
             }
             catch(e) {
         
-                console.log('error', e.originError)
+                //console.log('error', e.originError)
             }
         })();
     }

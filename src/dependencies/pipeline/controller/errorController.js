@@ -1,8 +1,8 @@
 const NoPhaseError = require("../../errors/pipeline/noPhaseError");
 const { ROLL_BACK, ABORT_PIPELINE, DISMISS } = require("../constant");
 const Breakpoint = require("../payload/breakpoint");
-const isControlSignal = require("./isControlSignal");
 const PipelineController = require("./pipelineController");
+const { isErrorHandlerControlSignal, isRedirectSignal } = require("./signal");
 
 /**
  * @typedef {import('../payload/breakpoint')} ErrorPayload
@@ -47,6 +47,14 @@ module.exports = class ErrorController extends PipelineController {
      * @return {BreakPoint}
      */
     get payload() {
+
+        return super.payload;
+    }
+
+    /**
+     * @returns {Breakpoint}
+     */
+    get breakpoint() {
 
         return super.payload;
     }
@@ -99,6 +107,11 @@ module.exports = class ErrorController extends PipelineController {
         return super.setPayload(_breakPoint);
     }
 
+    setBreackpoint(_breakPoint) {
+
+        return this.setPayload(_breakPoint);
+    }
+
     /**
      * 
      * @param {ErrorPayload} _breakPoint 
@@ -108,7 +121,8 @@ module.exports = class ErrorController extends PipelineController {
 
         const {currentPhase, occurError, value, opperator} = _info;
 
-        if (occurError === false || isControlSignal(value)) {
+        //if (occurError === false || isRedirectSignal(value)) {
+        if (isRedirectSignal(value)) {
             
             _breakPoint.trace.push(value);
 
@@ -116,12 +130,15 @@ module.exports = class ErrorController extends PipelineController {
 
             return;
         }
-        else {
-            
-            _info.occurError = false;
         
-            super.trace(...arguments);
+        if (isErrorHandlerControlSignal(value)) {
+            console.log('is control signal')
+            _info.value = this.breakpoint.lastCaughtError;
         }
+
+        _info.occurError = false;
+        
+        super.trace(...arguments);
     }
 
     // #isControllSignal(value) {
