@@ -1,6 +1,6 @@
 const ErrorHandlerConventionError = require("../errors/pipeline/ErrorHandlerConventionError");
 
-module.exports = class ErrorHandlerAcceptableStrategy {
+module.exports = class ErrorHandlerAcceptanceStrategy {
 
     #type;
 

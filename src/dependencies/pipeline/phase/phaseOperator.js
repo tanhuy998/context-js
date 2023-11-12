@@ -265,7 +265,7 @@ module.exports = class PhaseOperator {
         const devise = _payload.lastHandledValue;
 
         const context = _payload.context;
-
+        console.log('phase operation', handlerAbstract)
         switch (kind) {
             case HandlerKind.ES6_CLASS:
                 return new handlerAbstract();
@@ -290,7 +290,7 @@ module.exports = class PhaseOperator {
         const context = _payload.context;
 
         const handlerObj = new _HandlerClass(context, _payload.lastHandledValue);
-        
+        console.log(1);
         context.scope.override(ContextHandler, _HandlerClass, {
             defaultInstance: handlerObj
         });

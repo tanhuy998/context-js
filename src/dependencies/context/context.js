@@ -10,6 +10,7 @@ const self = require('reflectype/src/utils/self.js');
 const SessionCoordinator = require('../coordinator/sessionCoordinator.js');
 const { decoratePseudoConstructor } = require('../../utils/metadata.js');
 const ContextHandler = require('../handler/contextHandler.js');
+const ErrorHandlerAcceptanceMatcher = require('../handler/errorHandlerAcceptanceMatcher.js');
 
 /**
  * @typedef {import('../component/scope.js')} Scope
@@ -64,6 +65,8 @@ module.exports = class Context {
             throw new Error('[Context] must be inhertied as new class');
         }
 
+        this._decorateDependencies();
+
         const iocContainer = new ComponentContainer();
 
         this.componentManager ??= new ComponentManager(iocContainer);
@@ -80,8 +83,14 @@ module.exports = class Context {
         this.componentManager.bindScope(this);
         this.componentManager.bindScope(Context, this);
         this.componentManager.bindScope(ContextHandler);
+        this.componentManager.bind(ErrorHandlerAcceptanceMatcher);
 
         decoratePseudoConstructor(SessionCoordinator, {paramsType: [Context]});
+    }
+
+    static _decorateDependencies() {
+
+
     }
 
     static configure() {
@@ -127,7 +136,21 @@ module.exports = class Context {
 
     constructor() {
 
+        this.#init();
+    }
+
+    #init() {
+
+        this.#overideSelf();
+    }
+    #overideSelf() {
         
+        const overideOptions = {
+            defaultInstance: this
+        }
+
+        this.#scope.override(Context, self(this), overideOptions);
+        this.#scope.override(self(this), self(this), overideOptions);
     }
 
     getComponent(_abstract) {

@@ -2,9 +2,10 @@ const self = require("reflectype/src/utils/self.js");
 const { ABORT_PIPELINE, ROLL_BACK, DISMISS, CONSTRUCTOR, DISMISS_ERROR_PHASE } = require("../constants");
 const ErrorHandlerConventionError = require("../errors/pipeline/ErrorHandlerConventionError.js");
 const ContextHandler = require("./contextHandler.js");
-const ErrorHandlerAcceptableStrategy = require("./errorHandlerAcceptableStrategy.js");
+const ErrorHandlerAcceptableStrategy = require("./errorHandlerAcceptanceStrategy.js");
 const { decoratePseudoConstructor } = require("../../utils/metadata.js");
-const ErrorHandlerAcceptableMatcher = require("./errorHandlerAcceptableMatcher.js");
+const ErrorHandlerAcceptanceMatcher = require("./errorHandlerAcceptanceMatcher.js");
+const ConventionError = require("../errors/pipeline/conventionError.js");
 
 /**
  * @typedef {import('../pipeline/payload/breakpoint.js')} BreakPoint
@@ -17,8 +18,8 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
     /**@type {BreakPoint} */
     #breakPoint;
 
-    /**@type {ErrorHandlerAcceptableMatcher} */
-    #acceptableMatcher;
+    /**@type {ErrorHandlerAcceptanceMatcher} */
+    #matcher;
 
     /**@returns {any} */
     get error() {
@@ -40,12 +41,12 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
 
     /**
      * 
-     * @param {ErrorHandlerAcceptableMatcher} acceptableMatcher 
+     * @param {ErrorHandlerAcceptanceMatcher} acceptableMatcher 
      */
     [CONSTRUCTOR](acceptableMatcher) {
-        console.log('ErrorHandler constructor')
+        // console.log(.*)
 
-        this.#acceptableMatcher = acceptableMatcher;
+        this.#matcher = acceptableMatcher;
         this.#init();
     }
 
@@ -55,77 +56,34 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
      * @param {any} _error 
      */
     constructor(_breakPoint, _error) {
-
+        // console.log(.*)
         super(_breakPoint.context, _error);
 
         this.#breakPoint = _breakPoint;
     }
 
     #init() {
-        console.log('ErrorHandle initialization')
-        this.#checkAcceptable();
+        // console.log(.*)
+        this.#checkAcceptableError();
     }
 
-    #checkAcceptable() {
+    #checkAcceptableError() {
 
-        const matchAcceptable = this.#isAcceptableError();
-        const matchOriginAcceptable = this.#isOriginAcceptableError();
+        try {
 
-        if (!matchAcceptable && !matchOriginAcceptable) {
-            console.log('not acceptable')
-            throw DISMISS_ERROR_PHASE;
+            this.#matcher.match();
+
+        } catch (error) {
+            console.log(error)
+            if (error === DISMISS_ERROR_PHASE || error instanceof ConventionError) {
+                // console.log(.*)
+                throw error;
+            }
+            else {
+
+                throw new ConventionError(error?.message, error);
+            }
         }
-
-        console.log('accept error')
-        return;
-    }
-
-    /**
-     * 
-     * @param {string} _field 
-     * @returns {boolean}
-     */
-    #_checkAcceptableFrom(_field = 'accept') {
-
-        const acceptableErrors = this[_field];
-        console.log([_field], 1)
-        if (acceptableErrors === undefined || acceptableErrors === null) {
-
-            return true;
-        }
-        console.log([_field], 2)
-        if (Array.isArray(acceptableErrors) && acceptableErrors.length > 0) {
-
-            const errorFieldName = new ErrorHandlerAcceptableStrategy(_field).errorFieldName;
-
-            const actualError = this[errorFieldName];
-
-            const theActualErrorType = actualError ?? ;
-            
-            return acceptableErrors.includes(theActualErrorType);
-        }
-        else {
-            console.log([_field], 3)
-            throw new ErrorHandlerConventionError(`ErrorHandler.${_field} must be an array and not empty`);
-        }
-    }
-
-    /**
-     * 
-     * @returns {boolean}
-     */
-    #isAcceptableError() {
-        console.log(1);
-        return this.#_checkAcceptableFrom('accept');
-    }
-
-    /**
-     * 
-     * @returns {boolean}
-     */
-    #isOriginAcceptableError() {
-        console.log(2);
-        return this.#_checkAcceptableFrom('acceptOrigin');
     }
 
     handle() {
@@ -159,9 +117,9 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
 }
 
 decoratePseudoConstructor(ErrorHandlerClass, {
-    defaultParamsType: [ErrorHandlerAcceptableMatcher]
+    defaultParamsType: [ErrorHandlerAcceptanceMatcher]
 });
 
-decoratePseudoConstructor(ErrorHandlerAcceptableMatcher, {
-    defaultParamsType: [ErrorHandlerClass]
+decoratePseudoConstructor(ErrorHandlerAcceptanceMatcher, {
+    defaultParamsType: [ContextHandler]
 });

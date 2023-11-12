@@ -41,21 +41,33 @@ module.exports = class ObjectInjectorEngine extends Injector {
         const fieldInjector = new AutoAccessorInjectorEngine(this.iocContainer);
 
         fieldInjector.inject(_object, _scope);
+
         // the order of psudo constructor injection must be from base class to derived class
         // to insure the consitence and integrity of data
-        for (const pair of protoStack || []) {
+        const pseudoConstructorStack = new Set();
 
+        for (const pair of protoStack || []) {
+            /**
+             *  Inject fields
+             */
             const [classProto, objectProto] = pair;
             
             const pseudoConstructor = typeof classProto.prototype === 'object'? classProto.prototype[CONSTRUCTOR] : undefined;
             
-            //fieldInjector.inject(_object, _scope);
-            if (typeof pseudoConstructor === 'function') {
+            if (typeof pseudoConstructor !== 'function') {
+
+                continue;       
+            }
+
+            if (!pseudoConstructorStack.has(pseudoConstructor)) {
 
                 const args = functionInjector.resolveComponentsFor(pseudoConstructor, _scope);
-                
+
                 pseudoConstructor.call(_object, ...(args ?? []));
+
+                pseudoConstructorStack.add(pseudoConstructor);
             }
+            //fieldInjector.inject(_object, _scope);
         }
     }
 

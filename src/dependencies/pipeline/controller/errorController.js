@@ -1,3 +1,4 @@
+const ConventionError = require("../../errors/pipeline/conventionError");
 const NoPhaseError = require("../../errors/pipeline/noPhaseError");
 const { ROLL_BACK, ABORT_PIPELINE, DISMISS } = require("../constant");
 const Breakpoint = require("../payload/breakpoint");
@@ -132,8 +133,13 @@ module.exports = class ErrorController extends PipelineController {
         }
         
         if (isErrorHandlerControlSignal(value)) {
-            console.log('is control signal')
+            // console.log(.*)
             _info.value = this.breakpoint.lastCaughtError;
+        }
+
+        if (value instanceof ConventionError) {
+
+            this.event.emit('reject', value.reason);
         }
 
         _info.occurError = false;
