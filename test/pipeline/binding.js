@@ -64,7 +64,11 @@ module.exports = class TransportContext extends Context{
             console.log('########## transportation failed')
             //console.log(error);
 
-            return 'test Immediate Error value';
+            return {
+                prop1: 1,
+                prop2: 'test option'
+            }
+            //return 'test Immediate Error value';
         }, AcceptableErrorHandler, AnotherErrorHandler);
     }
 

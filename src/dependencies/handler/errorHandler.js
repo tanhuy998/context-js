@@ -2,7 +2,6 @@ const self = require("reflectype/src/utils/self.js");
 const { ABORT_PIPELINE, ROLL_BACK, DISMISS, CONSTRUCTOR, DISMISS_ERROR_PHASE } = require("../constants");
 const ErrorHandlerConventionError = require("../errors/pipeline/ErrorHandlerConventionError.js");
 const ContextHandler = require("./contextHandler.js");
-const ErrorHandlerAcceptableStrategy = require("./errorHandlerAcceptanceStrategy.js");
 const { decoratePseudoConstructor } = require("../../utils/metadata.js");
 const ErrorHandlerAcceptanceMatcher = require("./errorHandlerAcceptanceMatcher.js");
 const ConventionError = require("../errors/pipeline/conventionError.js");
@@ -44,7 +43,7 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
      * @param {ErrorHandlerAcceptanceMatcher} acceptableMatcher 
      */
     [CONSTRUCTOR](acceptableMatcher) {
-        // console.log(.*)
+        // 
 
         this.#matcher = acceptableMatcher;
         this.#init();
@@ -56,33 +55,48 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
      * @param {any} _error 
      */
     constructor(_breakPoint, _error) {
-        // console.log(.*)
+        // 
         super(_breakPoint.context, _error);
 
         this.#breakPoint = _breakPoint;
     }
 
     #init() {
-        // console.log(.*)
-        this.#checkAcceptableError();
+        // 
+        this.#decideToHandle();
     }
 
-    #checkAcceptableError() {
+    #decideToHandle() {
 
         try {
 
-            this.#matcher.match();
+            if (!this.#matcher.match()) {
 
-        } catch (error) {
-            console.log(error)
-            if (error === DISMISS_ERROR_PHASE || error instanceof ConventionError) {
-                // console.log(.*)
-                throw error;
-            }
-            else {
+                this.handle = function () {
+                    
+                    return this.error;
+                }
+            } 
+        } 
+        catch (exception) {
+            
+            this.#handleException(exception);
+        }
+    }
 
-                throw new ConventionError(error?.message, error);
-            }
+    #handleException(exception) {
+
+        if (exception === DISMISS_ERROR_PHASE) {
+                
+            throw exception;
+        }
+        else if (exception instanceof ConventionError) {
+
+            throw new ErrorHandlerConventionError(exception.message, exception.reason);
+        }
+        else {
+
+            throw new ErrorHandlerConventionError(exception?.message, exception);
         }
     }
 

@@ -7,13 +7,15 @@ module.exports = class AcceptableErrorHandler extends ErrorHandler {
     // ];
 
     accept = [
-        'test Immediate Error value'
+        {prop2: String}, // expects the error is an object that has property named "prop" and whose value is type of string
+        'test Immediate Error value',
+        Error, String
     ]
 
     handle() {
 
-        console.log('acceptable error handler');
+        console.log('acceptable error handler', this.error);
 
-        return 'test'
+        return this.error.prop2;
     }
 }

@@ -83,6 +83,7 @@ module.exports = class Context {
         this.componentManager.bindScope(this);
         this.componentManager.bindScope(Context, this);
         this.componentManager.bindScope(ContextHandler);
+        this.componentManager.bindScope(Error);
         this.componentManager.bind(ErrorHandlerAcceptanceMatcher);
 
         decoratePseudoConstructor(SessionCoordinator, {paramsType: [Context]});

@@ -11,49 +11,6 @@ const ContextHandler = require('../../handler/contextHandler.js');
  * @typedef {import('../../context/context.js')} Context
  */
 
-
-// const functionTraps = {
-//     /**
-//      * 
-//      * @param {Function} target 
-//      * @param {Object} _this 
-//      * @param {Iterable} args 
-//      * @returns 
-//      */
-//     apply: function(target, _this, args) {
-
-//         /**@type {Context} */
-//         const context = _this.context;
-//         const DI = context?.global?.DI;
-        
-//         if (args.length > 0 || typeof DI?.invoke !== 'function') {
-            
-//             return target.call(_this, ...args);
-//         }
-        
-//         return DI.invoke(_this, target, context);
-//     }
-// }
-
-// const traps = {
-//     /**
-//      * @param {ContextHandler} target 
-//      * @param {string} prop 
-//      * @returns 
-//      */
-//     get: function(target, prop) {
-
-//         const theProp = target[prop];
-        
-//         if (typeof theProp !== 'function') {
-
-//             return theProp;
-//         }
-
-//         return new Proxy(theProp, functionTraps);
-//     }
-// };
-
 module.exports = class PhaseOperator {
 
     /**@type {Payload | BreakPoint} */
@@ -121,25 +78,6 @@ module.exports = class PhaseOperator {
 
         return this.#prepareThenInvoke('handle', _additionalArgs);
     }
-
-    // #handleInternalError(_error) {
-
-    //     if (!this.hasErrorHandler) {
-
-    //         throw _error;
-    //     }
-
-    //     const handlerInstance = this.#handlerInstance;
-        
-    //     if (!handlerInstance) {
-
-    //         throw _error;
-    //     }
-
-    //     const _fn = this.#prepare('onError');
-
-    //     return _fn();
-    // }
 
     /**
      * 
@@ -265,7 +203,7 @@ module.exports = class PhaseOperator {
         const devise = _payload.lastHandledValue;
 
         const context = _payload.context;
-        console.log('phase operation', handlerAbstract)
+        
         switch (kind) {
             case HandlerKind.ES6_CLASS:
                 return new handlerAbstract();
@@ -290,7 +228,7 @@ module.exports = class PhaseOperator {
         const context = _payload.context;
 
         const handlerObj = new _HandlerClass(context, _payload.lastHandledValue);
-        console.log(1);
+        
         context.scope.override(ContextHandler, _HandlerClass, {
             defaultInstance: handlerObj
         });

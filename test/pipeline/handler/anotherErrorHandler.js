@@ -2,7 +2,7 @@ const ErrorHandler = require("../../../src/dependencies/handler/errorHandler");
 
 module.exports = class AnotherErrorHandler extends ErrorHandler {
 
-    accept = [Number];
+    accept = [String];
 
     handle() {
 
