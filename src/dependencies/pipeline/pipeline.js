@@ -153,10 +153,11 @@ module.exports = class Pipeline {
 
     /**
      * 
-     * @param {Context} _payload 
-     * @returns {Promise<any>}
+     * @param {Context} _context 
+     * @param {Payload} _payload 
+     * @returns 
      */
-    run(_context) {
+    run(_context, _payload) {
 
         if (this.#global && this.#global !== _context.global) {
 
@@ -165,7 +166,7 @@ module.exports = class Pipeline {
 
         const controller = new PipelineController(this);
 
-        const payload = new Payload(_context, controller, this);
+        const payload = _payload instanceof Payload ? _payload : new Payload(_context, controller, this);
 
         //console.time(payload.id);
 

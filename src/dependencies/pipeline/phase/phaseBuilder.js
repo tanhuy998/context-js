@@ -2,7 +2,7 @@ const Phase = require('./phase.js');
 const HandlerKind = require('../handlerKind.js');
 const ContextHandler = require('../../handler/contextHandler.js');
 
-const SubPipeline = require('./subpipeline.js');
+const SubPipeline = require('./PipablePhase.js');
 const isPipeline = require('../isPipeline.js');
 
 
