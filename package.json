@@ -10,6 +10,7 @@
   "homepage": "https://github.com/tanhuy998/context-js",
   "scripts": {
     "test": "node ./test/apply-express/test.js",
+    "test-lockable": "node ./test/lockable",
     "test-ioc": "npx babel ./test/ioc > ./test/ioc/compile.js && node ./test/ioc/compile",
     "test-component": "npx babel ./test/componentManager > ./test/componentManager/compile.js && node ./test/componentManager/compile",
     "test-injector": "npx babel ./test/injector > ./test/injector/compile.js && node ./test/injector/compile",

@@ -5,6 +5,33 @@ const {decorateMethod} = require('reflectype/src/libs/methodDecorator.js');
 const initFootPrint = require('reflectype/src/libs/initFootPrint.js');
 const { compareArgsWithType } = require('reflectype/src/libs/argumentType.js');
 
+const prototype = module.exports = metadata;
+
+function metadata(_object) {
+
+    if (_object === undefined || _object === null) {
+
+        return undefined;
+    }
+
+    return _object[METADATA];
+}
+
+// module.exports = {
+//     getTypeMetadata, setPseudoConstructor, initTypeField, initTypePropertyField, initMetadataField, decorateFunction, decoratePseudoConstructor
+// }
+
+
+prototype.getTypeMetadata = getTypeMetadata;
+prototype.setPseudoConstructor = setPseudoConstructor;
+prototype.initTypeField = initTypeField;
+prototype.initTypePropertyField = initTypePropertyField;
+prototype.initMetadataField = initMetadataField;
+prototype.decorateFunction = decorateFunction;
+prototype.decoratePseudoConstructor = decoratePseudoConstructor;
+
+
+
 function initMetadataField(_object) {
 
     if (!(_object instanceof Object)) {
@@ -124,6 +151,3 @@ function decoratePseudoConstructor(_class, _metadata = new property_metadata_t()
     _class.prototype[CONSTRUCTOR] = decoratedMethod;
 }
 
-module.exports = {
-    getTypeMetadata, setPseudoConstructor, initTypeField, initTypePropertyField, initMetadataField, decorateFunction, decoratePseudoConstructor
-}

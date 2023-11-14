@@ -11,6 +11,7 @@ const SessionCoordinator = require('../coordinator/sessionCoordinator.js');
 const { decoratePseudoConstructor } = require('../../utils/metadata.js');
 const ContextHandler = require('../handler/contextHandler.js');
 const ErrorHandlerAcceptanceMatcher = require('../handler/errorHandlerAcceptanceMatcher.js');
+const Lockable = require('../lockable/contextLockable.js');
 
 /**
  * @typedef {import('../component/scope.js')} Scope
@@ -45,6 +46,10 @@ module.exports = class Context {
 
     /**@type {DependenciesInjectionSystem} */
     static DI_System //= new DependenciesInjectionSystem(this.#iocContainer);
+
+    static lockableObjects = [];
+
+    static isLocked = false;
 
     /**@returns {DependenciesInjectionSystem} */
     static get DI() {
@@ -87,6 +92,16 @@ module.exports = class Context {
         this.componentManager.bind(ErrorHandlerAcceptanceMatcher);
 
         decoratePseudoConstructor(SessionCoordinator, {paramsType: [Context]});
+    }
+
+    static __lock() {
+        
+        for (/**@type {Lockable} */ const lockable of this.lockableObjects ?? []) {
+
+            lockable.lockOn(this);
+        }
+
+        this.isLocked = true;
     }
 
     static _decorateDependencies() {
@@ -133,6 +148,11 @@ module.exports = class Context {
     get scope() {
 
         return this.#scope;
+    }
+
+    get isLocked() {
+
+        return self(this).isLocked;
     }
 
     constructor() {
