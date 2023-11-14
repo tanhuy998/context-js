@@ -6,6 +6,7 @@ const ErrorController = require('./controller/errorController.js');
 const ErrorPhaseBuilder = require("./phase/errorPhaseBuilder");
 const self = require("reflectype/src/utils/self");
 const Breakpoint = require('./payload/breakpoint.js');
+const ContextLockable = require("../lockable/contextLockable.js");
 
 
 /**
@@ -21,7 +22,9 @@ const Breakpoint = require('./payload/breakpoint.js');
  *  when a context arrived, pipeline initiates a PipelineController
  *  and then dispatches the context as payload to it
  */
-module.exports = class Pipeline {
+module.exports = class Pipeline extends ContextLockable{
+
+    static lockActions = ['pipe', 'pipeError', 'addPhase', 'onError'];
 
     /**@type {number} */
     static #maxSyncTask = 100;
@@ -85,6 +88,8 @@ module.exports = class Pipeline {
     }
 
     constructor(_globolContext) {
+
+        super(_globolContext);
 
         this.#global = _globolContext;
 

@@ -3,17 +3,17 @@ const ComponentContainer = require('./componentContainer.js');
 
 const {decoratePseudoConstructor} = require('../../utils/metadata.js');
 const self = require('reflectype/src/utils/self.js');
+const ContextLockable = require('../lockable/contextLockable.js');
 
+/**
+ *  @typedef {import('./componentContainer.js') ComponentContainer}
+ */
 
-module.exports = class ComponentManager {
+module.exports = class ComponentManager extends ContextLockable{
 
-    /**
-     *  @typedef {import('./componentContainer.js') ComponentContainer}
-     */
+    static lockActions = ['bindSingleton', 'bind', 'bindScope']
 
-    /**
-     *  @type {ComponentContainer}
-     */
+    /**@type {ComponentContainer}*/
     #container;
     
     #keys = new Map();
@@ -27,21 +27,15 @@ module.exports = class ComponentManager {
         return this.#container;
     }
 
-    constructor(_container, _globalContext) {
+    constructor(_container, _context) {
 
-        //this.#app = appContext;
+        super(_container);
 
         this.#container = _container instanceof ComponentContainer ? _container : new ComponentContainer();
-        this.#global = _globalContext;
 
         this.#checkGlobal();
         this.#init();
         this.#initPresetComponent();
-    }
-
-    get isLocked() {
-
-        return this.#global?.isLocked;
     }
 
     #init() {
@@ -61,16 +55,10 @@ module.exports = class ComponentManager {
 
     #initPresetComponent() {
 
-        //const componentManagerClass = this.constructor;
-        
         const Scope = require('./scope.js');
 
         decoratePseudoConstructor(Scope, {paramsType: [self(this)]});
-        // const pseudoConstructor = Scope.prototype[CONSTRUCTOR];
-        // /**@type {property_metadata_t} */
-        // const meta = getTypeMetadata(pseudoConstructor);
-        
-        // meta.defaultParamsType = [componentManagerClass];
+
         this.bindScope(Scope, Scope);
     }
 
@@ -83,10 +71,6 @@ module.exports = class ComponentManager {
     }
 
     getScope() {
-
-        // const shallowCopy = Array.from(this.#scope);
-        
-        // return new Set(shallowCopy);
 
         return this.#scope;
     }
@@ -101,10 +85,6 @@ module.exports = class ComponentManager {
     #addScopeComponent(component) {
 
         this.#scope.add(component);
-
-        //const component = this.#scope.get(component);
-
-        //this.#keys.set(component.name, component);
     }
 
     bindSingleton(abstract, concrete) {

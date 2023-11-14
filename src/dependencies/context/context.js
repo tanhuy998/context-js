@@ -11,7 +11,7 @@ const SessionCoordinator = require('../coordinator/sessionCoordinator.js');
 const { decoratePseudoConstructor } = require('../../utils/metadata.js');
 const ContextHandler = require('../handler/contextHandler.js');
 const ErrorHandlerAcceptanceMatcher = require('../handler/errorHandlerAcceptanceMatcher.js');
-const Lockable = require('../lockable/contextLockable.js');
+const ContextLockable = require('../lockable/contextLockable.js');
 
 /**
  * @typedef {import('../component/scope.js')} Scope
@@ -31,21 +31,19 @@ module.exports = class Context {
      */
     static fullyInject = false;
 
-    //static #iocContainer //= new ComponentContainer();
-
     /**@type {ComponentManager} */
-    static componentManager //= new ComponentManager(this.#iocContainer);
+    static componentManager
 
     static configurator;
 
     /**@type {Pipeline} */
-    static pipeline //= new Pipeline(this);
+    static pipeline
 
     /**@type {ItemsManager} */
-    static items //= new ItemsManager();
+    static items
 
     /**@type {DependenciesInjectionSystem} */
-    static DI_System //= new DependenciesInjectionSystem(this.#iocContainer);
+    static DI_System
 
     static lockableObjects = [];
 
@@ -183,8 +181,6 @@ module.exports = class Context {
 
     overrideScope(_abstract, _concrete, {defaultInstance, componentKey, iocContainer}) {
 
-        this.#scope.overide(_abstract, _concrete, {defaultInstance, componentKey, iocContainer});
+        this.#scope.override(_abstract, _concrete, {defaultInstance, componentKey, iocContainer});
     }
-} 
-
-//module.exports = new Proxy(Context, preventModifyProp);
+}
