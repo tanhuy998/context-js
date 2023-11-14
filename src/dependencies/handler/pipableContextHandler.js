@@ -1,3 +1,5 @@
+const ContextHandler = require("./contextHandler");
+
 function decoratePipeline(_pipelineObj) {
 
     return class PipableContextHandler extends ContextHandler {

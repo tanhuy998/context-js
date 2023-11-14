@@ -2,7 +2,7 @@ const Phase = require('./phase.js');
 const HandlerKind = require('../handlerKind.js');
 const ContextHandler = require('../../handler/contextHandler.js');
 
-const SubPipeline = require('./PipablePhase.js');
+const PipablePhase = require('./PipablePhase.js');
 const isPipeline = require('../isPipeline.js');
 
 
@@ -82,7 +82,9 @@ module.exports = class PhaseBuilder {
 
         this.#handler = _pipeline;
 
-        this.#phaseObj = new SubPipeline(undefined, _pipeline);
+        this.#phaseObj = new PipablePhase(_pipeline);
+
+        return this;
     }
 
     _dispose() {

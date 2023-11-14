@@ -65,7 +65,7 @@ module.exports = class PhaseOperator {
 
         if (!this.#kind) {
 
-            this.#kind = HandlerKind.classify(this.handlerAbstract);
+            this.#kind = HandlerKind.classify(this.#handlerAbstract);
         }
     }
 

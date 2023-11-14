@@ -13,6 +13,7 @@ const DeliveryRequest = require('./components/coordinator.js/DeliveryRequest.js'
 const { ABORT_PIPELINE, DISMISS, ROLL_BACK } = require('../../src/dependencies/constants.js');
 const AcceptableErrorHandler = require('./handler/acceptableErrorHandler.js');
 const AnotherErrorHandler = require('./handler/anotherErrorHandler.js');
+const Pipeline = require('../../src/dependencies/pipeline/pipeline.js');
  
 /**
  * @typedef {import('../../src/dependencies/pipeline/pipeline.js')} Pipeline
@@ -53,16 +54,22 @@ module.exports = class TransportContext extends Context{
         super.components.bind(Bike);
         super.components.bind(Driver);
         super.components.bindScope(Product)
-        
+
+        const contextHandlerPipeline = new Pipeline();
+        contextHandlerPipeline.addPhase().setHandler(B).build();
+        contextHandlerPipeline.addPhase().setHandler(A).build();
+
         pipeline.addPhase().setHandler(first).build();
-        pipeline.addPhase().setHandler(B).build();
-        pipeline.addPhase().setHandler(A).build();
+        // pipeline.addPhase().setHandler(B).build();
+        // pipeline.addPhase().setHandler(A).build();
+        pipeline.addPhase().use(contextHandlerPipeline).build();
         pipeline.addPhase().setHandler(statistic).build();
 
         pipeline.onError(function hadnlerError(error, context, breakpoint, next) {
 
             console.log('########## transportation failed')
-            //console.log(error);
+            
+            console.log(error);
 
             return {
                 prop1: 1,
