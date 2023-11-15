@@ -84,6 +84,11 @@ module.exports = class ErrorHandlerAcceptanceMatcher {
             
             return false;
         }
+
+        if (matchAcceptable === undefined && matchOriginAcceptable === undefined) {
+
+            return true;
+        }
     }
 
     /**
