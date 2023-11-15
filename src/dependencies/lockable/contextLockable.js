@@ -109,7 +109,7 @@ module.exports = class ContextLockable {
                 continue;
             }
 
-            this[action] = decorateLockedMethod(method);
+            this[action] = decorateLockedMethod(method, action);
         }
     }
 

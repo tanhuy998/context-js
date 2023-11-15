@@ -1,4 +1,4 @@
-const ConventionError = require("../../errors/pipeline/conventionError");
+const ConventionError = require("../../errors/conventionError");
 const NoPhaseError = require("../../errors/pipeline/noPhaseError");
 const { ROLL_BACK, ABORT_PIPELINE, DISMISS } = require("../constant");
 const Breakpoint = require("../payload/breakpoint");

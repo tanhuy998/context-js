@@ -1,4 +1,4 @@
-const ConventionError = require("./conventionError");
+const ConventionError = require("../conventionError");
 
 module.exports = class ErrorHandlerConventionError extends ConventionError {
 

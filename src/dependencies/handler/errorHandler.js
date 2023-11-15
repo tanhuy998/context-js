@@ -4,7 +4,7 @@ const ErrorHandlerConventionError = require("../errors/pipeline/ErrorHandlerConv
 const ContextHandler = require("./contextHandler.js");
 const { decoratePseudoConstructor } = require("../../utils/metadata.js");
 const ErrorHandlerAcceptanceMatcher = require("./errorHandlerAcceptanceMatcher.js");
-const ConventionError = require("../errors/pipeline/conventionError.js");
+const ConventionError = require("../errors/conventionError.js");
 
 /**
  * @typedef {import('../pipeline/payload/breakpoint.js')} BreakPoint

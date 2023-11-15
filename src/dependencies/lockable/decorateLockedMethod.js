@@ -2,6 +2,8 @@ const { property_metadata_t } = require('reflectype/src/reflection/metadata.js')
 const self = require('reflectype/src/utils/self.js');
 const metadata = require('../../utils/metadata.js');
 const { CONTEXT_LOCK } = require('./constant.js');
+const ContextLoackError = require('../errors/context/contextLockError.js');
+const ConventionError = require('../errors/conventionError.js');
 
 
 /**
@@ -10,26 +12,30 @@ const { CONTEXT_LOCK } = require('./constant.js');
  */
 
 /**
- * @this Lockable
+ * @this ContextLockable
  * 
  * @param {Function} _func 
+ * @param {string} _name
  */
-function decorateLockedMethod(_func) {
+function decorateLockedMethod(_func, _name) {
 
     const lockedFunction = function() {
         /**@type {Context} */
         const context = this.context;
-        console.log(self(context).isLocked)
 
         const isValidContext = context !== undefined && context !== null;
-
+        
         if (isValidContext && self(this).hasRegistryOf(context) && context.isLocked) {
 
-            throw new Error();
+            const err = new ContextLoackError(this, _name, context);
+
+             throw new ConventionError(err.message, err);
         }
 
-        return _func(...arguments);
+        return _func.call(this, ...arguments);
     };
+
+    //lockedFunction.name = _name;
 
     const propMeta = metadata.getTypeMetadata(_func);
 
@@ -70,7 +76,7 @@ function lockActions(_obj) {
             continue;
         }
 
-        _obj[propName] = decorateLockedMethod(prop);
+        _obj[propName] = decorateLockedMethod(prop, propName);
     }
 }
 

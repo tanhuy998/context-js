@@ -45,7 +45,9 @@ module.exports = class Context {
     /**@type {DependenciesInjectionSystem} */
     static DI_System
 
-    static lockableObjects = [];
+    static contextLockClasses = [
+        ComponentManager, Pipeline, 
+    ];
 
     static isLocked = false;
 
@@ -70,9 +72,11 @@ module.exports = class Context {
 
         this._decorateDependencies();
 
+        this._registerContextLock();
+
         const iocContainer = new ComponentContainer();
 
-        this.componentManager ??= new ComponentManager(iocContainer);
+        this.componentManager ??= new ComponentManager(iocContainer, this);
     
         this.pipeline ??= new Pipeline(this);
     
@@ -92,14 +96,19 @@ module.exports = class Context {
         decoratePseudoConstructor(SessionCoordinator, {paramsType: [Context]});
     }
 
-    static __lock() {
-        
-        for (/**@type {Lockable} */ const lockable of this.lockableObjects ?? []) {
+    static _registerContextLock() {
 
-            lockable.lockOn(this);
+        for (/**@type {Lockable} */ const lockableClass of this.contextLockClasses ?? []) {
+
+            lockableClass.lockOn(this);
         }
+    }
+
+    static __lock() {
 
         this.isLocked = true;
+
+        Object.freeze(this);
     }
 
     static _decorateDependencies() {

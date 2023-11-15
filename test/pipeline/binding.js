@@ -77,6 +77,8 @@ module.exports = class TransportContext extends Context{
             }
             //return 'test Immediate Error value';
         }, AcceptableErrorHandler, AnotherErrorHandler);
+
+        this.__lock();
     }
 
     constructor() {

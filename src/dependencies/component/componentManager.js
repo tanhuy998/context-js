@@ -29,7 +29,7 @@ module.exports = class ComponentManager extends ContextLockable{
 
     constructor(_container, _context) {
 
-        super(_container);
+        super(_context);
 
         this.#container = _container instanceof ComponentContainer ? _container : new ComponentContainer();
 
