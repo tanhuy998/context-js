@@ -5,7 +5,7 @@ const PhaseOperator = require('./phaseOperator.js');
  * @typedef {import('../../handler/contextHandler.js')} ContextHandler
  * @typedef {import('../../context/context.js')} Context
  * @typedef {import('reflectype/src/metadata/ReflectionParameter.js')} ReflectionParameter
- * @typedef {import('../payload/payload.js')} Payload
+ * @typedef {import('../payload/pipelinePayload.js')} Payload
  * @typedef {import('../../DI/dependenciesInjectionSystem.js')} DependenciesInjectionSystem
  * @typedef {import('../pipeline.js')} Pipeline
  */

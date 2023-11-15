@@ -2,7 +2,7 @@ const { decoratePipeline } = require("../../handler/pipableContextHandler.js");
 const Phase = require("./phase");
 
 /**
- * @typedef {import('../payload/payload.js')} Payload
+ * @typedef {import('../payload/pipelinePayload.js')} Payload
  * @typedef {import('../pipeline.js')} Pipeline
  * @typedef {import('../payload/breakpoint.js')} BreakPoint
  */

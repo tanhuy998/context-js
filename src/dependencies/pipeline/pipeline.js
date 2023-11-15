@@ -1,5 +1,5 @@
 const PhaseError = require("../errors/pipeline/phaseError");
-const Payload = require("./payload/payload");
+const Payload = require("./payload/pipelinePayload.js");
 const PhaseBuilder = require("./phase/phaseBuilder");
 const PipelineController = require("./controller/pipelineController");
 const ErrorController = require('./controller/errorController.js');

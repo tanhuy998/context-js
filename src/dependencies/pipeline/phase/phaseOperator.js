@@ -4,7 +4,7 @@ const ContextHandler = require('../../handler/contextHandler.js');
 
 /**
  * @typedef {import('../../handler/contextHandler.js')} ContextHandler
- * @typedef {import('../payload/payload.js')} Payload
+ * @typedef {import('../payload/pipelinePayload.js')} Payload
  * @typedef {import('../payload/breakpoint.js')} BreakPoint
  * @typedef {import('../../handler/contextHandler.js')} ContextHandler
  * @typedef {import('../../handler/errorHandler.js')} ErrorHandler

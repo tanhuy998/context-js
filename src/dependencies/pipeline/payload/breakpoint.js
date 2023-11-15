@@ -1,4 +1,4 @@
-const Payload = require("./payload");
+const PipelinePayload = require("./pipelinePayload.js");
 
 /**
  * @typedef {import('../phase/phase.js')} Phase
@@ -7,7 +7,7 @@ const Payload = require("./payload");
  * @typedef {import('../controller/errorController.js')} ErrorController
  */
 
-module.exports = class Breakpoint extends Payload {
+module.exports = class Breakpoint extends PipelinePayload {
 
     #rollbackPoint;
 

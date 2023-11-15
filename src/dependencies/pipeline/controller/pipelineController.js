@@ -1,6 +1,6 @@
 const { ABORT_PIPELINE, ROLL_BACK, DISMISS } = require("../../constants");
 const isPipeline = require("../isPipeline");
-const Payload = require("../payload/payload.js");
+const Payload = require("../payload/pipelinePayload.js");
 const { EventEmitter } = require('node:events');
 const NoPhaseError = require("../../errors/pipeline/noPhaseError");
 
@@ -10,7 +10,7 @@ const NoPhaseError = require("../../errors/pipeline/noPhaseError");
  * @typedef {import('../pipeline.js')} Pipeline
  * @typedef {import('../../handler/contextHandler.js')} ContextHandler
  * @typedef {import('../phase/phase.js')} Phase
- * @typedef {import('../payload/payload.js')} Payload
+ * @typedef {import('../payload/pipelinePayload.js')} Payload
  * @typedef {import('../phase/phaseOperator')} PhaseOperator
  * @typedef {import('../payload/breakpoint.js')} Breakpoint
  * 

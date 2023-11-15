@@ -6,7 +6,7 @@
  * @typedef {import('../pipeline.js')} Pipeline
  */
 
-module.exports = class Payload {
+module.exports = class PipelinePayload {
 
     #id = Date.now();
 
