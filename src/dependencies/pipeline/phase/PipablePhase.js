@@ -18,11 +18,11 @@ module.exports = class PipablePhase extends Phase{
      * 
      * @param {Pipeline} _executor 
      */
-    constructor(_executor) {
-
+    constructor(_executor, errorCollector) {
+        console.log(errorCollector)
         const PipableContextHandler = decoratePipeline(_executor);
 
-        super(PipableContextHandler);
+        super(PipableContextHandler, errorCollector);
 
         this.#init();
     }

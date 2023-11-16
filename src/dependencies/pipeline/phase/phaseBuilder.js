@@ -4,6 +4,8 @@ const ContextHandler = require('../../handler/contextHandler.js');
 
 const PipablePhase = require('./PipablePhase.js');
 const isPipeline = require('../isPipeline.js');
+const ErrorCollector = require('../../errorCollector/errorCollector.js');
+const PhaseErrorCollector = require('../errorCollector/phaseErrorCollector.js');
 
 
 /**
@@ -57,13 +59,34 @@ module.exports = class PhaseBuilder {
 
         this.#checkIfDisposed();
 
-        const hadlerKind = HandlerKind.classify(_unknown);
+        //const hadlerKind = HandlerKind.classify(_unknown);
+
+        const errorCollector = this.#prepareErrorCollectorOf(_unknown);
 
         this.#handler = _unknown;
         
-        this.#phaseObj = new Phase(_unknown, hadlerKind);
+        this.#phaseObj = new Phase(_unknown, errorCollector);
         
         return this;
+    }
+
+    #prepareErrorCollectorOf(_ContextHandlerClass) {
+
+        const errorCollector = new PhaseErrorCollector();
+
+        if (typeof _ContextHandlerClass !== 'Function') {
+
+            return errorCollector;
+        }
+
+        const kind = HandlerKind.classify(_ContextHandlerClass);
+
+        if (kind === HandlerKind.FUNCTION) {
+
+            return errorCollector;
+        }
+
+        return errorCollector;
     }
 
     /**
@@ -82,7 +105,9 @@ module.exports = class PhaseBuilder {
 
         this.#handler = _pipeline;
 
-        this.#phaseObj = new PipablePhase(_pipeline);
+        const errorCollector = new PhaseErrorCollector();
+
+        this.#phaseObj = new PipablePhase(_pipeline, errorCollector);
 
         return this;
     }

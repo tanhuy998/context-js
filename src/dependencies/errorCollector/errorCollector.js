@@ -1,10 +1,11 @@
-const self = require("reflectype/src/utils/self.js");
-const { CONSTRUCTOR, DISMISS_ERROR_PHASE } = require("../constants");
-const ErrorHandlerConventionError = require("../errors/pipeline/ErrorHandlerConventionError.js");
 const matchType = require("reflectype/src/libs/matchType.js");
 const ContextLockable = require("../lockable/contextLockable.js");
+const {EventEmitter} = require('node:events');
+const { OCCUR_ERROR, NO_ERROR } = require("./constant.js");
 
-
+/**
+ * ErrorCollector collect error of a specific function.
+ */
 module.exports = class ErrorCollector extends ContextLockable {
 
     lockActions = ['registerError'];
@@ -12,12 +13,16 @@ module.exports = class ErrorCollector extends ContextLockable {
     /**@type {ErrorHandler} */
     #handlerObject;
 
+    #exceptErrors = new Set();
+
     /**@type {Map<string, Set>} */
     #registeredErrors = new Map();
 
     #currentError;
 
     #currentField;
+
+    #event = new EventEmitter();
 
     get error() {
 
@@ -29,6 +34,10 @@ module.exports = class ErrorCollector extends ContextLockable {
         return this.#currentField;
     }
 
+    get exceptions() {
+
+        return this.#exceptErrors;
+    }
     /**
      * @returns {boolean}
      */
@@ -68,7 +77,7 @@ module.exports = class ErrorCollector extends ContextLockable {
             return false;
         }
 
-        if (acceptanceSet.has(actualError)) {
+        if (acceptanceSet.has(error)) {
             /**
              *  when actualError matches an immediate value
              */
@@ -163,7 +172,15 @@ module.exports = class ErrorCollector extends ContextLockable {
             
             return true;
         }
-        
+
+        const matchExcepError = this.#matchExceptError(_error);
+
+        if (matchExcepError) {
+
+            return false;
+        }
+
+
        for (const field of this.#registeredErrors.keys()) {
 
             if (this._check(_error, field)) {
@@ -173,41 +190,39 @@ module.exports = class ErrorCollector extends ContextLockable {
        }
     }
 
+    #matchExceptError(_error) {
+
+        const exceptions = this.#exceptErrors;
+
+        return this.#lookupType(_error, exceptions);
+    }
+
     /**
      * 
      * @param {any} error 
      */
-    #resolve(_error) {
+    #handlerError(err, collectArgs = []) {
 
         if (!this.isSelective) {
 
             throw _error;
         }
 
-        const matchField = this.match(_error);
-
-        const registeredErrorType = this.#registeredErrors.get(matchField);
-
-        this.#setHandlingState({
-            error: _error,
-            category: matchField
-        })
-
-        this.handleError();
+        this.#event.emit(OCCUR_ERROR, err, collectArgs);
 
         this.#rollBackState();
     }
 
-    handleError() {
+    #handleResult(result, collectArgs = []) {
 
-
+        this.#event.emit(NO_ERROR, result, collectArgs);
     }
  
     /**
      * 
      * @param {Function} _func 
      */
-    collect(_func) {
+    collect(_func, {thisContext, args}) {
 
         if (typeof _func !== 'function') {
 
@@ -216,23 +231,29 @@ module.exports = class ErrorCollector extends ContextLockable {
 
         try {
 
-            const funcResult = _func();
+            const funcResult = _func.call(thisContext, ...(args ?? []));
 
             if (funcResult instanceof Promise) {
 
-                return funcResult.catch((function(error) {
+                return funcResult.then((function(result) {
 
-                    this.#resolve(error);
+                    this.#handleResult(result, args);
+
+                }).bind(this))
+                .catch((function(error) {
+
+                    this.#handlerError(error, args);
+
                 }).bind(this));
             }
             else {
 
-                return funcResult;
+                return this.#handleResult(funcResult, args);
             }
         }
         catch (err) {
 
-            return this.#resolve(err);
+            return this.#handlerError(err, args);
         }
     }
 
@@ -261,5 +282,15 @@ module.exports = class ErrorCollector extends ContextLockable {
         }
         
         this.#registeredErrors.get(_field).add(_type);
+    }
+
+    whenErrorOccur(_func) {
+
+        this.#event.on(OCCUR_ERROR, _func);
+    }
+
+    whenNoError(_func) {
+
+        this.#event.on(NO_ERROR, _func);
     }
 }

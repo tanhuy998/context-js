@@ -8,6 +8,8 @@ const PhaseOperator = require('./phaseOperator.js');
  * @typedef {import('../payload/pipelinePayload.js')} Payload
  * @typedef {import('../../DI/dependenciesInjectionSystem.js')} DependenciesInjectionSystem
  * @typedef {import('../pipeline.js')} Pipeline
+ * @typedef {import('../../errorCollector/errorCollector.js')} ErrorCollector
+ * @typedef {import('../errorCollector/phaseErrorCollector.js')} PhaseErrorCollector
  */
 
 
@@ -28,16 +30,53 @@ module.exports = class Phase extends T_WeakTypeNode {
     /**@type {Pipeline} */
     #pipeline;
 
+    /**@type {PhaseErrorCollector} */
+    #errorCollector;
+
     /**
      * 
      * @param {T} _handler 
      * @param {*} kind 
      */
-    constructor(_handler, kind) {
+    constructor(_handler, _errorCollector) {
 
         super(...arguments);
 
-        this.#kind = kind;
+        this.#errorCollector = _errorCollector;
+
+        //this.#kind = kind;
+
+        this.#init();
+    }
+
+    #init() {
+        
+        this.#initReport();
+        this.#initErrorReport();
+    }
+
+    #initReport() {
+
+        const errorCollector = this.#errorCollector;
+
+        const _this = this;
+
+        errorCollector.whenNoError(function(result, [payload]) {
+
+            _this.report(payload, result);
+        });
+    }
+
+    #initErrorReport() {
+
+        const errorCollector = this.#errorCollector;
+
+        const _this = this;
+
+        errorCollector.whenErrorOccur(function(err, [payload, phaseOperator]) {
+
+            _this.reportError(payload, err, phaseOperator);
+        });
     }
 
     /**
@@ -62,37 +101,52 @@ module.exports = class Phase extends T_WeakTypeNode {
      */
     accquire(_payload, _additionalArgs = []) {
 
+        const errorCollector = this.#errorCollector;
+
+        errorCollector.setContext(_payload.context);
+
         const executor = new PhaseOperator(_payload, this.handlerAbstract, this.#kind);
+        
+        _payload.switchPhase(this);
+
+        errorCollector.collect(executor, _payload, _additionalArgs);
+
+        // errorCollector.collect(function () {
+
+        //     const result = executor.operate(_additionalArgs);
+
+        //     return [_payload, result];
+        // });
+
+        // try {
+
+        //     _payload.switchPhase(this);
+
+        //     // executor.operate() invoke the ContextHandler.handle() method that can be an async function 
+        //     // or function that return Promise
+        //     const result = executor.operate(_additionalArgs);
             
-        try {
+        //     if (result instanceof Promise) {
 
-            _payload.switchPhase(this);
+        //         const _this = this;
 
-            // executor.operate() invoke the ContextHandler.handle() method that can be an async function 
-            // or function that return Promise
-            const result = executor.operate(_additionalArgs);
-            
-            if (result instanceof Promise) {
-
-                const _this = this;
-
-                result.then(value => {
+        //         result.then(value => {
                     
-                    _this.report(_payload, value)
-                })
-                    .catch(error => _this.reportError(_payload, error, executor));
+        //             _this.report(_payload, value)
+        //         })
+        //             .catch(error => _this.reportError(_payload, error, executor));
 
-                return;
-            }
-            else {
+        //         return;
+        //     }
+        //     else {
                 
-                this.report(_payload, result);
-            }
-        }
-        catch (error) {
+        //         this.report(_payload, result);
+        //     }
+        // }
+        // catch (error) {
 
-            this.reportError(_payload, error, executor);
-        }
+        //     this.reportError(_payload, error, executor);
+        // }
     }
 
     /**

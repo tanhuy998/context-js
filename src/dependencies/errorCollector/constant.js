@@ -1,3 +1,5 @@
 module.exports = {
-    HANDLE_ERROR: Symbol('handle-error')
+    HANDLE_ERROR: Symbol('handle-error'),
+    OCCUR_ERROR: 'occurError',
+    NO_ERROR: 'noError'
 }
