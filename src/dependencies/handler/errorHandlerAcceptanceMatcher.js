@@ -3,12 +3,18 @@ const { CONSTRUCTOR, DISMISS_ERROR_PHASE } = require("../constants");
 const ErrorHandlerConventionError = require("../errors/pipeline/ErrorHandlerConventionError.js");
 const ErrorHandlerAcceptanceStrategy = require("./errorHandlerAcceptanceStrategy.js");
 const matchType = require("reflectype/src/libs/matchType.js");
+const ComponentCategory = require("../category/componentCategory.js");
+const { ACCEPT_ORIGIN_FIELD, ACCEPT_FIELD } = require("./constant.js");
+const ConventionError = require("../errors/conventionError.js");
+const ContextExceptionErrorCategory = require("../errorCollector/contextExceptionErrorCategory.js");
+const {EXCEPTION} = require('../errorCollector/constant.js')
 
 /**
  * @typedef {import('./errorHandler.js')} ErrorHandler
+ * @typedef {import('../context/context.js')} Context
  */
 
-module.exports = class ErrorHandlerAcceptanceMatcher {
+module.exports = class ErrorHandlerAcceptanceMatcher extends ContextExceptionErrorCategory {
 
     static fields = [
         'accept', 'acceptOrigin'
@@ -16,9 +22,6 @@ module.exports = class ErrorHandlerAcceptanceMatcher {
 
     /**@type {ErrorHandler} */
     #handlerObject;
-
-    /**@type {Map<String, Set?>} */
-    #acceptErrorTypes;
 
     /**
      * @returns {boolean}
@@ -37,10 +40,13 @@ module.exports = class ErrorHandlerAcceptanceMatcher {
     /**
      * 
      * @param {ErrorHandler} _errorHanlderObj 
+     * @param {Context} context
      */
-    [CONSTRUCTOR](_errorHanlderObj) {
+    [CONSTRUCTOR](_errorHanlderObj, context) {
 
         this.#handlerObject = _errorHanlderObj;
+
+        this.setContext(context);
 
         this.#init();
     }
@@ -54,10 +60,11 @@ module.exports = class ErrorHandlerAcceptanceMatcher {
 
         const errorHanlderObj = this.#handlerObject;
 
-        this.#acceptErrorTypes = new Map([
-            ['accept', new Set( errorHanlderObj?.accept)],
-            ['acceptOrigin', new Set(errorHanlderObj?.acceptOrigin)]
-        ]);
+        const acceptList = errorHanlderObj?.accept ?? [];
+        const acceptOriginList = errorHanlderObj?.acceptOrigin ?? [];
+
+        this.add(ACCEPT_ORIGIN_FIELD, new Set(acceptOriginList));
+        this.add(ACCEPT_FIELD, new Set(acceptList));
     }
 
     /**
@@ -65,28 +72,36 @@ module.exports = class ErrorHandlerAcceptanceMatcher {
      * @returns {boolean}
      */
     #checkAcceptableError() {
-        
-        const matchAcceptable = this.#isAcceptableError();
 
-        if (matchAcceptable === true) {
-            
-            return true;
+        const isException = this.#isException();
+
+        if (isException) {
+            console.log(1)
+            return false;
         }
 
         const matchOriginAcceptable = this.#isOriginAcceptableError();
 
         if (matchOriginAcceptable === true) {
-            
+            console.log(2)
             return true;
         }
 
+        const matchAcceptable = this.#isAcceptableError();
+        
+        if (matchAcceptable === true) {
+            console.log(3)
+            return true;
+        }
+
+
         if (matchAcceptable === false || matchOriginAcceptable === false) {
-            
+            console.log(4);
             return false;
         }
 
         if (matchAcceptable === undefined && matchOriginAcceptable === undefined) {
-
+            console.log(5)
             return true;
         }
     }
@@ -96,27 +111,44 @@ module.exports = class ErrorHandlerAcceptanceMatcher {
      * @param {string} _field 
      * @returns {boolean}
      */
-    #_checkAcceptableFrom(_field = 'accept') {
+    #_checkAcceptableFrom(_field = ACCEPT_FIELD) {
 
         const errorFieldName = new ErrorHandlerAcceptanceStrategy(_field).errorFieldName;
         
         const actualError = this.#handlerObject[errorFieldName];
 
-        const acceptanceSet = this.#acceptErrorTypes.get(_field);
+        console.log([_field], actualError)
+        console.log(this.categories.get(_field))
+        return super._check(actualError, _field);
+    }
 
-        if (!acceptanceSet) {
-        
-            return undefined;
-        }
+    #isException() {
 
-        if (acceptanceSet.has(actualError)) {
-            /**
-             *  when actualError matches an immediate value
-             */
+        const handlerObject = this.#handlerObject;
+
+        const originErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_ORIGIN_FIELD).errorFieldName;
+
+        const originError = handlerObject[originErrorField];
+
+        const  originErrorMatchExceptionError = super._check(originError, EXCEPTION);
+
+        if (originErrorMatchExceptionError) {
+
             return true;
         }
 
-        return this.#lookupType(actualError, acceptanceSet);
+        const lastErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_FIELD).errorFieldName;
+
+        const lastError = handlerObject[lastErrorField];
+
+        const lastErrorMatchExceptionError = super._check(lastError, EXCEPTION);
+
+        if (lastErrorMatchExceptionError) {
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -125,7 +157,7 @@ module.exports = class ErrorHandlerAcceptanceMatcher {
      */
     #isAcceptableError() {
         
-        return this.#_checkAcceptableFrom('accept');
+        return this.#_checkAcceptableFrom(ACCEPT_FIELD);
     }
 
     /**
@@ -134,81 +166,7 @@ module.exports = class ErrorHandlerAcceptanceMatcher {
      */
     #isOriginAcceptableError() {
         
-        return this.#_checkAcceptableFrom('acceptOrigin');
-    }
-    
-    /**
-     * find best match error types, check on inheritance (classes and interfaces)
-     * 
-     * @param {any} _error 
-     * @param {Iterable<any>} _acceptanceList 
-     * @returns {boolean}
-     */
-    #lookupType(_error, _acceptanceList = []) {
-            
-        for (const acceptableType of _acceptanceList) {
-
-            const matchOptionalPattern = this.#checkOptionalPattern({
-                expect: acceptableType, 
-                error: _error
-            });
-
-            if (matchOptionalPattern) {
-
-                return true;
-            }
-
-            const match = matchType(acceptableType, _error);
-
-            if (match) {
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    #checkOptionalPattern({expect, error}) {
-
-        if (typeof expect === 'function') {
-
-            return false;
-        }
-
-        return this.#likable({expect, error});
-    }
-
-    #likable({expect, error}) {
-
-        if (typeof expect !== 'object' || typeof error !== 'object') {
-
-            return false;
-        }
-        
-        const expectPropNames = Object.getOwnPropertyNames(expect);
-        const expectAcceptances = expectPropNames.map(_name => expect[_name]);
-
-        const errorFilteredPropNames = Object.getOwnPropertyNames(error).filter(_name => expectPropNames.includes(_name));
-
-        if (expectPropNames.length > errorFilteredPropNames.length) {
-
-            return false;
-        }
-        
-        for (const propName of errorFilteredPropNames) {
-
-            const prop = error[propName]
-
-            const matchType = this.#lookupType(prop, expectAcceptances);
-
-            if (!matchType) {
-
-                return false;
-            }
-        }
-
-        return true;
+        return this.#_checkAcceptableFrom(ACCEPT_ORIGIN_FIELD);
     }
 
     /**
@@ -221,7 +179,11 @@ module.exports = class ErrorHandlerAcceptanceMatcher {
             
             return true;
         }
-        
-        return this.#checkAcceptableError();
+
+        const lookupResult = this.#checkAcceptableError();
+
+        console.log('check accept', lookupResult)
+
+        return lookupResult;
     }
 }

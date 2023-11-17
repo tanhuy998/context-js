@@ -70,6 +70,11 @@ module.exports = class ComponentCategory extends ContextLockable {
                 return true;
             }
 
+            if (typeof Type !== 'function') {
+
+                continue;
+            }
+
             const match = matchType(Type, _value);
 
             if (match) {

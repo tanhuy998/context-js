@@ -1,19 +1,20 @@
 const matchType = require("reflectype/src/libs/matchType.js");
 const ContextLockable = require("../lockable/contextLockable.js");
 const {EventEmitter} = require('node:events');
-const { OCCUR_ERROR, NO_ERROR, EXCEPTIONS } = require("./constant.js");
+const { OCCUR_ERROR, NO_ERROR, EXCEPTION } = require("./constant.js");
 const ComponentCategory = require("../category/componentCategory.js");
+const ContextExceptionErrorCategory = require("./contextExceptionErrorCategory.js");
 
 /**
  * ErrorCollector collect error of a specific function.
  */
-module.exports = class ErrorCollector extends ComponentCategory {
+module.exports = class ErrorCollector extends ContextExceptionErrorCategory {
 
     #event = new EventEmitter();
 
     get exceptions() {
 
-        return this.categories.get(EXCEPTIONS);
+        return this.categories.get(EXCEPTION);
     }
 
     get isSelective() {
@@ -30,7 +31,7 @@ module.exports = class ErrorCollector extends ComponentCategory {
 
     #init() {
 
-        this.categories.set(EXCEPTIONS, new Set());
+        //this.categories.set(EXCEPTION, new Set());
     }
 
     /**
@@ -54,7 +55,7 @@ module.exports = class ErrorCollector extends ComponentCategory {
 
        for (const field of this.categories.keys()) {
 
-            if (field === EXCEPTIONS) {
+            if (field === EXCEPTION) {
 
                 continue;
             }
@@ -68,7 +69,7 @@ module.exports = class ErrorCollector extends ComponentCategory {
 
     #matchExceptError(_error) {
 
-        return this._check(_error, EXCEPTIONS);
+        return this._check(_error, EXCEPTION);
     }
 
     /**
