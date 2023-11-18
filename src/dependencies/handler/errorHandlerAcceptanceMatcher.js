@@ -1,6 +1,6 @@
 const self = require("reflectype/src/utils/self.js");
 const { CONSTRUCTOR, DISMISS_ERROR_PHASE } = require("../constants");
-const ErrorHandlerConventionError = require("../errors/pipeline/ErrorHandlerConventionError.js");
+const ErrorHandlerConventionError = require("../errors/pipeline/errorHandlerConventionError.js");
 const ErrorHandlerAcceptanceStrategy = require("./errorHandlerAcceptanceStrategy.js");
 const matchType = require("reflectype/src/libs/matchType.js");
 const ComponentCategory = require("../category/componentCategory.js");

@@ -1,4 +1,4 @@
-const ErrorHandlerConventionError = require("../errors/pipeline/ErrorHandlerConventionError");
+const ErrorHandlerConventionError = require("../errors/pipeline/errorHandlerConventionError");
 
 module.exports = class ErrorHandlerAcceptanceStrategy {
 

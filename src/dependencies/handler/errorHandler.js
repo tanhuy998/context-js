@@ -1,6 +1,6 @@
 const self = require("reflectype/src/utils/self.js");
 const { ABORT_PIPELINE, ROLL_BACK, DISMISS, CONSTRUCTOR, DISMISS_ERROR_PHASE } = require("../constants");
-const ErrorHandlerConventionError = require("../errors/pipeline/ErrorHandlerConventionError.js");
+const ErrorHandlerConventionError = require("../errors/pipeline/errorHandlerConventionError.js");
 const ContextHandler = require("./contextHandler.js");
 const { decoratePseudoConstructor } = require("../../utils/metadata.js");
 const ErrorHandlerAcceptanceMatcher = require("./errorHandlerAcceptanceMatcher.js");
