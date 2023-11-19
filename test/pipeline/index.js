@@ -41,7 +41,7 @@ function run() {
             }
             catch(e) {
         
-                //console.log('error', e.originError)
+                console.log('error', e)
             }
         })();
     }

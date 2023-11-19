@@ -3,6 +3,7 @@ const isPipeline = require("../isPipeline");
 const Payload = require("../payload/pipelinePayload.js");
 const { EventEmitter } = require('node:events');
 const NoPhaseError = require("../../errors/pipeline/noPhaseError");
+const self = require("reflectype/src/utils/self.js");
 
 
 /**
@@ -13,12 +14,15 @@ const NoPhaseError = require("../../errors/pipeline/noPhaseError");
  * @typedef {import('../payload/pipelinePayload.js')} Payload
  * @typedef {import('../phase/phaseOperator')} PhaseOperator
  * @typedef {import('../payload/breakpoint.js')} Breakpoint
- * 
  */
 
 const START_INDEX = 0;
 
 module.exports = class PipelineController {
+
+    static count = 0;
+
+    id = ++self(this).count;
 
     /**@type {Pipeline} */
     #pipeline;
@@ -144,7 +148,7 @@ module.exports = class PipelineController {
          *  base on type of the _payload parameter, controller will decide what to do next
          */
         const payloadController = _payload.controller;
-
+        
         if (payloadController !== this) {
 
             return;

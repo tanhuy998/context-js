@@ -32,7 +32,7 @@ module.exports = class ComponentCategory extends ContextLockable {
     _check(value, _field = 'default') {
 
         const targetCategoriesSet = this.#categories.get(_field);
-
+        
         if (!targetCategoriesSet) {
         
             return false;
@@ -88,11 +88,11 @@ module.exports = class ComponentCategory extends ContextLockable {
 
     #checkOptionalPattern({expect, object}) {
 
-        if (typeof expect === 'function') {
+        // if (typeof expect === 'function') {
 
-            return false;
-        }
-
+        //     return false;
+        // }
+        console.log(expect)
         return this.#likable({expect, object});
     }
 

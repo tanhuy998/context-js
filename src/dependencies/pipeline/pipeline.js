@@ -7,6 +7,7 @@ const ErrorPhaseBuilder = require("./phase/errorPhaseBuilder");
 const self = require("reflectype/src/utils/self");
 const Breakpoint = require('./payload/breakpoint.js');
 const ContextLockable = require("../lockable/contextLockable.js");
+const ErrorTracer = require("./errorTracer.js");
 
 
 /**
@@ -163,14 +164,14 @@ module.exports = class Pipeline extends ContextLockable{
      * @returns 
      */
     run(_context, _payload) {
-
+        
         if (this.#global && this.#global !== _context.global) {
 
             return;
         }
-
+        
         const controller = new PipelineController(this);
-
+        
         const payload = _payload instanceof Payload ? _payload : new Payload(_context, controller, this);
 
         //console.time(payload.id);
@@ -192,20 +193,45 @@ module.exports = class Pipeline extends ContextLockable{
             return;
         }
 
+        const errorTracer = new ErrorTracer(_payload, _error);
 
-        const controller = new ErrorController(this);
+        _error = errorTracer.errorToHandle;
 
-        const breakpoint = new Breakpoint(_payload.context, controller, this, _payload);
+        const errorController = new ErrorController(this);
 
-        //const payload = new ErrorPayload(_payload.context, controller, this, _payload);
+        const breakpoint = new Breakpoint(_payload.context, errorController, this, _payload);
 
         breakpoint.trace.push(_error);
-
+        
         breakpoint.setOriginError(_error);
 
-        controller.setPayload(breakpoint);
+        errorController.setPayload(breakpoint);
+
+        this.#overrideContextErrorsComponents(_payload.context, breakpoint, _error);
         
-        return controller.startHandle();
+        return errorController.startHandle();
+    }
+
+    /**
+     * 
+     * @param {Context} _context
+     * @param {Breakpoint} _breakPoint 
+     * @param {any} _error 
+     */
+    #overrideContextErrorsComponents(_context, _breakPoint, _error) {
+
+        const contextScope = _context.scope;
+
+        contextScope.override(Breakpoint, Breakpoint, {
+            defaultInstance: _breakPoint
+        })
+
+        if (_error instanceof Error) {
+
+            contextScope.override(Error, Error, {
+                defaultInstance: _error
+            })
+        }
     }
     
     /**

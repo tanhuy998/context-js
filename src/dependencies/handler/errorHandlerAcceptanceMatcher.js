@@ -7,29 +7,35 @@ const ComponentCategory = require("../category/componentCategory.js");
 const { ACCEPT_ORIGIN_FIELD, ACCEPT_FIELD } = require("./constant.js");
 const ConventionError = require("../errors/conventionError.js");
 const ContextExceptionErrorCategory = require("../errorCollector/contextExceptionErrorCategory.js");
-const {EXCEPTION} = require('../errorCollector/constant.js')
+const {EXCEPTION} = require('../errorCollector/constant.js');
+const { decoratePseudoConstructor } = require("../../utils/metadata.js");
+const Breakpoint = require("../pipeline/payload/breakpoint.js");
 
 /**
  * @typedef {import('./errorHandler.js')} ErrorHandler
  * @typedef {import('../context/context.js')} Context
  */
 
-module.exports = class ErrorHandlerAcceptanceMatcher extends ContextExceptionErrorCategory {
+const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAcceptanceMatcher extends ContextExceptionErrorCategory {
 
     static fields = [
         'accept', 'acceptOrigin'
     ];
 
     /**@type {ErrorHandler} */
-    #handlerObject;
+    #breakPoint;
+
+    #acceptList;
+
+    #acceptOriginList;
 
     /**
      * @returns {boolean}
      */
     get isSelective() {
 
-        const acceptList = this.#handlerObject?.accept;
-        const acceptOriginList = this.#handlerObject?.acceptOrigin;
+        const acceptList = this.#acceptList;
+        const acceptOriginList = this.#acceptList;
 
         const firstCond = acceptList === undefined || acceptList === null;
         const secondCond = acceptOriginList === undefined || acceptOriginList === null;
@@ -39,12 +45,12 @@ module.exports = class ErrorHandlerAcceptanceMatcher extends ContextExceptionErr
 
     /**
      * 
-     * @param {ErrorHandler} _errorHanlderObj 
+     * @param {BreakPoint} _breakPoint 
      * @param {Context} context
      */
-    [CONSTRUCTOR](_errorHanlderObj, context) {
+    [CONSTRUCTOR](_breakPoint, context) {
 
-        this.#handlerObject = _errorHanlderObj;
+        this.#breakPoint = _breakPoint;
 
         this.setContext(context);
 
@@ -58,13 +64,23 @@ module.exports = class ErrorHandlerAcceptanceMatcher extends ContextExceptionErr
             return;
         }
 
-        const errorHanlderObj = this.#handlerObject;
+        this.#initCategories();
+    }
 
-        const acceptList = errorHanlderObj?.accept ?? [];
-        const acceptOriginList = errorHanlderObj?.acceptOrigin ?? [];
+    #initCategories() {
 
-        this.add(ACCEPT_ORIGIN_FIELD, new Set(acceptOriginList));
-        this.add(ACCEPT_FIELD, new Set(acceptList));
+        const acceptList = this.#acceptList;
+        const acceptOriginList = this.#acceptOriginList;
+
+        if (Array.isArray(acceptOriginList)) {
+
+            this.add(ACCEPT_ORIGIN_FIELD, new Set(acceptOriginList));
+        }
+
+        if (Array.isArray(acceptList)) {
+
+            this.add(ACCEPT_FIELD, new Set(acceptList));
+        }
     }
 
     /**
@@ -115,40 +131,41 @@ module.exports = class ErrorHandlerAcceptanceMatcher extends ContextExceptionErr
 
         const errorFieldName = new ErrorHandlerAcceptanceStrategy(_field).errorFieldName;
         
-        const actualError = this.#handlerObject[errorFieldName];
+        const actualError = this.#breakPoint[errorFieldName];
 
-        console.log([_field], actualError)
-        console.log(this.categories.get(_field))
         return super._check(actualError, _field);
     }
 
     #isException() {
 
-        const handlerObject = this.#handlerObject;
-
-        const originErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_ORIGIN_FIELD).errorFieldName;
-
-        const originError = handlerObject[originErrorField];
-
-        const  originErrorMatchExceptionError = super._check(originError, EXCEPTION);
-
-        if (originErrorMatchExceptionError) {
-
-            return true;
-        }
-
-        const lastErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_FIELD).errorFieldName;
-
-        const lastError = handlerObject[lastErrorField];
-
-        const lastErrorMatchExceptionError = super._check(lastError, EXCEPTION);
-
-        if (lastErrorMatchExceptionError) {
+        if (this.#originErrorIsException() || this.#lastHandledErrorisException()) {
 
             return true;
         }
 
         return false;
+    }
+
+    #lastHandledErrorisException() {
+
+        const breakPoint = this.#breakPoint;
+
+        const lastErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_FIELD).errorFieldName;
+
+        const lastError = breakPoint[lastErrorField];
+
+        return super._check(lastError, EXCEPTION);
+    }
+
+    #originErrorIsException() {
+
+        const breakPoint = this.#breakPoint;
+
+        const originErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_ORIGIN_FIELD).errorFieldName;
+
+        const originError = breakPoint[originErrorField];
+
+        return super._check(originError, EXCEPTION);
     }
 
     /**
@@ -169,21 +186,32 @@ module.exports = class ErrorHandlerAcceptanceMatcher extends ContextExceptionErr
         return this.#_checkAcceptableFrom(ACCEPT_ORIGIN_FIELD);
     }
 
+    setReference({accept, acceptOrigin} = {}) {
+
+        this.#acceptList = Array.isArray(accept) ? accept : undefined;
+
+        this.#acceptOriginList = Array.isArray(acceptOrigin) ? acceptOrigin : undefined;
+
+        this.#initCategories();
+    }
+
     /**
      * 
      * @returns {boolean}
      */
     match() {
-
+        
         if (!this.isSelective) {
-            
+        
             return true;
         }
-
+        
         const lookupResult = this.#checkAcceptableError();
-
-        console.log('check accept', lookupResult)
 
         return lookupResult;
     }
 }
+
+decoratePseudoConstructor(ErrorHandlerAcceptanceMatcherClass, {
+    defaultParamsType: [Breakpoint]
+})

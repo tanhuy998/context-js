@@ -123,7 +123,7 @@ module.exports = class PhaseOperator {
         if (this.#kind === HandlerKind.FUNCTION) {
             
             args = DI.resolveArguments(handler, context) ?? [];
-
+            
             args = (args.length > 0) ? [...args, ..._additionalArgs] : [_payload.lastHandledValue, context, _payload, ..._additionalArgs];             
             
             obj = null;
@@ -228,10 +228,6 @@ module.exports = class PhaseOperator {
         const context = _payload.context;
 
         const handlerObj = new _HandlerClass(context, _payload.lastHandledValue);
-        
-        context.scope.override(ContextHandler, _HandlerClass, {
-            defaultInstance: handlerObj
-        });
 
         return handlerObj;
     }

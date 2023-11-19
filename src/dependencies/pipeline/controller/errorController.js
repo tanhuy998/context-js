@@ -121,7 +121,7 @@ module.exports = class ErrorController extends PipelineController {
     trace(_breakPoint, _info = {}) {
 
         const {currentPhase, occurError, value, opperator} = _info;
-
+        
         //if (occurError === false || isRedirectSignal(value)) {
         if (isRedirectSignal(value)) {
             
@@ -133,7 +133,7 @@ module.exports = class ErrorController extends PipelineController {
         }
         
         if (isErrorHandlerControlSignal(value)) {
-            // console.log(.*)
+            
             _info.value = this.breakpoint.lastCaughtError;
         }
 

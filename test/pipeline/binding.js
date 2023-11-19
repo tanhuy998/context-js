@@ -65,7 +65,7 @@ module.exports = class TransportContext extends Context{
         pipeline.addPhase().use(contextHandlerPipeline).build();
         pipeline.addPhase().setHandler(statistic).build();
 
-        pipeline.onError(function hadnlerError(error, context, breakpoint, next) {
+        pipeline.onError(AcceptableErrorHandler, function hadnlerError(error, context, breakpoint, next) {
 
             console.log('########## transportation failed')
             
@@ -76,7 +76,7 @@ module.exports = class TransportContext extends Context{
                 prop2: 'test option'
             }
             //return 'test Immediate Error value';
-        }, AcceptableErrorHandler, AnotherErrorHandler);
+        },  AnotherErrorHandler);
 
         this.__lock();
     }

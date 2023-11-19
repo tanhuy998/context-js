@@ -26,7 +26,7 @@ module.exports = class ErrorHandlerAcceptanceStrategy {
     #init() {
 
         switch(this.#type) {
-            case 'accept': return this.#errorField = 'error';
+            case 'accept': return this.#errorField = 'lastCaughtError';
             case 'acceptOrigin':return this.#errorField = 'originError';
             default: 
                 throw new ErrorHandlerConventionError(`${this.#type} is not valid error field of [ErrorHandler]`);

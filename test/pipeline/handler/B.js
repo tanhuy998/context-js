@@ -42,7 +42,7 @@ module.exports = class B extends ContextHandler{
         console.log('deliver to city', req.city);
         console.log('need one bike', _v)
 
-        console.log('scope overiding success', this === handler)
+        //console.log('scope overiding success', this === handler)
 
         throw new Error('missing');
         // return await new Promise((resolve, reject) => {

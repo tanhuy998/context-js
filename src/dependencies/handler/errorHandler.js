@@ -26,6 +26,11 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
         return this.devise;
     }
 
+    get lastCaughtError() {
+
+        return this.devise;
+    }
+
     /**@returns {BreakPoint} */
     get breakPoint() {
 
@@ -43,7 +48,6 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
      * @param {ErrorHandlerAcceptanceMatcher} acceptableMatcher 
      */
     [CONSTRUCTOR](acceptableMatcher) {
-        // 
 
         this.#matcher = acceptableMatcher;
         this.#init();
@@ -55,14 +59,19 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
      * @param {any} _error 
      */
     constructor(_breakPoint, _error) {
-        // 
+        console.log(['new ErrorHandler'])
         super(_breakPoint.context, _error);
-
+        
         this.#breakPoint = _breakPoint;
     }
 
     #init() {
         // 
+        this.#matcher.setReference({
+            accept: this.accept,
+            acceptOrigin: this.acceptOrigin
+        })
+
         this.#decideToHandle();
     }
 
@@ -71,7 +80,7 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
         try {
 
             if (!this.#matcher.match()) {
-
+                
                 this.handle = function () {
                     
                     return this.error;
@@ -134,6 +143,6 @@ decoratePseudoConstructor(ErrorHandlerClass, {
     defaultParamsType: [ErrorHandlerAcceptanceMatcher]
 });
 
-decoratePseudoConstructor(ErrorHandlerAcceptanceMatcher, {
-    defaultParamsType: [ContextHandler]
-});
+// decoratePseudoConstructor(ErrorHandlerAcceptanceMatcher, {
+//     defaultParamsType: [ContextHandler]
+// });
