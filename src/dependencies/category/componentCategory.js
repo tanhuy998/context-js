@@ -122,7 +122,7 @@ module.exports = class ComponentCategory extends ContextLockable {
     add(_category, ..._types) {
 
         const categories = this.#categories;
-
+        
         if (!categories.has(_category)) {
 
             categories.set(_category, new Set(_types));

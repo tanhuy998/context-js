@@ -1,11 +1,6 @@
-const self = require("reflectype/src/utils/self.js");
-const { CONSTRUCTOR, DISMISS_ERROR_PHASE } = require("../constants");
-const ErrorHandlerConventionError = require("../errors/pipeline/errorHandlerConventionError.js");
+const { CONSTRUCTOR } = require("../constants.js");
 const ErrorHandlerAcceptanceStrategy = require("./errorHandlerAcceptanceStrategy.js");
-const matchType = require("reflectype/src/libs/matchType.js");
-const ComponentCategory = require("../category/componentCategory.js");
 const { ACCEPT_ORIGIN_FIELD, ACCEPT_FIELD } = require("./constant.js");
-const ConventionError = require("../errors/conventionError.js");
 const ContextExceptionErrorCategory = require("../errorCollector/contextExceptionErrorCategory.js");
 const {EXCEPTION} = require('../errorCollector/constant.js');
 const { decoratePseudoConstructor } = require("../../utils/metadata.js");
@@ -18,7 +13,7 @@ const { isValuable } = require("../../utils/type.js");
  * @typedef {import('../context/context.js')} Context
  */
 
-const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAcceptanceMatcher extends ContextExceptionErrorCategory {
+const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFilter extends ContextExceptionErrorCategory {
 
     static fields = [
         'accept', 'acceptOrigin'
@@ -31,6 +26,8 @@ const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAc
 
     #acceptOriginList;
 
+    #exceptList;
+
     /**
      * @returns {boolean}
      */
@@ -38,11 +35,17 @@ const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAc
 
         const acceptList = this.#acceptList;
         const acceptOriginList = this.#acceptList;
+        const exceptList = this.#exceptList;
 
-        const firstCond = acceptList === undefined || acceptList === null;
-        const secondCond = acceptOriginList === undefined || acceptOriginList === null;
+        // const firstCond = acceptList === undefined || acceptList === null;
+        // const secondCond = acceptOriginList === undefined || acceptOriginList === null;
+
+        const firstCond = isValuable(exceptList);
+        const secondCond = isValuable(acceptOriginList);
+        const thirdCond = isValuable(acceptList);
         
-        return !(firstCond && secondCond);
+        
+        return firstCond || secondCond || thirdCond;
     }
 
     /**
@@ -73,23 +76,28 @@ const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAc
 
         const acceptList = this.#acceptList;
         const acceptOriginList = this.#acceptOriginList;
+        const exceptions = this.#exceptList;
 
-        if (isIterable(acceptOriginList)) {
+        this.#addToCategory(EXCEPTION, exceptions)
+        this.#addToCategory(ACCEPT_ORIGIN_FIELD, acceptOriginList);
+        this.#addToCategory(ACCEPT_FIELD, acceptList);
+        // if (isIterable(acceptOriginList)) {
+    }
 
-            this.add(ACCEPT_ORIGIN_FIELD, ...acceptOriginList);
+    /**
+     * 
+     * @param {string} _category 
+     * @param {Iterable} _typeList 
+     */
+    #addToCategory(_category, _typeList) {
+
+        if (isIterable(_typeList)) {
+
+            this.add(_category, ..._typeList);
         }
-        else if (isValuable(acceptOriginList)) {
+        else if (isValuable(_typeList)) {
 
-            this.add(ACCEPT_ORIGIN_FIELD, acceptOriginList)            
-        }
-
-        if (isIterable(acceptList)) {
-
-            this.add(ACCEPT_FIELD, ...acceptList);
-        }
-        else if (isValuable(acceptList)) {
-
-            this.add(ACCEPT_FIELD, acceptList);
+            this.add(_category, _typeList);
         }
     }
 
@@ -148,12 +156,14 @@ const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAc
 
     #isException() {
 
-        if (this.#originErrorIsException() || this.#lastHandledErrorisException()) {
+        // if (this.#originErrorIsException() || this.#lastHandledErrorisException()) {
 
-            return true;
-        }
+        //     return true;
+        // }
 
-        return false;
+        // return false;
+
+        return this.#originErrorIsException() || this.#lastHandledErrorisException();
     }
 
     #lastHandledErrorisException() {
@@ -196,11 +206,13 @@ const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAc
         return this.#_checkAcceptableFrom(ACCEPT_ORIGIN_FIELD);
     }
 
-    setReference({accept, acceptOrigin} = {}) {
+    setReference({accept, acceptOrigin, except} = {}) {
+        
+        this.#acceptList = accept
 
-        this.#acceptList = Array.isArray(accept) ? accept : undefined;
+        this.#acceptOriginList = acceptOrigin
 
-        this.#acceptOriginList = Array.isArray(acceptOrigin) ? acceptOrigin : undefined;
+        this.#exceptList = except;
         
         this.#initCategories();
     }
@@ -222,6 +234,6 @@ const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAc
     }
 }
 
-decoratePseudoConstructor(ErrorHandlerAcceptanceMatcherClass, {
+decoratePseudoConstructor(ErrorHandlerErrorFilterClass, {
     defaultParamsType: [Breakpoint]
 })

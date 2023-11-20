@@ -1,9 +1,8 @@
-const self = require("reflectype/src/utils/self.js");
 const { ABORT_PIPELINE, ROLL_BACK, DISMISS, CONSTRUCTOR, DISMISS_ERROR_PHASE } = require("../constants");
 const ErrorHandlerConventionError = require("../errors/pipeline/errorHandlerConventionError.js");
 const ContextHandler = require("./contextHandler.js");
 const { decoratePseudoConstructor } = require("../../utils/metadata.js");
-const ErrorHandlerAcceptanceMatcher = require("./errorHandlerAcceptanceMatcher.js");
+const ErrorHandlerErrorFilter = require("./errorHandlerErrorFilter.js");
 const ConventionError = require("../errors/conventionError.js");
 
 /**
@@ -17,8 +16,8 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
     /**@type {BreakPoint} */
     #breakPoint;
 
-    /**@type {ErrorHandlerAcceptanceMatcher} */
-    #matcher;
+    /**@type {ErrorHandlerErrorFilter} */
+    #errorFilter;
 
     /**@returns {any} */
     get error() {
@@ -45,11 +44,11 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
 
     /**
      * 
-     * @param {ErrorHandlerAcceptanceMatcher} acceptableMatcher 
+     * @param {ErrorHandlerErrorFilter} acceptableMatcher 
      */
     [CONSTRUCTOR](acceptableMatcher) {
 
-        this.#matcher = acceptableMatcher;
+        this.#errorFilter = acceptableMatcher;
         this.#init();
     }
 
@@ -59,7 +58,7 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
      * @param {any} _error 
      */
     constructor(_breakPoint, _error) {
-        console.log(['new ErrorHandler'])
+        
         super(_breakPoint.context, _error);
         
         this.#breakPoint = _breakPoint;
@@ -67,9 +66,10 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
 
     #init() {
         // 
-        this.#matcher.setReference({
+        this.#errorFilter.setReference({
             accept: this.accept,
-            acceptOrigin: this.acceptOrigin
+            acceptOrigin: this.acceptOrigin,
+            except: this.except
         })
 
         this.#decideToHandle();
@@ -79,7 +79,7 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
 
         try {
 
-            if (!this.#matcher.match()) {
+            if (!this.#errorFilter.match()) {
                 
                 this.handle = function () {
                     
@@ -140,9 +140,9 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
 }
 
 decoratePseudoConstructor(ErrorHandlerClass, {
-    defaultParamsType: [ErrorHandlerAcceptanceMatcher]
+    defaultParamsType: [ErrorHandlerErrorFilter]
 });
 
-// decoratePseudoConstructor(ErrorHandlerAcceptanceMatcher, {
+// decoratePseudoConstructor(ErrorHandlerErrorFilter, {
 //     defaultParamsType: [ContextHandler]
 // });

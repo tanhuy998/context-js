@@ -10,7 +10,7 @@ const self = require('reflectype/src/utils/self.js');
 const SessionCoordinator = require('../coordinator/sessionCoordinator.js');
 const { decoratePseudoConstructor } = require('../../utils/metadata.js');
 const ContextHandler = require('../handler/contextHandler.js');
-const ErrorHandlerAcceptanceMatcher = require('../handler/errorHandlerAcceptanceMatcher.js');
+const ErrorHandlerErrorFilter = require('../handler/errorHandlerErrorFilter.js');
 const ContextLockable = require('../lockable/contextLockable.js');
 const Breakpoint = require('../pipeline/payload/breakpoint.js');
 
@@ -93,7 +93,7 @@ module.exports = class Context {
         this.componentManager.bindScope(ContextHandler);
         this.componentManager.bindScope(Error);
         this.componentManager.bindScope(Breakpoint);
-        this.componentManager.bind(ErrorHandlerAcceptanceMatcher);
+        this.componentManager.bind(ErrorHandlerErrorFilter);
 
         decoratePseudoConstructor(SessionCoordinator, {paramsType: [Context]});
     }
