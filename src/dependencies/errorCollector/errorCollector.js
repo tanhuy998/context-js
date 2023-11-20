@@ -1,8 +1,5 @@
-const matchType = require("reflectype/src/libs/matchType.js");
-const ContextLockable = require("../lockable/contextLockable.js");
 const {EventEmitter} = require('node:events');
 const { OCCUR_ERROR, NO_ERROR, EXCEPTION } = require("./constant.js");
-const ComponentCategory = require("../category/componentCategory.js");
 const ContextExceptionErrorCategory = require("./contextExceptionErrorCategory.js");
 
 /**
@@ -78,10 +75,10 @@ module.exports = class ErrorCollector extends ContextExceptionErrorCategory {
      */
     #handlerError(err, collectArgs = []) {
 
-        if (!this.isSelective) {
+        // if (!this.isSelective) {
 
-            throw _error;
-        }
+        //     throw err;
+        // }
 
         this.#event.emit(OCCUR_ERROR, err, collectArgs);
     }
@@ -101,31 +98,31 @@ module.exports = class ErrorCollector extends ContextExceptionErrorCategory {
 
             return;
         }
-
+        
         try {
 
             const funcResult = _func.call(thisContext, ...(args ?? []));
-
+            
             if (funcResult instanceof Promise) {
 
                 return funcResult.then((function(result) {
-
+                    
                     this.#handleResult(result, args);
 
                 }).bind(this))
                 .catch((function(error) {
-
+                    
                     this.#handlerError(error, args);
 
                 }).bind(this));
             }
             else {
-
+                
                 return this.#handleResult(funcResult, args);
             }
         }
         catch (err) {
-
+            
             return this.#handlerError(err, args);
         }
     }

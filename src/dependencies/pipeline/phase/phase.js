@@ -44,8 +44,6 @@ module.exports = class Phase extends T_WeakTypeNode {
 
         this.#errorCollector = _errorCollector;
 
-        //this.#kind = kind;
-
         this.#init();
     }
 
@@ -107,40 +105,40 @@ module.exports = class Phase extends T_WeakTypeNode {
 
         const executor = new PhaseOperator(_payload, this.handlerAbstract, this.#kind);
         
-        // _payload.switchPhase(this);
+        _payload.switchPhase(this);
+        
+        errorCollector.collect(executor, _payload, _additionalArgs);
 
-        // errorCollector.collect(executor, _payload, _additionalArgs);
 
+        // try {
 
-        try {
+        //     _payload.switchPhase(this);
 
-            _payload.switchPhase(this);
-
-            // executor.operate() invoke the ContextHandler.handle() method that can be an async function 
-            // or function that return Promise
-            const result = executor.operate(_additionalArgs);
+        //     // executor.operate() invoke the ContextHandler.handle() method that can be an async function 
+        //     // or function that return Promise
+        //     const result = executor.operate(_additionalArgs);
             
-            if (result instanceof Promise) {
+        //     if (result instanceof Promise) {
 
-                const _this = this;
+        //         const _this = this;
 
-                result.then(value => {
+        //         result.then(value => {
                     
-                    _this.report(_payload, value)
-                })
-                    .catch(error => _this.reportError(_payload, error, executor));
+        //             _this.report(_payload, value)
+        //         })
+        //             .catch(error => _this.reportError(_payload, error, executor));
 
-                return;
-            }
-            else {
+        //         return;
+        //     }
+        //     else {
                 
-                this.report(_payload, result);
-            }
-        }
-        catch (error) {
+        //         this.report(_payload, result);
+        //     }
+        // }
+        // catch (error) {
 
-            this.reportError(_payload, error, executor);
-        }
+        //     this.reportError(_payload, error, executor);
+        // }
     }
 
     /**
@@ -149,7 +147,7 @@ module.exports = class Phase extends T_WeakTypeNode {
      * @param {any} value
      */
     report(_payload, value) {
-
+        
         const controller = _payload.controller;
         
         controller.trace(_payload, {

@@ -24,6 +24,7 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
 
     #acceptList;
 
+
     #acceptOriginList;
 
     #exceptList;
@@ -155,13 +156,6 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
     }
 
     #isException() {
-
-        // if (this.#originErrorIsException() || this.#lastHandledErrorisException()) {
-
-        //     return true;
-        // }
-
-        // return false;
 
         return this.#originErrorIsException() || this.#lastHandledErrorisException();
     }

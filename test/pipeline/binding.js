@@ -55,14 +55,19 @@ module.exports = class TransportContext extends Context{
         super.components.bind(Driver);
         super.components.bindScope(Product)
 
-        const contextHandlerPipeline = new Pipeline();
-        contextHandlerPipeline.addPhase().setHandler(B).build();
-        contextHandlerPipeline.addPhase().setHandler(A).build();
+        
 
         pipeline.addPhase().setHandler(first).build();
         // pipeline.addPhase().setHandler(B).build();
         // pipeline.addPhase().setHandler(A).build();
+
+        const contextHandlerPipeline = new Pipeline();
+
         pipeline.addPhase().use(contextHandlerPipeline).build();
+
+        contextHandlerPipeline.addPhase().setHandler(B).build();
+        contextHandlerPipeline.addPhase().setHandler(A).build();
+        
         pipeline.addPhase().setHandler(statistic).build();
 
         pipeline.onError(AcceptableErrorHandler, function hadnlerError(error, context, breakpoint, next) {

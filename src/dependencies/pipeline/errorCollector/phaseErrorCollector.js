@@ -26,7 +26,7 @@ module.exports = class PhaseErrorCollector extends ErrorCollector {
      * @param {pipelinePayload} _payload 
      * @param {Array<any>} _args 
      */
-    collect(_phaseOperator, _payload, _args = []) {
+    collect(_phaseOperator, _payload, _phaseOperatorArgs = []) {
 
         const options = {
             args: [_payload, _phaseOperator]
@@ -34,9 +34,8 @@ module.exports = class PhaseErrorCollector extends ErrorCollector {
 
         super.collect(function(operator, payload) {
 
-            const result = _phaseOperator.operate(_args);
-            
-            return [_payload, result];
+            return _phaseOperator.operate(_phaseOperatorArgs);
+
         }, options);
     }
 }
