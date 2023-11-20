@@ -10,6 +10,8 @@ const ContextExceptionErrorCategory = require("../errorCollector/contextExceptio
 const {EXCEPTION} = require('../errorCollector/constant.js');
 const { decoratePseudoConstructor } = require("../../utils/metadata.js");
 const Breakpoint = require("../pipeline/payload/breakpoint.js");
+const isIterable = require("reflectype/src/utils/isIterable.js");
+const { isValuable } = require("../../utils/type.js");
 
 /**
  * @typedef {import('./errorHandler.js')} ErrorHandler
@@ -72,14 +74,22 @@ const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAc
         const acceptList = this.#acceptList;
         const acceptOriginList = this.#acceptOriginList;
 
-        if (Array.isArray(acceptOriginList)) {
+        if (isIterable(acceptOriginList)) {
 
-            this.add(ACCEPT_ORIGIN_FIELD, new Set(acceptOriginList));
+            this.add(ACCEPT_ORIGIN_FIELD, ...acceptOriginList);
+        }
+        else if (isValuable(acceptOriginList)) {
+
+            this.add(ACCEPT_ORIGIN_FIELD, acceptOriginList)            
         }
 
-        if (Array.isArray(acceptList)) {
+        if (isIterable(acceptList)) {
 
-            this.add(ACCEPT_FIELD, new Set(acceptList));
+            this.add(ACCEPT_FIELD, ...acceptList);
+        }
+        else if (isValuable(acceptList)) {
+
+            this.add(ACCEPT_FIELD, acceptList);
         }
     }
 
@@ -92,32 +102,32 @@ const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAc
         const isException = this.#isException();
 
         if (isException) {
-            console.log(1)
+            
             return false;
         }
 
         const matchOriginAcceptable = this.#isOriginAcceptableError();
 
         if (matchOriginAcceptable === true) {
-            console.log(2)
+            
             return true;
         }
 
         const matchAcceptable = this.#isAcceptableError();
         
         if (matchAcceptable === true) {
-            console.log(3)
+            
             return true;
         }
 
 
         if (matchAcceptable === false || matchOriginAcceptable === false) {
-            console.log(4);
+            
             return false;
         }
 
         if (matchAcceptable === undefined && matchOriginAcceptable === undefined) {
-            console.log(5)
+            
             return true;
         }
     }
@@ -191,7 +201,7 @@ const ErrorHandlerAcceptanceMatcherClass = module.exports = class ErrorHandlerAc
         this.#acceptList = Array.isArray(accept) ? accept : undefined;
 
         this.#acceptOriginList = Array.isArray(acceptOrigin) ? acceptOrigin : undefined;
-
+        
         this.#initCategories();
     }
 

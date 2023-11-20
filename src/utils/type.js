@@ -1,6 +1,7 @@
 const Interface = require('reflectype/src/interface/interface.js');
 const {IS_CHECKABLE} = require('reflectype/src/constants.js');
 const isAbstract = require('reflectype/src/utils/isAbstract.js');
+const { type } = require('reflectype');
 
 function checkType(abstract, concrete) {
 
@@ -97,4 +98,24 @@ function useTrait(_class, _trait) {
     }
 }
 
-module.exports = {isParent, hasRelationShip, checkType, isAbstract, useTrait};
+/**
+ * 
+ * @param {any} _unknown 
+ * @returns {boolean}
+ */
+function isIterable(_unknown) {
+
+    if (_unknown === undefined || _unknown === null) {
+
+        return false;
+    }
+
+    return typeof _unknown[Symbol.iterator] === 'function';
+}
+
+function isValuable(_unknown) {
+
+    return _unknown !== undefined && _unknown !== null;
+}
+
+module.exports = {isParent, hasRelationShip, checkType, isAbstract, useTrait, isIterable, isValuable};

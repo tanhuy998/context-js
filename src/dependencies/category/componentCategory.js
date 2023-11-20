@@ -1,3 +1,4 @@
+const { field } = require("../coordinator/coodinator");
 const ContextLockable = require("../lockable/contextLockable");
 const matchType = require("reflectype/src/libs/matchType.js");
 
@@ -30,7 +31,7 @@ module.exports = class ComponentCategory extends ContextLockable {
      * @returns {boolean}
      */
     _check(value, _field = 'default') {
-
+        
         const targetCategoriesSet = this.#categories.get(_field);
         
         if (!targetCategoriesSet) {
@@ -44,7 +45,7 @@ module.exports = class ComponentCategory extends ContextLockable {
              */
             return true;
         }
-
+        
         return this.#lookupType(value, targetCategoriesSet);
     }
 
@@ -52,74 +53,64 @@ module.exports = class ComponentCategory extends ContextLockable {
     /**
      * find best match error types, check on inheritance (classes and interfaces)
      * 
-     * @param {any} _value 
+     * @param {Object} _value 
      * @param {Iterable<any>} _acceptanceList 
      * @returns {boolean}
      */
     #lookupType(_value, list = []) {
-
+        
         for (const Type of list) {
-
+            
             const matchOptionalPattern = this.#checkOptionalPattern({
                 expect: Type, 
                 object: _value
             });
 
             if (matchOptionalPattern) {
-
+                
                 return true;
             }
-
+            
             if (typeof Type !== 'function') {
-
+                
                 continue;
             }
-
+            
             const match = matchType(Type, _value);
 
             if (match) {
-
+                
                 return true;
             }
         }
-
+        
         return false;
     }
 
     #checkOptionalPattern({expect, object}) {
+        
+        if (typeof expect === 'function') {
 
-        // if (typeof expect === 'function') {
+            return false;
+        }
 
-        //     return false;
-        // }
-        console.log(expect)
         return this.#likable({expect, object});
     }
 
     #likable({expect, object}) {
-
-        if (typeof expect !== 'object' || typeof object !== 'object') {
-
+        
+        if (typeof expect !== 'object' && typeof object !== 'object') {
+            
             return false;
         }
-        
-        const expectPropNames = Object.getOwnPropertyNames(expect);
-        const expectAcceptances = expectPropNames.map(_name => expect[_name]);
 
-        const errorFilteredPropNames = Object.getOwnPropertyNames(object).filter(_name => expectPropNames.includes(_name));
+        for (const propName in expect) {
 
-        if (expectPropNames.length > errorFilteredPropNames.length) {
+            const objectProp = object[propName];
 
-            return false;
-        }
-        
-        for (const propName of errorFilteredPropNames) {
+            const expectProp = expect[propName];
 
-            const prop = object[propName]
-
-            const matchType = this.#lookupType(prop, expectAcceptances);
-
-            if (!matchType) {
+            if (!matchType(expectProp, objectProp)) {
 
                 return false;
             }
@@ -128,18 +119,21 @@ module.exports = class ComponentCategory extends ContextLockable {
         return true;
     }
 
-    add(_category, _type) {
+    add(_category, ..._types) {
 
         const categories = this.#categories;
 
         if (!categories.has(_category)) {
 
-            categories.set(_category, new Set([_type]));
+            categories.set(_category, new Set(_types));
 
             return;
         }
 
-        categories.get(_category).add(_type);
+        for (const Type of _types) {
+
+            categories.get(_category).add(Type);
+        }
     }
 
     /**
