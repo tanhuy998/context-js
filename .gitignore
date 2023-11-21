@@ -6,5 +6,8 @@ node_modules
 example/injector.js
 exports/
 
+decorator/handlerError.js
+src/dependencies/pipeline/mapping/
+src/utils/decorator/handleError.util.js
 
 

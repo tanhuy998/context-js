@@ -49,11 +49,11 @@ module.exports = class Phase extends T_WeakTypeNode {
 
     #init() {
         
-        this.#initReport();
-        this.#initErrorReport();
+        this.#initWhenNoError();
+        this.#initWhenErroOccur();
     }
 
-    #initReport() {
+    #initWhenNoError() {
 
         const errorCollector = this.#errorCollector;
 
@@ -65,7 +65,7 @@ module.exports = class Phase extends T_WeakTypeNode {
         });
     }
 
-    #initErrorReport() {
+    #initWhenErroOccur() {
 
         const errorCollector = this.#errorCollector;
 
