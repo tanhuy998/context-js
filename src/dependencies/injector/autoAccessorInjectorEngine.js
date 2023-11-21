@@ -1,7 +1,6 @@
-const isAbStract = require("reflectype/src/utils/isAbstract");
 const Injector = require("./injector");
-//const {metadata_t, metaOf, property_metadata_t} = require('reflectype/src/reflection/metadata.js');
 const {getTypeMetadata} = require('../../utils/metadata.js');
+const { isPropMetaAutowired } = require("../../utils/decorator/autowire.util.js");
 
 /**
  * @typedef {import('reflectype/src/reflection/metadata.js').metadata_t} metadata_t
@@ -34,17 +33,7 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
             return false;
         }
 
-        if (typeof propMeta.footPrint !== 'object') {
-
-            return false;
-        }
-
-        if (propMeta.footPrint.needInject !== true) {
-
-            return false;
-        }
-
-        return true;
+        return isPropMetaAutowired(propMeta);
     }
 
     inject(_object, _scope) {
@@ -70,7 +59,7 @@ module.exports = class AutoAccessorInjectorEngine extends Injector {
 
                 continue;
             }
-            
+
             const propAccessor = propMeta.footPrint?.accessor;
 
             const {type} = propMeta;

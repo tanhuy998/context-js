@@ -44,7 +44,7 @@ module.exports = class B extends ContextHandler{
 
         //console.log('scope overiding success', this === handler)
 
-        throw {};
+
         // return await new Promise((resolve, reject) => {
 
         //     setTimeout(() => {
