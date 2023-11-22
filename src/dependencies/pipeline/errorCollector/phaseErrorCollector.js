@@ -1,5 +1,6 @@
 const ErrorCollector = require("../../errorCollector/errorCollector");
 const ConventionError = require("../../errors/conventionError.js");
+const ContextHandlerErrorMapper = require("../mapping/contextHandlerErrorMapper.js");
 
 /**
  * @typedef {import('../phase/phaseOperator.js')} PhaseOperator
@@ -7,6 +8,9 @@ const ConventionError = require("../../errors/conventionError.js");
  */
 
 module.exports = class PhaseErrorCollector extends ErrorCollector {
+
+    /**@type {ContextHandlerErrorMapper?} */
+    #errorRemapper;
 
     constructor() {
 
@@ -24,18 +28,46 @@ module.exports = class PhaseErrorCollector extends ErrorCollector {
      * 
      * @param {PhaseOperator} _phaseOperator 
      * @param {pipelinePayload} _payload 
-     * @param {Array<any>} _args 
+     * @param {Array<any>} _args
      */
-    collect(_phaseOperator, _payload, _phaseOperatorArgs = []) {
+    collect(_phaseOperator, _payload, {phaseOperatorArgs, contextHandlerMethod} = {
+        contextHandlerMethod: null,
+        phaseOperatorArgs: []
+    }) {
 
         const options = {
             args: [_payload, _phaseOperator]
         }
 
+        const errorRemapper = this.#errorRemapper;
+
         super.collect(function(operator, payload) {
 
-            return _phaseOperator.operate(_phaseOperatorArgs);
+            _phaseOperator.prepare();
+
+            if (errorRemapper instanceof ContextHandlerErrorMapper && _phaseOperator.isContextHandler) {
+                
+                const handler = _phaseOperator.handlerInstance;
+                
+                errorRemapper.redirectError(handler);
+            }
+
+            return _phaseOperator.operate(phaseOperatorArgs);
 
         }, options);
+    }
+
+    /**
+     * 
+     * @param {ContextHandlerErrorMapper} _remapper 
+     */
+    setErrorRemapper(_remapper) {
+        
+        if (!(_remapper instanceof ContextHandlerErrorMapper)) {
+
+            throw new TypeError('_remapper is not isntance of [ContextHandlerErrorMapper]')
+        }
+
+        this.#errorRemapper = _remapper;
     }
 }

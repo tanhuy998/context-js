@@ -8,6 +8,7 @@ const Driver = require('../components/driver.js');
 const Bike = require('../components/bike.js');
 const Warehouse = require('../components/warehouse.js');
 const DeliveryRequest = require('../components/coordinator.js/DeliveryRequest.js');
+const handleError = require('../../../decorator/handlerError.js');
 
 
 function random(min, max) {
@@ -44,7 +45,7 @@ module.exports = class B extends ContextHandler{
 
         //console.log('scope overiding success', this === handler)
 
-
+        throw new Error('missing');
         // return await new Promise((resolve, reject) => {
 
         //     setTimeout(() => {
@@ -59,5 +60,9 @@ module.exports = class B extends ContextHandler{
         // })
     }
 
-    
+    @handleError(Error)
+    someFunc() {
+
+        console.log('internal error catching');
+    }
 }

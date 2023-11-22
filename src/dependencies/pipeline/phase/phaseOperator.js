@@ -1,6 +1,7 @@
 const HandlerKind = require('../handlerKind.js');
 const HanlderInitializeError = require('../../errors/pipeline/handlerInitializeError.js');
 const ContextHandler = require('../../handler/contextHandler.js');
+const PhaseErrorCollector = require('../errorCollector/phaseErrorCollector.js');
 
 /**
  * @typedef {import('../../handler/contextHandler.js')} ContextHandler
@@ -22,6 +23,14 @@ module.exports = class PhaseOperator {
     #handlerAbstract;
 
     #kind;
+
+    get isContextHandler() {
+
+        return this.#kind === HandlerKind.REGULAR;
+    }
+
+    /**@type {boolean} */
+    #isPrepared = false;
     
     /**@returns {Payload | BreakPoint}*/
     get payload() {
@@ -52,11 +61,11 @@ module.exports = class PhaseOperator {
      * @param {*} _handlerAbstract 
      * @param {*} _kindOfHandler 
      */
-    constructor(_payload, _handlerAbstract, _kindOfHandler) {
+    constructor(_payload, _handlerAbstract) {
 
         this.#payload = _payload
         this.#handlerAbstract = _handlerAbstract;
-        this.#kind = _kindOfHandler;
+        //this.#kind = _kindOfHandler;
 
         this.#init();
     }
@@ -67,23 +76,11 @@ module.exports = class PhaseOperator {
 
             this.#kind = HandlerKind.classify(this.#handlerAbstract);
         }
+
+        
     }
 
-    /**
-     * 
-     * @param {Array<any>} _additionalArgs 
-     * @returns 
-     */
-    operate(_additionalArgs = []) {
-
-        return this.#prepareThenInvoke('handle', _additionalArgs);
-    }
-
-    /**
-     * 
-     * @param {Payload} _payload 
-     */
-    #prepareThenInvoke(_methodName = 'handle', _additionalArgs = []) {
+    prepare() {
 
         const _payload = this.#payload;
 
@@ -97,6 +94,33 @@ module.exports = class PhaseOperator {
         }
 
         this.#injectComponents(handler, context);
+
+        if (this.#kind === HandlerKind.FUNCTION) {
+
+            return;
+        }
+
+        this.#handlerInstance = handler;
+    }
+
+    /**
+     * 
+     * @param {Array<any>} _additionalArgs 
+     * @returns 
+     */
+    operate(_additionalArgs = []) {
+
+        return this.#prepareThenInvoke('handle', _additionalArgs);
+    }
+
+
+    /**
+     * 
+     * @param {Payload} _payload 
+     */
+    #prepareThenInvoke(_methodName = 'handle', _additionalArgs = []) {
+
+        const handler = this.#kind === HandlerKind.FUNCTION ? this.#handlerAbstract : this.#handlerInstance;
         
         return this.#classifyThenReturnFunction(handler, _methodName, _additionalArgs);
     }

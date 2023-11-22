@@ -6,6 +6,7 @@ const PipablePhase = require('./PipablePhase.js');
 const isPipeline = require('../isPipeline.js');
 const ErrorCollector = require('../../errorCollector/errorCollector.js');
 const PhaseErrorCollector = require('../errorCollector/phaseErrorCollector.js');
+const ContextHandlerErrorMapper = require('../mapping/contextHandlerErrorMapper.js');
 
 
 /**
@@ -61,8 +62,13 @@ module.exports = class PhaseBuilder {
 
         //const hadlerKind = HandlerKind.classify(_unknown);
 
-        const errorCollector = this.#prepareErrorCollectorOf(_unknown);
+        if (typeof _unknown !== 'function') {
 
+            throw new TypeError('cannot set non function as a pipeline phase handler');
+        }
+        
+        const errorCollector = this.#prepareErrorCollectorOf(_unknown);
+        
         this.#handler = _unknown;
         
         this.#phaseObj = new Phase(_unknown, errorCollector);
@@ -74,16 +80,16 @@ module.exports = class PhaseBuilder {
 
         const errorCollector = new PhaseErrorCollector();
 
-        if (typeof _ContextHandlerClass !== 'Function') {
+        const contextHandlerKind = HandlerKind.classify(_ContextHandlerClass);
+        
+        if (contextHandlerKind === HandlerKind.REGULAR) {
+            
+            const errorRemapper = new ContextHandlerErrorMapper(_ContextHandlerClass)
 
-            return errorCollector;
-        }
-
-        const kind = HandlerKind.classify(_ContextHandlerClass);
-
-        if (kind === HandlerKind.FUNCTION) {
-
-            return errorCollector;
+            if (errorRemapper.hasRemap) {
+                
+                errorCollector.setErrorRemapper(errorRemapper);
+            }
         }
 
         return errorCollector;

@@ -1,4 +1,5 @@
 const {T_WeakTypeNode} = require('../../../libs/linkedList.js');
+const ContextHandlerErrorMapper = require('../mapping/contextHandlerErrorMapper.js');
 const PhaseOperator = require('./phaseOperator.js');
 
 /**
@@ -32,6 +33,14 @@ module.exports = class Phase extends T_WeakTypeNode {
 
     /**@type {PhaseErrorCollector} */
     #errorCollector;
+
+    // /**@type {ContextHandlerErrorMapper} */
+    // #contextHandlerErrorMapper;
+
+    // get isErrorRedirect() {
+
+    //     return this.#contextHandlerErrorMapper instanceof ContextHandlerErrorMapper;
+    // }
 
     /**
      * 
@@ -77,6 +86,20 @@ module.exports = class Phase extends T_WeakTypeNode {
         });
     }
 
+    // /**
+    //  * 
+    //  * @param {ContextHandlerErrorMapper} _mapper 
+    //  */
+    // setContextHandlerErrorMapper(_mapper) {
+
+    //     if (!(_mapper instanceof ContextHandlerErrorMapper)) {
+
+    //         return;
+    //     }
+
+    //     this.#contextHandlerErrorMapper = _mapper;
+    // }
+
     /**
      * 
      * @param {Pipeline} _pipeline 
@@ -103,11 +126,14 @@ module.exports = class Phase extends T_WeakTypeNode {
 
         errorCollector.setContext(_payload.context);
 
-        const executor = new PhaseOperator(_payload, this.handlerAbstract, this.#kind);
+        const executor = new PhaseOperator(_payload, this.handlerAbstract);
         
         _payload.switchPhase(this);
         
-        errorCollector.collect(executor, _payload, _additionalArgs);
+        errorCollector.collect(executor, _payload, {
+            phaseOperatorArgs: _additionalArgs, 
+            //errorRemapper: this.#contextHandlerErrorMapper
+        });
 
 
         // try {
