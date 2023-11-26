@@ -1,17 +1,26 @@
-const {EventEmitter} = require('node:events');
-const { OCCUR_ERROR, NO_ERROR, EXCEPTION } = require("./constant.js");
+const {EventEmitter, captureRejectionSymbol, errorMonitor} = require('node:events');
+const { ERROR_GATEWAY, NO_ERROR, EXCEPTION, START_COLLECTING, AFTER_ERROR, OCCUR_ERROR, NO_ERROR_GATEWAY } = require("./constant.js");
 const ContextExceptionErrorCategory = require("./contextExceptionErrorCategory.js");
+const ConventionError = require('../errors/conventionError.js');
+const isIterable = require('reflectype/src/utils/isIterable.js');
 
 /**
- * ErrorCollector collect error of a specific function.
+ * ErrorCollector watches and collects potential error of a specific action.
+ * ErrorCollector is subclass of EventEmitter that manages events for manipulating the error catching operation.
+ * This class adapts the behavior of the actions and preserves the synchronicity flow control 
+ * when catching sync and async functions's error.
+ * 
+ * When can use ErrorCollector as event driven when the supervised action resolve,
+ * Otherwise, we can overried [ERROR_GATEWAY] and [NO_ERROR_GATEWAY] to avoid the default events.
  */
-module.exports = class ErrorCollector extends ContextExceptionErrorCategory {
+module.exports = class ErrorCollector extends EventEmitter {
 
-    #event = new EventEmitter();
+    /**@type {ContextExceptionErrorCategory} */
+    #errorCategory = new ContextExceptionErrorCategory();
 
     get exceptions() {
 
-        return this.categories.get(EXCEPTION);
+        return this.#errorCategory.get(EXCEPTION);
     }
 
     get isSelective() {
@@ -21,129 +30,201 @@ module.exports = class ErrorCollector extends ContextExceptionErrorCategory {
 
     constructor(_context) {
 
-        super(_context);
+        super({captureRejections: true});
 
         this.#init();
     }
 
     #init() {
 
-        //this.categories.set(EXCEPTION, new Set());
+        this.#initWhenCollectingError();
+    }
+
+
+    #initWhenCollectingError() {
+
+        const collectError = this.#collect.bind(this);
+
+        super.on(START_COLLECTING, collectError);
     }
 
     /**
+     * This method is registered to "START_COLLECTING" event
      * 
-     * @returns {boolean}
+     * @param {Function} _action 
+     * @param {any} thisContext 
+     * @param {Array<any>} args 
+     * @returns 
      */
-    match(_error) {
-
-        if (!this.isSelective) {
-            
-            return true;
-        }
-
-        const matchExcepError = this.#matchExceptError(_error);
-
-        if (matchExcepError) {
-
-            return false;
-        }
-
-
-       for (const field of this.categories.keys()) {
-
-            if (field === EXCEPTION) {
-
-                continue;
-            }
-
-            if (this._check(_error, field)) {
-
-                return field;
-            }
-       }
-    }
-
-    #matchExceptError(_error) {
-
-        return this._check(_error, EXCEPTION);
-    }
-
-    /**
-     * 
-     * @param {any} error 
-     */
-    #handlerError(err, collectArgs = []) {
-
-        // if (!this.isSelective) {
-
-        //     throw err;
-        // }
-
-        this.#event.emit(OCCUR_ERROR, err, collectArgs);
-    }
-
-    #handleResult(result, collectArgs = []) {
-
-        this.#event.emit(NO_ERROR, result, collectArgs);
-    }
- 
-    /**
-     * 
-     * @param {Function} _func 
-     */
-    collect(_func, {thisContext, args}) {
-
-        if (typeof _func !== 'function') {
-
-            return;
-        }
+    #collect(_action, thisContext, args = []) {
         
         try {
 
-            const funcResult = _func.call(thisContext, ...(args ?? []));
+            const result = _action.call(thisContext, ...args);
             
-            if (funcResult instanceof Promise) {
+            if (result instanceof Promise) {
 
-                return funcResult.then((function(result) {
-                    
-                    this.#handleResult(result, args);
-
-                }).bind(this))
-                .catch((function(error) {
-                    
-                    this.#handlerError(error, args);
-
-                }).bind(this));
+                return result.then(this.#noError(args));
             }
-            else {
-                
-                return this.#handleResult(funcResult, args);
-            }
+
+            // super.emit(NO_ERROR, result, ...args);
+            this.#_resolve(result, args);
         }
-        catch (err) {
+        catch (error) {
             
-            return this.#handlerError(err, args);
+            this.#_handleError(error, args);
+        }
+    }
+
+    [captureRejectionSymbol](err, event, ..._execContext) {
+
+        if (event !== START_COLLECTING) {
+
+            throw err;
+        }
+
+        const [theAsyncFunc, thisContext, invokeArgs] = _execContext;
+        
+        this.#_handleError(err, invokeArgs);
+    }
+
+    #_resolve(value, watchArgs = []) {
+
+        this[NO_ERROR_GATEWAY](value, watchArgs);
+    }
+
+    #_handleError(err, args = []) {
+
+        try {
+
+            this[ERROR_GATEWAY](err, args);
+        }
+        catch (e) {
+
+            super.emit(OCCUR_ERROR, e, ...args);
+        }
+    }
+
+    #noError(args = []) {
+
+        const _this = this;
+
+        return function (_value) {
+
+            _this[NO_ERROR_GATEWAY](_value, args);
+        }        
+    }
+
+    #_checkExceptions(_err) {
+
+        if (this.#errorCategory?.match(_err, EXCEPTION)) {
+
+            throw _err;
         }
     }
 
     /**
      * 
-     * @param {string} _field 
-     * @param {any} _type 
+     * @param {Function} _action 
+     * @param {Object} param1
+     * @param {any} param1.thisContext
+     * @param {Array<any>} param1.args
      */
-    registerError(_type, _field = 'default') {
+    watch(_action, {thisContext, args} = {args: []}) {
 
-        this.add(_field, _type);
+        args = isIterable(args) ? args : [args];
+        
+        super.emit(START_COLLECTING, _action, thisContext, args);
     }
 
-    whenErrorOccur(_func) {
 
-        this.#event.on(OCCUR_ERROR, _func);
+    whenErrorOccur(_cb) {
+
+       super.on(OCCUR_ERROR, _cb);
     }
 
-    whenNoError(_func) {
+    whenNoError(_cb) {
 
-        this.#event.on(NO_ERROR, _func);
+        super.on(NO_ERROR, _cb);
+    }
+
+    [ERROR_GATEWAY](_err, _watchArgs = []) {
+
+        this.#_checkExceptions(_err);
+
+        super.emit(OCCUR_ERROR, _err, ..._watchArgs);
+    }
+
+    [NO_ERROR_GATEWAY](_value, _watchArgs = []) {
+
+        this.emit(NO_ERROR, _value, ..._watchArgs);
+    }
+
+    /**
+
+    /*****************************************************************
+     * 
+     * @param {any} _error 
+     * @param {string} _category 
+     */
+    _check(_error, _category) {
+
+        return this.#errorCategory._check(_error, _category);
+    }
+
+    /*****************************************************************
+     * override methods
+     */
+
+    /**
+     * legacy 
+     */
+    setContext() {
+
+    }
+
+    on() {
+
+        this.#throwLockActionError('on');
+    }
+
+    off() {
+
+        this.#throwLockActionError('off');
+    }
+
+    once() {
+
+        this.#throwLockActionError('once');
+    }
+
+    prependListener() {
+
+        this.#throwLockActionError('prependListener');
+    }
+
+    prependOnceListener() {
+
+        this.#throwLockActionError('prependOnceListener');
+    }
+
+    removeListener() {
+
+        this.#throwLockActionError('removeListener');
+    }
+
+    removeAllListeners() {
+
+        this.#throwLockActionError('removeAllListeners');
+    }
+
+
+    /**
+     * 
+     * @param {string | Symbol} _methodName 
+     */
+    #throwLockActionError(_methodName) {
+
+        throw new ConventionError(`${_methodName.descriptions || _methodName} is locked`); 
     }
 }

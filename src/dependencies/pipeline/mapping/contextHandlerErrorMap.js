@@ -13,7 +13,7 @@ const self = require("reflectype/src/utils/self");
  * @typedef {import('reflectype/src/reflection/metadata').property_metadata_t} property_metadata_t
  */
 
-module.exports = class ContextHandlerErrorMapper extends ContextExceptionErrorCategory {
+module.exports = class ContextHandlerErrorMap extends ContextExceptionErrorCategory {
 
     #contextHandlerClass
 
@@ -131,12 +131,13 @@ module.exports = class ContextHandlerErrorMapper extends ContextExceptionErrorCa
     }
 
     /**
+     * Return iterator of mapped functions resolved from a ContextHandler
      * 
      * @param {any} _errorType 
      * 
-     * @returns {Array<string>}
+     * @returns {Iterator<Function>}
      */
-    getMethods(_error) {
+    *getErrorHandlingMethods(_error) {
 
         const errorPrimitivetype = typeof _error;
 
@@ -154,63 +155,9 @@ module.exports = class ContextHandlerErrorMapper extends ContextExceptionErrorCa
                 break;
         }
 
-        return this.#mappingTable.get(Type);
-    }
+        for (const fn of this.#mappingTable.get(Type) || []) {
 
-    /**
-     * 
-     * @param {ContextHandler} _contextHandlerObject 
-     * @returns 
-     */
-    redirectError(_contextHandlerObject) {
-        
-        // if (!(_contextHandlerObject instanceof ContextHandler)) {
-
-        //     return;
-        // }
-
-        const _class = self(_contextHandlerObject);
-        
-        const kind = HandlerKind.classify(_class);
-        
-        if (kind !== HandlerKind.REGULAR) {
-
-            return;
-        }
-        
-        this.#wrappContextHanlderMethod(_contextHandlerObject);
-    }
-
-    /**
-     * 
-     * @param {ContextHandler} _contextHandlerObject 
-     */
-    #wrappContextHanlderMethod(_contextHandlerObject) {
-
-        const handleMethod = _contextHandlerObject.handle;
-
-        const errorMapper = this;
-
-        _contextHandlerObject.handle = function handle() {
-
-            try {
-                
-                return handleMethod.call(_contextHandlerObject);
-            }
-            catch (error) {
-                console.log(2, error)
-                const methods = errorMapper.getMethods(error);
-
-                if (!isIterable(methods)) {
-
-                    throw error;
-                }
-
-                for (const fn of methods) {
-
-                    fn.call(_contextHandlerObject);
-                }
-            }
+            yield fn;
         }
     }
 }

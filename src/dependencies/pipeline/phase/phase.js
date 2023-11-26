@@ -1,5 +1,6 @@
 const {T_WeakTypeNode} = require('../../../libs/linkedList.js');
-const ContextHandlerErrorMapper = require('../mapping/contextHandlerErrorMapper.js');
+const PhaseErrorCollector = require('../errorCollector/phaseErrorCollector.js');
+const ContextHandlerErrorMapper = require('../mapping/contextHandlerErrorMap.js');
 const PhaseOperator = require('./phaseOperator.js');
 
 /**
@@ -15,6 +16,7 @@ const PhaseOperator = require('./phaseOperator.js');
 
 
 /**
+ * 
  * @class
  * @template T
  */
@@ -31,16 +33,8 @@ module.exports = class Phase extends T_WeakTypeNode {
     /**@type {Pipeline} */
     #pipeline;
 
-    /**@type {PhaseErrorCollector} */
-    #errorCollector;
-
-    // /**@type {ContextHandlerErrorMapper} */
-    // #contextHandlerErrorMapper;
-
-    // get isErrorRedirect() {
-
-    //     return this.#contextHandlerErrorMapper instanceof ContextHandlerErrorMapper;
-    // }
+    /**@type {ContextHandlerErrorMapper} */
+    #contextHandlerErrorMap;
 
     /**
      * 
@@ -51,54 +45,26 @@ module.exports = class Phase extends T_WeakTypeNode {
 
         super(...arguments);
 
-        this.#errorCollector = _errorCollector;
-
         this.#init();
     }
 
     #init() {
         
-        this.#initWhenNoError();
-        this.#initWhenErroOccur();
     }
 
-    #initWhenNoError() {
+    /**
+     * 
+     * @param {ContextHandlerErrorMapper} _mapper 
+     */
+    setErrorRedirectMap(_map) {
 
-        const errorCollector = this.#errorCollector;
+        if (!(_map instanceof ContextHandlerErrorMapper)) {
 
-        const _this = this;
+            return;
+        }
 
-        errorCollector.whenNoError(function(result, [payload]) {
-
-            _this.report(payload, result);
-        });
+        this.#contextHandlerErrorMap = _map;
     }
-
-    #initWhenErroOccur() {
-
-        const errorCollector = this.#errorCollector;
-
-        const _this = this;
-
-        errorCollector.whenErrorOccur(function(err, [payload, phaseOperator]) {
-
-            _this.reportError(payload, err, phaseOperator);
-        });
-    }
-
-    // /**
-    //  * 
-    //  * @param {ContextHandlerErrorMapper} _mapper 
-    //  */
-    // setContextHandlerErrorMapper(_mapper) {
-
-    //     if (!(_mapper instanceof ContextHandlerErrorMapper)) {
-
-    //         return;
-    //     }
-
-    //     this.#contextHandlerErrorMapper = _mapper;
-    // }
 
     /**
      * 
@@ -122,85 +88,22 @@ module.exports = class Phase extends T_WeakTypeNode {
      */
     accquire(_payload, _additionalArgs = []) {
 
-        const errorCollector = this.#errorCollector;
-
-        errorCollector.setContext(_payload.context);
-
         const executor = new PhaseOperator(_payload, this.handlerAbstract);
-        
+
+        executor.prepare();
+
         _payload.switchPhase(this);
+
+        const pipelineController = _payload.controller;
+
+        const errorCollector = new PhaseErrorCollector(pipelineController);
         
-        errorCollector.collect(executor, _payload, {
+        errorCollector.setErrorRemapper(this.#contextHandlerErrorMap);
+        
+        errorCollector.watch(executor, _payload, {
             phaseOperatorArgs: _additionalArgs, 
-            //errorRemapper: this.#contextHandlerErrorMapper
         });
 
-
-        // try {
-
-        //     _payload.switchPhase(this);
-
-        //     // executor.operate() invoke the ContextHandler.handle() method that can be an async function 
-        //     // or function that return Promise
-        //     const result = executor.operate(_additionalArgs);
-            
-        //     if (result instanceof Promise) {
-
-        //         const _this = this;
-
-        //         result.then(value => {
-                    
-        //             _this.report(_payload, value)
-        //         })
-        //             .catch(error => _this.reportError(_payload, error, executor));
-
-        //         return;
-        //     }
-        //     else {
-                
-        //         this.report(_payload, result);
-        //     }
-        // }
-        // catch (error) {
-
-        //     this.reportError(_payload, error, executor);
-        // }
-    }
-
-    /**
-     * 
-     * @param {Payload} _payload 
-     * @param {any} value
-     */
-    report(_payload, value) {
-        
-        const controller = _payload.controller;
-        
-        controller.trace(_payload, {
-            currentPhase: this,
-            occurError: false,
-            value: value
-        });
-    }
-
-    /**
-     * 
-     * @param {Payload} _payload 
-     * @param {any} error 
-     * @param {PhaseOperator} _operator 
-     */
-    reportError(_payload, error, _operator) {
-
-        const controller = _payload.controller;
-        
-        controller.trace(_payload, {
-            currentPhase: this,
-            occurError: true,
-            value: error,
-            operator: _operator
-        });
+        errorCollector.start();
     }
 } 
-
-
-

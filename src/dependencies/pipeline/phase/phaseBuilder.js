@@ -1,18 +1,18 @@
 const Phase = require('./phase.js');
 const HandlerKind = require('../handlerKind.js');
 const ContextHandler = require('../../handler/contextHandler.js');
-
 const PipablePhase = require('./PipablePhase.js');
 const isPipeline = require('../isPipeline.js');
-const ErrorCollector = require('../../errorCollector/errorCollector.js');
 const PhaseErrorCollector = require('../errorCollector/phaseErrorCollector.js');
-const ContextHandlerErrorMapper = require('../mapping/contextHandlerErrorMapper.js');
+const ContextHandlerErrorMap = require('../mapping/contextHandlerErrorMap.js');
 
 
 /**
  *  @typedef {import('../pipeline.js')} Pipeline
  *  @typedef {import('../../handler/errorHandler.js')} ErrorHandler
  */
+
+
 module.exports = class PhaseBuilder {
 
     /**@type {Phase} */
@@ -60,39 +60,30 @@ module.exports = class PhaseBuilder {
 
         this.#checkIfDisposed();
 
-        //const hadlerKind = HandlerKind.classify(_unknown);
-
         if (typeof _unknown !== 'function') {
 
             throw new TypeError('cannot set non function as a pipeline phase handler');
         }
         
-        const errorCollector = this.#prepareErrorCollectorOf(_unknown);
-        
         this.#handler = _unknown;
         
-        this.#phaseObj = new Phase(_unknown, errorCollector);
+        this.#phaseObj = new Phase(_unknown);
+
+        const ctxHandlerErrorMap = this.#prepareErrorMap(_unknown);
+
+        this.#phaseObj.setErrorRedirectMap(ctxHandlerErrorMap);
         
         return this;
     }
 
-    #prepareErrorCollectorOf(_ContextHandlerClass) {
-
-        const errorCollector = new PhaseErrorCollector();
+    #prepareErrorMap(_ContextHandlerClass) {
 
         const contextHandlerKind = HandlerKind.classify(_ContextHandlerClass);
         
         if (contextHandlerKind === HandlerKind.REGULAR) {
             
-            const errorRemapper = new ContextHandlerErrorMapper(_ContextHandlerClass)
-
-            if (errorRemapper.hasRemap) {
-                
-                errorCollector.setErrorRemapper(errorRemapper);
-            }
+            return new ContextHandlerErrorMap(_ContextHandlerClass);
         }
-
-        return errorCollector;
     }
 
     /**
