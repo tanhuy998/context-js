@@ -142,7 +142,3 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
 decoratePseudoConstructor(ErrorHandlerClass, {
     defaultParamsType: [ErrorHandlerErrorFilter]
 });
-
-// decoratePseudoConstructor(ErrorHandlerErrorFilter, {
-//     defaultParamsType: [ContextHandler]
-// });

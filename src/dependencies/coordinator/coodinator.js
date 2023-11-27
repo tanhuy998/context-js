@@ -81,5 +81,3 @@ module.exports = class Coordinator extends Any {
         this.#value = (isValidKey) ? value[_key] : value;
     }
 }
-
-//module.exports = new Proxy(Coordinator, subCoordination);

@@ -30,7 +30,7 @@ function random(min, max) {
 
 function run() {
 
-    for(let i = 0; i < 1; ++i) {
+    for(let i = 0; i < 10; ++i) {
 
         (async function () {
 

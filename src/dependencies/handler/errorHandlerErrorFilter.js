@@ -38,9 +38,6 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
         const acceptOriginList = this.#acceptList;
         const exceptList = this.#exceptList;
 
-        // const firstCond = acceptList === undefined || acceptList === null;
-        // const secondCond = acceptOriginList === undefined || acceptOriginList === null;
-
         const firstCond = isValuable(exceptList);
         const secondCond = isValuable(acceptOriginList);
         const thirdCond = isValuable(acceptList);

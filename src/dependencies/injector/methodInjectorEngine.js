@@ -1,8 +1,7 @@
 const FunctionInjectorEngine = require("./functionInjectorEngine");
-//const ReflectionPrototypeMethod = require('reflectype/src/metadata/reflectionPrototypeMethod');
 const ReflectionFunction = require('reflectype/src/metadata/reflectionFunction');
-const {initTypeField, getTypeMetadata, initTypePropertyField} = require('../../utils/metadata');
-const { metadata_t, metaOf } = require("reflectype/src/reflection/metadata");
+const {initTypeField, getTypeMetadata} = require('../../utils/metadata');
+const { metadata_t } = require("reflectype/src/reflection/metadata");
 
 module.exports = class MethodInjectorEngine extends FunctionInjectorEngine {
 

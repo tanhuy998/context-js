@@ -5,7 +5,6 @@ const AutoAccessorInjectorEngine = require('./autoAccessorInjectorEngine');
 const {isAbstract} = require('../../utils/type.js');
 const CouldNotInjectError = require('../errors/couldNotInjectError.js');
 const {CONSTRUCTOR} = require('../constants.js');
-const { metaOf, property_metadata_t } = require("reflectype/src/reflection/metadata");
 
 module.exports = class ObjectInjectorEngine extends Injector {
 
