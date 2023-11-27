@@ -1,6 +1,6 @@
 {
   "name": "isln",
-  "version": "0.0.5",
+  "version": "0.1.1-beta.1",
   "description": "General purpose context",
   "main": "index.js",
   "repository": {
