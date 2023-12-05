@@ -3,11 +3,12 @@ const Payload = require("./payload/pipelinePayload.js");
 const PhaseBuilder = require("./phase/phaseBuilder");
 const PipelineController = require("./controller/pipelineController");
 const ErrorController = require('./controller/errorController.js');
-const ErrorPhaseBuilder = require("./phase/errorPhaseBuilder");
+const ErrorPhaseBuilder = require("./phase/errorPhaseBuilder.js");
 const self = require("reflectype/src/utils/self");
 const Breakpoint = require('./payload/breakpoint.js');
 const ContextLockable = require("../lockable/contextLockable.js");
 const ErrorTracer = require("./errorTracer.js");
+const ErrorHandlingPolicy = require("./errorHandlingPolicy.js");
 
 
 /**
@@ -18,7 +19,8 @@ const ErrorTracer = require("./errorTracer.js");
  * @typedef {import('../handler/contextHandler.js')} ContextHandler
  */
 
-/**
+/** 
+ *  @description
  *  Pipeline Manage phases and errors handler.
  *  when a context arrived, pipeline initiates a PipelineController
  *  and then dispatches the context as payload to it
@@ -27,13 +29,10 @@ module.exports = class Pipeline extends ContextLockable{
 
     static lockActions = ['pipe', 'pipeError', 'addPhase', 'onError'];
 
-    /**@type {number} */
-    static #maxSyncTask = 100;
-
     /**@returns {number} */
     static get maxSyncTask() {
 
-        return this.#maxSyncTask;
+        return 100;
     }
 
     /**@type {Phase<ContextHandler | Function>} */
@@ -47,6 +46,13 @@ module.exports = class Pipeline extends ContextLockable{
 
     /**@type {number} */
     #maxSync;
+
+    #errorPolicy = ErrorHandlingPolicy.DEATAIL;
+
+    get errorPolicy() {
+
+        return this.#errorPolicy;
+    }
 
     /**@returns {number} */
     get maxSyncTask() {
@@ -95,6 +101,11 @@ module.exports = class Pipeline extends ContextLockable{
         this.#global = _globolContext;
 
         this.#init();
+    }
+
+    summarizeErrors() {
+
+        this.#errorPolicy = ErrorHandlingPolicy.SUMMARIZE;
     }
 
     #init() {
@@ -171,10 +182,7 @@ module.exports = class Pipeline extends ContextLockable{
         }
         
         const controller = new PipelineController(this);
-        
         const payload = _payload instanceof Payload ? _payload : new Payload(_context, controller, this);
-
-        //console.time(payload.id);
 
         controller.setPayload(payload);
 
@@ -193,18 +201,14 @@ module.exports = class Pipeline extends ContextLockable{
             return;
         }
 
-        const errorTracer = new ErrorTracer(_payload, _error);
+        const errorTracer = new ErrorTracer(_payload, _error, this.#errorPolicy);
+        const errorController = new ErrorController(this);
+        const breakpoint = new Breakpoint(_payload.context, errorController, this, _payload);
 
         _error = errorTracer.errorToHandle;
 
-        const errorController = new ErrorController(this);
-
-        const breakpoint = new Breakpoint(_payload.context, errorController, this, _payload);
-
         breakpoint.trace.push(_error);
-        
         breakpoint.setOriginError(_error);
-
         errorController.setPayload(breakpoint);
 
         this.#overrideContextErrorsComponents(_payload.context, breakpoint, _error);

@@ -1,102 +1,127 @@
-
+'use strict'
 
 /**
  * @typedef {import('./payload/pipelinePayload.js')} PipelinePayload
+ * @typedef {import('./payload/breakpoint.js')} BreakPoint
  */
 
 const PipablePhaseAbortionError = require('../errors/pipeline/pipablePhaseAbortionError.js');
+const ErrorHandlingPolicy = require('./errorHandlingPolicy.js');
 const Breakpoint = require('./payload/breakpoint.js');
 const PipablePhase = require('./phase/PipablePhase.js');
 
+/**
+ * @description
+ * 
+ */
 module.exports = class ErrorTracer {
 
     #payload;
 
-    /**@type {any | Breakpoint} */
-    #pipelineError;
+    /**
+     * The error that is passed as constructor argument.
+     * if the error caused by a mainline pipeline phase, it is the actual error.
+     * if the error caused by a mainline pipable phase, it is a pipeline breakpoint.
+     * 
+     * @type {any | Breakpoint} 
+     */
+    #initialError;
 
+    /**@type {any} */
     #actualError;   
-
-    /**@type {boolean} */
-    #isHandled;
 
     /**@type {boolean} */
     #isCausedByPipeablePhase;
 
+    #policy;
+
+    get isCausedByPipablePhase() {
+
+        return this.#isCausedByPipeablePhase;
+    }
+
+    /**
+     *  The error that caused by one of the following situation:
+     *  1. error caused by a mainline PipelinePhase
+     *  2. error caused by a mainline PipablePhase (the error is the breakpoint object)
+     *    + returns the last traced error of the pipable phase's error handling progress
+     *    + otherwise, return the breakpoint's origin error.
+     * 
+     * @type {any}
+     */
     get actualError() {
 
         return this.#actualError;
     }
 
+    /**
+     * The error that the pipeline will take to dispatch to an error controller to handle
+     * 
+     * @type {any}
+     */
     get errorToHandle() {
 
-        if (this.#isCausedByPipeablePhase) {
+        if (!this.#isCausedByPipeablePhase || 
+        this.#policy === ErrorHandlingPolicy.SUMMARIZE) {
 
-            const breakPoint = this.#pipelineError;
-
-            const pipablePhase = this.#payload.currentPhase;
-
-            return new PipablePhaseAbortionError(pipablePhase, breakPoint);
+            return this.#actualError;
         }
-        
-        return this.#actualError;
+
+        const breakPoint = this.#initialError;
+        const pipablePhase = this.#payload.currentPhase;
+
+        return new PipablePhaseAbortionError(pipablePhase, breakPoint);
     }
 
     /**
      * 
      * @param {PipelinePayload} _payload 
      * @param {any | BreakPoint} _error 
+     * @param {ErrorHandlingPolicy} _policy
      */
-    constructor(_payload, _error) {
+    constructor(_payload, _error, _policy = ErrorHandlingPolicy.DEATAIL) {
 
         this.#payload = _payload;
-
-        this.#pipelineError = _error;
+        this.#initialError = _error;
+        this.#policy = _policy;
 
         this.#init();
     }
 
     #init() {
 
+        this.#validatePolicy();
+        this.#analyze();
+    }
+
+    #analyze() {
+
         const isPipablePhase = this.#payload.currentPhase instanceof PipablePhase;
+        const isBreakPoint = this.#initialError instanceof Breakpoint;
 
-        const errorIsBreakPoint = this.#pipelineError instanceof Breakpoint;
-    
-
-        if (isPipablePhase && errorIsBreakPoint) {
+        if (isPipablePhase && isBreakPoint) {
 
             this.#isCausedByPipeablePhase = true;
 
-            this.#checkIfErrorIsHandledByPipeabePhase();
+            /**@type {BreakPoint} */
+            const breakPoint = this.#initialError;
 
-            const isErrorHandled = this.#isHandled;
-
-            const breakPoint = this.#pipelineError;
-
-            this.#actualError = isErrorHandled ? breakPoint.lastCaughtError : breakPoint.originError;
+            this.#actualError = breakPoint.isErrorOverloaded ? 
+                                breakPoint.lastTracedError : breakPoint.originError;
         }
         else {
 
             this.#isCausedByPipeablePhase = false;
-
-            this.#actualError = this.#pipelineError;
+            this.#actualError = this.#initialError;
         }
     }
 
-    #checkIfErrorIsHandledByPipeabePhase() {
+    #validatePolicy() {
 
-        if (!this.#isCausedByPipeablePhase) {
+        const policy = this.#policy;
 
-            return;
-        }
-
-        /**@type {Breakpoint} */
-        const breakPoint = this.#pipelineError;
-
-        const brOrignError = breakPoint.originError;
-
-        const brLastError = breakPoint.lastCaughtError;
-
-        this.#isHandled = (brOrignError !== brLastError && breakPoint.trace.length > 1);
+        this.#policy = [ErrorHandlingPolicy.DEATAIL, ErrorHandlingPolicy.SUMMARIZE]
+                        .includes(policy) ?
+                        policy : ErrorHandlingPolicy.DEATAIL;
     }
 }

@@ -1,3 +1,4 @@
+const ConventionError = require("../../errors/conventionError.js");
 const PipelinePayload = require("./pipelinePayload.js");
 
 /**
@@ -10,6 +11,9 @@ const PipelinePayload = require("./pipelinePayload.js");
 module.exports = class Breakpoint extends PipelinePayload {
 
     #rollbackPoint;
+
+    /**@type {boolean} */
+    #hasOriginError = false;
 
     /**@type {Payload} */
     #rollbackPayload;
@@ -34,6 +38,16 @@ module.exports = class Breakpoint extends PipelinePayload {
     get lastCaughtError() {
 
         return super.lastHandledValue;
+    }
+
+    /**
+     * Synonym for lastCaughtError
+     * 
+     * @type {any}
+     */
+    get lastTracedError() {
+
+        return this.lastCaughtError;
     }
 
     /**
@@ -66,6 +80,11 @@ module.exports = class Breakpoint extends PipelinePayload {
         return this.#rollbackPayload;
     }
 
+    get isErrorOverloaded() {
+
+        return this.trace.length > 1;
+    }
+
     /**
      * 
      * @param {Context} _context 
@@ -84,6 +103,12 @@ module.exports = class Breakpoint extends PipelinePayload {
 
     setOriginError(_e) {
 
+        if (this.#hasOriginError) {
+
+            throw new ConventionError("breakpoint's origin error just be initialized once");
+        }
+
         this.#originError = _e;
+        this.#hasOriginError = true;
     }
 }

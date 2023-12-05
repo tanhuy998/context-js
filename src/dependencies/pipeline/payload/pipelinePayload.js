@@ -54,6 +54,16 @@ module.exports = class PipelinePayload {
         return this.#stackStrace[last];
     }
 
+    /**
+     * Synonym for lastHandledValue
+     * 
+     * @type {any}
+     */
+    get lastTracedResult() {
+
+        return this.lastHandledValue;
+    }
+
     /**@returns {Phase} */
     get currentPhase() {
 

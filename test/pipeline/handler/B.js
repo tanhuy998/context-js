@@ -60,9 +60,9 @@ module.exports = class B extends ContextHandler{
         // })
     }
 
-    @handleError(Error)
-    someFunc() {
+    // @handleError(Error)
+    // someFunc() {
 
-        console.log('internal error catching');
-    }
+    //     console.log('internal error catching');
+    // }
 }

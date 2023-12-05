@@ -56,7 +56,7 @@ module.exports = class TransportContext extends Context{
         super.components.bindScope(Product)
 
         
-
+        pipeline.summarizeErrors();
         pipeline.addPhase().setHandler(first).build();
         // pipeline.addPhase().setHandler(B).build();
         // pipeline.addPhase().setHandler(A).build();

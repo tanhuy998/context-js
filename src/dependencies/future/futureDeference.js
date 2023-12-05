@@ -1,4 +1,7 @@
-require('core-js/proposals/promise-with-resolvers');
+if (typeof Promise.withResolvers !== 'function') {
+
+    require('core-js/proposals/promise-with-resolvers');
+}
 
 module.exports = class FututeDeference {
 
