@@ -1,9 +1,9 @@
 const { ABORT_PIPELINE, ROLL_BACK, DISMISS } = require("../../constants");
 const isPipeline = require("../isPipeline");
 const Payload = require("../payload/pipelinePayload.js");
-const { EventEmitter } = require('node:events');
 const NoPhaseError = require("../../errors/pipeline/noPhaseError");
 const self = require("reflectype/src/utils/self.js");
+const FututeDeference = require("../../future/futureDeference.js");
 
 
 /**
@@ -16,9 +16,13 @@ const self = require("reflectype/src/utils/self.js");
  * @typedef {import('../payload/breakpoint.js')} Breakpoint
  */
 
+/**
+ * @typedef {Object} PipelineControllerHandlingState
+ */
+
 const START_INDEX = 0;
 
-module.exports = class PipelineController {
+module.exports = class PipelineController extends FututeDeference {
 
     static count = 0;
 
@@ -33,13 +37,8 @@ module.exports = class PipelineController {
     /**@type {Number} */
     #maxSyncTask;
 
+    /**@type {number} */
     #taskIndex = START_INDEX;
-
-    /**@type {Promise} */
-    #state;
-
-    /**@type {EventEmitter} */
-    #eventController;
 
     /**@type {boolean} */
     #isDisposed;
@@ -56,20 +55,10 @@ module.exports = class PipelineController {
         return this.#payload;
     }
 
-    get state() {
-
-        return this.#state;
-    }
-
-    /** */
+    /**@type {Phase} */
     get firstPhase() {
         
         return this.#pipeline.firstPhase;
-    }
-
-    get event() {
-
-        return this.#eventController;
     }
 
     /**
@@ -77,6 +66,8 @@ module.exports = class PipelineController {
      * @param {Pipeline} _pipeline 
      */
     constructor(_pipeline) {
+
+        super();
 
         this.#pipeline = _pipeline;
 
@@ -102,7 +93,6 @@ module.exports = class PipelineController {
     setPayload(_payload) {
 
         this.#payload = _payload;
-
         this.#isDisposed = false;
     }
 
@@ -112,29 +102,22 @@ module.exports = class PipelineController {
 
             throw new Error('the pipeline controller has been disposed');
         }
-
         
         this.#initializeHandleEnv();
 
         /**@type {Phase}*/
         const firstPhase = this.firstPhase;
-        
+
+        if (!firstPhase) {
+
+            throw new NoPhaseError();
+        }
+
         const payload = this.payload;
-        const event = this.#eventController = new EventEmitter();
         
-        return this.#state = new Promise(function (resolve, reject) {
+        firstPhase.accquire(payload, _additionalArgs);
 
-            event.once('resolve', resolve).once('abort', reject);
-
-            if (firstPhase === undefined || firstPhase === null) {
-
-                reject(new NoPhaseError());
-
-                return;
-            }
-
-            firstPhase.accquire(payload, _additionalArgs);
-        })
+        return super.value;
     }
 
     /**
@@ -184,7 +167,7 @@ module.exports = class PipelineController {
         }
         else if (signal === ABORT_PIPELINE) {
             
-            this.#abort(_breakPoint);
+            this._abort(_breakPoint);
         }
         else if (signal === DISMISS) {
             
@@ -194,7 +177,7 @@ module.exports = class PipelineController {
         }
         else {
             
-            this.#abort(_breakPoint);
+            this._abort(_breakPoint);
         }
     }    
 
@@ -207,7 +190,6 @@ module.exports = class PipelineController {
     #nextPhase(_payload, previousValue) {
         
         const maxSyncTask = this.#maxSyncTask
-
         const taskIndex = this.#taskIndex = (++this.#taskIndex) % maxSyncTask;
 
         _payload.trace.push(previousValue);
@@ -216,7 +198,7 @@ module.exports = class PipelineController {
 
         if (nextPhase === undefined || nextPhase === null) {
             
-            this.#resolve(_payload);
+            this._finish(_payload);
 
             //this.#pipeline.approve(this);
 
@@ -236,27 +218,24 @@ module.exports = class PipelineController {
         }
     }
 
-    #abort(_reason) {
-        
-        this.#eventController.emit('abort', _reason);
+    _abort(_reason) {
 
+        super.reject(_reason);
         this._dispose();
     }
 
-    #resolve(_payload) {
+    _finish(_payload) {
 
-        this.#eventController.emit('resolve', _payload);
-
+        super.resolve(_payload);
         this._dispose();
     }
 
     _dispose() {
 
-        this.#state = undefined;
         this.#payload = undefined;
-
         this.#isDisposed = true;
     }
+
     #initializeHandleEnv() {
 
         /**@type {Context} */

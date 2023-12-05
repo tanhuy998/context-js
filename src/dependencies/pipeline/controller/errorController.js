@@ -127,7 +127,8 @@ module.exports = class ErrorController extends PipelineController {
             
             _breakPoint.trace.push(value);
 
-            this.event.emit('resolve', _breakPoint);
+            //this.event.emit('resolve', _breakPoint);
+            super._finish(_breakPoint);
 
             return;
         }
@@ -139,7 +140,8 @@ module.exports = class ErrorController extends PipelineController {
 
         if (value instanceof ConventionError) {
 
-            this.event.emit('reject', value.reason);
+            //this.event.emit('reject', value.reason);
+            super._abort(value.reason);
         }
 
         _info.occurError = false;
