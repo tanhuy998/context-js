@@ -1,17 +1,27 @@
 const ErrorHandlerConventionError = require("../errors/pipeline/errorHandlerConventionError");
+const { ACCEPT_FIELD, ACCEPT_ORIGIN_FIELD, ACCEPT_PUBLISHER } = require("./constant");
 
+/**
+ * ErrorHandlerAcceptanceStrategy defines strategies for ErrorHandlerFilter
+ * to lookup on a breakpoint object's field
+ */
 module.exports = class ErrorHandlerAcceptanceStrategy {
 
     #type;
 
-    #errorField;
+    #lookupFieldName;
 
     get errorFieldName() {
 
-        return this.#errorField;
+        return this.lookupFieldName
     }
 
-    constructor(type = 'accept') {
+    get lookupFieldName() {
+
+        return this.#lookupFieldName;
+    }
+
+    constructor(type = ACCEPT_FIELD) {
 
         if (typeof type !== 'string') {
 
@@ -26,8 +36,12 @@ module.exports = class ErrorHandlerAcceptanceStrategy {
     #init() {
 
         switch(this.#type) {
-            case 'accept': return this.#errorField = 'lastCaughtError';
-            case 'acceptOrigin':return this.#errorField = 'originError';
+            case ACCEPT_FIELD: 
+                return this.#lookupFieldName = 'lastCaughtError';
+            case ACCEPT_ORIGIN_FIELD: 
+                return this.#lookupFieldName = 'originError';
+            case ACCEPT_PUBLISHER: 
+                return this.#lookupFieldName = 'rollBackPoint';
             default: 
                 throw new ErrorHandlerConventionError(`${this.#type} is not valid error field of [ErrorHandler]`);
         }

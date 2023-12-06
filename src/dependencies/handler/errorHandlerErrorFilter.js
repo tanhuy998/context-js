@@ -1,6 +1,6 @@
 const { CONSTRUCTOR } = require("../constants.js");
 const ErrorHandlerAcceptanceStrategy = require("./errorHandlerAcceptanceStrategy.js");
-const { ACCEPT_ORIGIN_FIELD, ACCEPT_FIELD } = require("./constant.js");
+const { ACCEPT_ORIGIN_FIELD, ACCEPT_FIELD, ACCEPT_PUBLISHER } = require("./constant.js");
 const ContextExceptionErrorCategory = require("../errorCollector/contextExceptionErrorCategory.js");
 const {EXCEPTION} = require('../errorCollector/constant.js');
 const { decoratePseudoConstructor } = require("../../utils/metadata.js");
@@ -15,15 +15,21 @@ const { isValuable } = require("../../utils/type.js");
 
 const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFilter extends ContextExceptionErrorCategory {
 
-    static fields = [
-        'accept', 'acceptOrigin'
-    ];
+    /**
+     *  This class is too hard to use code to describe what exactly it does and I'm working on it 
+     *  to find a more understandable and reliable coding style.
+     */
 
+    static fields = [
+        'acceptPublisher', 'accept', 'acceptOrigin'
+    ];
+    
     /**@type {ErrorHandler} */
     #breakPoint;
 
-    #acceptList;
+    #acceptPublisher;
 
+    #acceptList;
 
     #acceptOriginList;
 
@@ -41,9 +47,9 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
         const firstCond = isValuable(exceptList);
         const secondCond = isValuable(acceptOriginList);
         const thirdCond = isValuable(acceptList);
+        const fourthCond = isValuable(this.#acceptPublisher);
         
-        
-        return firstCond || secondCond || thirdCond;
+        return firstCond || secondCond || thirdCond || fourthCond;
     }
 
     /**
@@ -72,10 +78,12 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
 
     #initCategories() {
 
+        const acceptPublisherList = this.#acceptPublisher;
         const acceptList = this.#acceptList;
         const acceptOriginList = this.#acceptOriginList;
         const exceptions = this.#exceptList;
 
+        this.#addToCategory(ACCEPT_PUBLISHER, acceptPublisherList);
         this.#addToCategory(EXCEPTION, exceptions)
         this.#addToCategory(ACCEPT_ORIGIN_FIELD, acceptOriginList);
         this.#addToCategory(ACCEPT_FIELD, acceptList);
@@ -108,7 +116,7 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
         const isException = this.#isException();
 
         if (isException) {
-            
+            console.log(1)
             return false;
         }
 
@@ -126,13 +134,14 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
             return true;
         }
 
+        // // the following logic will be removed because of the invalid result
+        // if (matchAcceptable === false || matchOriginAcceptable === false) {
+        //     console.log(4, matchAcceptable, matchOriginAcceptable)
+        //     return false;
+        // }
 
-        if (matchAcceptable === false || matchOriginAcceptable === false) {
-            
-            return false;
-        }
-
-        if (matchAcceptable === undefined && matchOriginAcceptable === undefined) {
+        if (this.#acceptList === undefined && 
+        this.#acceptOriginList === undefined) {
             
             return true;
         }
@@ -145,38 +154,61 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
      */
     #_checkAcceptableFrom(_field = ACCEPT_FIELD) {
 
-        const errorFieldName = new ErrorHandlerAcceptanceStrategy(_field).errorFieldName;
-        
+        const errorFieldName = new ErrorHandlerAcceptanceStrategy(_field).lookupFieldName;
         const actualError = this.#breakPoint[errorFieldName];
-
+        
         return super._check(actualError, _field);
     }
 
     #isException() {
 
-        return this.#originErrorIsException() || this.#lastHandledErrorisException();
+        //return this.#originErrorIsException() || this.#lastHandledErrorisException();
+        return this.#checkExceptionOn(ACCEPT_ORIGIN_FIELD) ||
+                this.#checkExceptionOn(ACCEPT_FIELD);
     }
 
-    #lastHandledErrorisException() {
+    #checkExceptionOn(_field) {
 
-        const breakPoint = this.#breakPoint;
-
-        const lastErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_FIELD).errorFieldName;
-
-        const lastError = breakPoint[lastErrorField];
-
-        return super._check(lastError, EXCEPTION);
+        const errorFieldName = new ErrorHandlerAcceptanceStrategy(_field).lookupFieldName;
+        const actualError = this.#breakPoint[errorFieldName];
+        
+        return super._check(actualError, EXCEPTION);
     }
 
-    #originErrorIsException() {
+    // #lastHandledErrorisException() {
 
-        const breakPoint = this.#breakPoint;
+    //     const breakPoint = this.#breakPoint;
+    //     const lastErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_FIELD).lookupFieldName;
+    //     const lastError = breakPoint[lastErrorField];
 
-        const originErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_ORIGIN_FIELD).errorFieldName;
+    //     return super._check(lastError, EXCEPTION);
+    // }
 
-        const originError = breakPoint[originErrorField];
+    // #originErrorIsException() {
 
-        return super._check(originError, EXCEPTION);
+    //     const breakPoint = this.#breakPoint;
+    //     const originErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_ORIGIN_FIELD).lookupFieldName;
+    //     const originError = breakPoint[originErrorField];
+
+    //     return super._check(originError, EXCEPTION);
+    // }
+
+    #matchPublisher() {
+
+        return this.#matchOn(ACCEPT_PUBLISHER);
+    }
+
+    #matchOn(_field) {
+
+        const hasField = this.categories.get(_field)?.size > 0;
+
+        return (!hasField || this.#_checkAcceptableFrom(ACCEPT_FIELD));
+    }
+
+    #check(_field) {
+
+        return this.#matchPublisher() &&
+                this.#matchOn(_field);
     }
 
     /**
@@ -185,7 +217,10 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
      */
     #isAcceptableError() {
         
-        return this.#_checkAcceptableFrom(ACCEPT_FIELD);
+        // return this.#_checkAcceptableFrom(ACCEPT_FIELD) || 
+        //         this.#acceptList === undefined;
+
+        return this.#check(ACCEPT_FIELD);
     }
 
     /**
@@ -194,16 +229,18 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
      */
     #isOriginAcceptableError() {
         
-        return this.#_checkAcceptableFrom(ACCEPT_ORIGIN_FIELD);
+        // return this.#_checkAcceptableFrom(ACCEPT_ORIGIN_FIELD) ||
+        //         this.#acceptOriginList === undefined;
+
+        return this.#check(ACCEPT_ORIGIN_FIELD);
     }
 
-    setReference({accept, acceptOrigin, except} = {}) {
-        
+    setReference({accept, acceptOrigin, except, acceptPublisher} = {}) {
+
         this.#acceptList = accept
-
         this.#acceptOriginList = acceptOrigin
-
         this.#exceptList = except;
+        this.#acceptPublisher = acceptPublisher;
         
         this.#initCategories();
     }
@@ -220,7 +257,7 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
         }
         
         const lookupResult = this.#checkAcceptableError();
-
+        console.log(['matcth'], lookupResult)
         return lookupResult;
     }
 }

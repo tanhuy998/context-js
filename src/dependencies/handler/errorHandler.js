@@ -69,7 +69,8 @@ const ErrorHandlerClass = module.exports = class ErrorHandler extends ContextHan
         this.#errorFilter.setReference({
             accept: this.accept,
             acceptOrigin: this.acceptOrigin,
-            except: this.except
+            except: this.except,
+            acceptPublisher: this.acceptPublisher
         })
 
         this.#decideToHandle();

@@ -1,6 +1,10 @@
 const ErrorHandler = require("../../../src/dependencies/handler/errorHandler");
+const A = require('./A.js');
+const B = require('./B.js');
 
 module.exports = class AcceptableErrorHandler extends ErrorHandler {
+
+    acceptPublisher = [B]
 
     // acceptOrigin = [
     //     TypeError, 'test Immediate Error value'

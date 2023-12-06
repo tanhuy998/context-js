@@ -9,7 +9,6 @@
   },
   "homepage": "https://github.com/tanhuy998/context-js",
   "scripts": {
-    "test": "node ./test/apply-express/test.js",
     "test-lockable": "node ./test/lockable",
     "test-category": "node ./test/category",
     "test-ioc": "npx babel ./test/ioc > ./test/ioc/compile.js && node ./test/ioc/compile",
