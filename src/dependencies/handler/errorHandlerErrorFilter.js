@@ -13,10 +13,10 @@ const { isValuable } = require("../../utils/type.js");
  * @typedef {import('../context/context.js')} Context
  */
 
-const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFilter extends ContextExceptionErrorCategory {
+const proto = module.exports = class ErrorHandlerErrorFilter extends ContextExceptionErrorCategory {
 
     /**
-     *  This class is too hard to use code to describe what exactly it does and I'm working on it 
+     *  This class is too hard to use code on describing what exactly it does and I'm working on it 
      *  to find a more understandable and reliable coding style.
      */
 
@@ -24,7 +24,7 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
         'acceptPublisher', 'accept', 'acceptOrigin'
     ];
     
-    /**@type {ErrorHandler} */
+    /**@type {Breakpoint} */
     #breakPoint;
 
     #acceptPublisher;
@@ -113,38 +113,36 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
      */
     #checkAcceptableError() {
 
-        const isException = this.#isException();
+        if (this.#isException()) {
 
-        if (isException) {
-            console.log(1)
             return false;
         }
-
-        const matchOriginAcceptable = this.#isOriginAcceptableError();
-
-        if (matchOriginAcceptable === true) {
-            
-            return true;
-        }
-
-        const matchAcceptable = this.#isAcceptableError();
         
-        if (matchAcceptable === true) {
+        if (this.#isSelectiveOn(ACCEPT_PUBLISHER)) {
             
-            return true;
+            if (!this.#matchPublisher()) {
+
+                return false;
+            }
+        }
+        
+        if (this.#isSelectiveOn(ACCEPT_ORIGIN_FIELD)) {
+            
+            if (!this.#matchOn(ACCEPT_ORIGIN_FIELD)) {
+
+                return false;
+            }
+        }
+        
+        if (this.#isSelectiveOn(ACCEPT_FIELD)) {
+            
+            if (!this.#matchOn(ACCEPT_FIELD)) {
+
+                return false;
+            }
         }
 
-        // // the following logic will be removed because of the invalid result
-        // if (matchAcceptable === false || matchOriginAcceptable === false) {
-        //     console.log(4, matchAcceptable, matchOriginAcceptable)
-        //     return false;
-        // }
-
-        if (this.#acceptList === undefined && 
-        this.#acceptOriginList === undefined) {
-            
-            return true;
-        }
+        return true;
     }
 
     /**
@@ -152,17 +150,16 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
      * @param {string} _field 
      * @returns {boolean}
      */
-    #_checkAcceptableFrom(_field = ACCEPT_FIELD) {
+    #_checkAcceptableOn(_field = ACCEPT_FIELD) {
 
-        const errorFieldName = new ErrorHandlerAcceptanceStrategy(_field).lookupFieldName;
-        const actualError = this.#breakPoint[errorFieldName];
-        
-        return super._check(actualError, _field);
+        const lookupFieldName = new ErrorHandlerAcceptanceStrategy(_field).lookupFieldName;
+        const value = this.#breakPoint[lookupFieldName];
+        console.log(['check field'], _field, lookupFieldName, value, this.#breakPoint.rollbackPoint)
+        return super._check(value, _field);
     }
 
     #isException() {
 
-        //return this.#originErrorIsException() || this.#lastHandledErrorisException();
         return this.#checkExceptionOn(ACCEPT_ORIGIN_FIELD) ||
                 this.#checkExceptionOn(ACCEPT_FIELD);
     }
@@ -175,40 +172,27 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
         return super._check(actualError, EXCEPTION);
     }
 
-    // #lastHandledErrorisException() {
-
-    //     const breakPoint = this.#breakPoint;
-    //     const lastErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_FIELD).lookupFieldName;
-    //     const lastError = breakPoint[lastErrorField];
-
-    //     return super._check(lastError, EXCEPTION);
-    // }
-
-    // #originErrorIsException() {
-
-    //     const breakPoint = this.#breakPoint;
-    //     const originErrorField = new ErrorHandlerAcceptanceStrategy(ACCEPT_ORIGIN_FIELD).lookupFieldName;
-    //     const originError = breakPoint[originErrorField];
-
-    //     return super._check(originError, EXCEPTION);
-    // }
-
     #matchPublisher() {
 
         return this.#matchOn(ACCEPT_PUBLISHER);
     }
 
-    #matchOn(_field) {
+    #isSelectiveOn(_field) {
 
-        const hasField = this.categories.get(_field)?.size > 0;
-
-        return (!hasField || this.#_checkAcceptableFrom(ACCEPT_FIELD));
+        return this.categories.get(_field)?.size > 0;
     }
 
-    #check(_field) {
+    #matchOn(_field) {
+        
+        const hasField = this.categories.get(_field)?.size > 0;
+        const thisFieldIsNotSelective = !hasField;
 
-        return this.#matchPublisher() &&
-                this.#matchOn(_field);
+        if (thisFieldIsNotSelective) {
+
+            return true;
+        }
+
+        return this.#_checkAcceptableOn(_field);
     }
 
     /**
@@ -216,11 +200,8 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
      * @returns {boolean}
      */
     #isAcceptableError() {
-        
-        // return this.#_checkAcceptableFrom(ACCEPT_FIELD) || 
-        //         this.#acceptList === undefined;
 
-        return this.#check(ACCEPT_FIELD);
+        return this.#matchOn(ACCEPT_FIELD);
     }
 
     /**
@@ -228,11 +209,8 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
      * @returns {boolean}
      */
     #isOriginAcceptableError() {
-        
-        // return this.#_checkAcceptableFrom(ACCEPT_ORIGIN_FIELD) ||
-        //         this.#acceptOriginList === undefined;
 
-        return this.#check(ACCEPT_ORIGIN_FIELD);
+        return this.#matchOn(ACCEPT_ORIGIN_FIELD);
     }
 
     setReference({accept, acceptOrigin, except, acceptPublisher} = {}) {
@@ -262,6 +240,6 @@ const ErrorHandlerErrorFilterClass = module.exports = class ErrorHandlerErrorFil
     }
 }
 
-decoratePseudoConstructor(ErrorHandlerErrorFilterClass, {
+decoratePseudoConstructor(proto, {
     defaultParamsType: [Breakpoint]
 })

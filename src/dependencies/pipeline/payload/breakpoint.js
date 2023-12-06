@@ -6,6 +6,7 @@ const PipelinePayload = require("./pipelinePayload.js");
  * @typedef {import('../../context/context.js')} Context
  * @typedef {import('../pipeline.js')} Pipeline
  * @typedef {import('../controller/errorController.js')} ErrorController
+ * @typedef {import('../../handler/contextHandler.js')} ContextHandler
  */
 
 module.exports = class Breakpoint extends PipelinePayload {
@@ -19,6 +20,15 @@ module.exports = class Breakpoint extends PipelinePayload {
     #rollbackPayload;
 
     #originError;
+
+    /**@type {ContextHandler | Function} */
+    #publisher;
+
+    /**@type {ContextHandler | Function} */
+    get publisher() {
+
+        return this.#publisher;
+    }
 
     /**
      * The error that started the error handler pipeline
@@ -101,11 +111,25 @@ module.exports = class Breakpoint extends PipelinePayload {
         this.#rollbackPoint = _payload.currentPhase;
     }
 
+    /**
+     * 
+     * @param {ContextHandler | Function} _sender 
+     */
+    setPublisher(_sender) {
+
+        if (this.#publisher) {
+
+            throw new ConventionError("breakpoint's publisher error just initialized once")
+        }
+
+        this.#publisher = _sender;
+    }
+
     setOriginError(_e) {
 
         if (this.#hasOriginError) {
 
-            throw new ConventionError("breakpoint's origin error just be initialized once");
+            throw new ConventionError("breakpoint's origin error just initialized once");
         }
 
         this.#originError = _e;

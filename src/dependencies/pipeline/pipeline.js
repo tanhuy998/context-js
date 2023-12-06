@@ -17,6 +17,7 @@ const ErrorHandlingPolicy = require("./errorHandlingPolicy.js");
  * @typedef {import('./phase/phase.js')} Phase
  * @typedef {import('../handler/errorHandler.js')} ErrorHandler
  * @typedef {import('../handler/contextHandler.js')} ContextHandler
+ * @typedef {import('./phase/phaseOperator.js')} PhaseOperator
  */
 
 /** 
@@ -193,8 +194,9 @@ module.exports = class Pipeline extends ContextLockable{
      * 
      * @param {Payload} _payload 
      * @param {any} _error 
+     * @param {PhaseOperator} _operatorInstance
      */
-    catchError(_payload, _error) {
+    catchError(_payload, _error, _operatorInstance) {
         
         if (_payload.pipeline !== this) {
 
@@ -207,6 +209,7 @@ module.exports = class Pipeline extends ContextLockable{
 
         _error = errorTracer.errorToHandle;
 
+        breakpoint.setPublisher(_operatorInstance.handlerInstance);
         breakpoint.trace.push(_error);
         breakpoint.setOriginError(_error);
         errorController.setPayload(breakpoint);

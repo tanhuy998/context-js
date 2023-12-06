@@ -41,7 +41,7 @@ module.exports = class ErrorHandlerAcceptanceStrategy {
             case ACCEPT_ORIGIN_FIELD: 
                 return this.#lookupFieldName = 'originError';
             case ACCEPT_PUBLISHER: 
-                return this.#lookupFieldName = 'rollBackPoint';
+                return this.#lookupFieldName = 'publisher';
             default: 
                 throw new ErrorHandlerConventionError(`${this.#type} is not valid error field of [ErrorHandler]`);
         }

@@ -125,7 +125,7 @@ module.exports = class PipelineController extends FututeDeference {
      * @param {Payload} _payload 
      * @param {*} param1 
      */
-    async trace(_payload, {currentPhase, occurError, value, opperator} = {}) {
+    async trace(_payload, {currentPhase, occurError, value, operator} = {}) {
         /**
          *  occurError parameter detemines that the phase thrown an exception
          *  base on type of the _payload parameter, controller will decide what to do next
@@ -139,7 +139,7 @@ module.exports = class PipelineController extends FututeDeference {
 
         if (occurError === true) {
             
-            const breakpoint = await this.#pipeline.catchError(_payload, value);
+            const breakpoint = await this.#pipeline.catchError(_payload, value, operator);
 
             this.#handleControlSignal(breakpoint);
         }

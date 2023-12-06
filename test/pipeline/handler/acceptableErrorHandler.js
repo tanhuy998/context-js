@@ -4,7 +4,7 @@ const B = require('./B.js');
 
 module.exports = class AcceptableErrorHandler extends ErrorHandler {
 
-    acceptPublisher = [B]
+    //acceptPublisher = [B]
 
     // acceptOrigin = [
     //     TypeError, 'test Immediate Error value'
