@@ -249,7 +249,7 @@ module.exports = class PhaseOperator {
 
             throw new ConventionError('invalid binding of ErrorHandler');
         }
-        console.log(1)
+        
         return new _handlerClass(_breakPoint, _breakPoint.lastTracedError);
     }
 }
