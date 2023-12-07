@@ -35,21 +35,16 @@ const proto = module.exports = class ErrorHandlerErrorFilter extends ContextExce
 
     #exceptList;
 
+    //#checkList = [ACCEPT_PUBLISHER, ACCEPT_ORIGIN_FIELD, ACCEPT_FIELD];
+
     /**
      * @returns {boolean}
      */
     get isSelective() {
 
-        const acceptList = this.#acceptList;
-        const acceptOriginList = this.#acceptList;
-        const exceptList = this.#exceptList;
-
-        const firstCond = isValuable(exceptList);
-        const secondCond = isValuable(acceptOriginList);
-        const thirdCond = isValuable(acceptList);
-        const fourthCond = isValuable(this.#acceptPublisher);
-        
-        return firstCond || secondCond || thirdCond || fourthCond;
+        return this.#isSelectiveOn(ACCEPT_PUBLISHER) ||
+                this.#isSelectiveOn(ACCEPT_ORIGIN_FIELD) ||
+                this.#isSelectiveOn(ACCEPT_FIELD);
     }
 
     /**
@@ -87,7 +82,6 @@ const proto = module.exports = class ErrorHandlerErrorFilter extends ContextExce
         this.#addToCategory(EXCEPTION, exceptions)
         this.#addToCategory(ACCEPT_ORIGIN_FIELD, acceptOriginList);
         this.#addToCategory(ACCEPT_FIELD, acceptList);
-        // if (isIterable(acceptOriginList)) {
     }
 
     /**
@@ -112,7 +106,7 @@ const proto = module.exports = class ErrorHandlerErrorFilter extends ContextExce
      * @returns {boolean}
      */
     #checkAcceptableError() {
-
+        
         if (this.#isException()) {
 
             return false;
@@ -120,7 +114,7 @@ const proto = module.exports = class ErrorHandlerErrorFilter extends ContextExce
         
         if (this.#isSelectiveOn(ACCEPT_PUBLISHER)) {
             
-            if (!this.#matchPublisher()) {
+            if (!this.#matchOn(ACCEPT_PUBLISHER)) {
 
                 return false;
             }
@@ -141,7 +135,7 @@ const proto = module.exports = class ErrorHandlerErrorFilter extends ContextExce
                 return false;
             }
         }
-
+        
         return true;
     }
 
@@ -154,7 +148,7 @@ const proto = module.exports = class ErrorHandlerErrorFilter extends ContextExce
 
         const lookupFieldName = new ErrorHandlerAcceptanceStrategy(_field).lookupFieldName;
         const value = this.#breakPoint[lookupFieldName];
-        console.log(['check field'], _field, lookupFieldName, value, this.#breakPoint.rollbackPoint)
+        
         return super._check(value, _field);
     }
 
@@ -170,11 +164,6 @@ const proto = module.exports = class ErrorHandlerErrorFilter extends ContextExce
         const actualError = this.#breakPoint[errorFieldName];
         
         return super._check(actualError, EXCEPTION);
-    }
-
-    #matchPublisher() {
-
-        return this.#matchOn(ACCEPT_PUBLISHER);
     }
 
     #isSelectiveOn(_field) {
@@ -193,24 +182,6 @@ const proto = module.exports = class ErrorHandlerErrorFilter extends ContextExce
         }
 
         return this.#_checkAcceptableOn(_field);
-    }
-
-    /**
-     * 
-     * @returns {boolean}
-     */
-    #isAcceptableError() {
-
-        return this.#matchOn(ACCEPT_FIELD);
-    }
-
-    /**
-     * 
-     * @returns {boolean}
-     */
-    #isOriginAcceptableError() {
-
-        return this.#matchOn(ACCEPT_ORIGIN_FIELD);
     }
 
     setReference({accept, acceptOrigin, except, acceptPublisher} = {}) {
@@ -235,7 +206,7 @@ const proto = module.exports = class ErrorHandlerErrorFilter extends ContextExce
         }
         
         const lookupResult = this.#checkAcceptableError();
-        console.log(['matcth'], lookupResult)
+        
         return lookupResult;
     }
 }

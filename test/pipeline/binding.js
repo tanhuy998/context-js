@@ -74,7 +74,7 @@ module.exports = class TransportContext extends Context{
 
             console.log('########## transportation failed')
             
-            console.log(error.reason);
+            console.log(error);
 
             return {
                 prop1: 1,
