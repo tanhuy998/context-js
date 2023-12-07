@@ -24,7 +24,10 @@ module.exports = class AcceptableErrorHandler extends ErrorHandler {
 
     handle() {
 
-        console.log('acceptable error handler', this.error);
+        const breakpoint = this.breakPoint;
+
+        console.log('acceptable error handler');
+        console.log(breakpoint);
         
         //return this.error;
     }

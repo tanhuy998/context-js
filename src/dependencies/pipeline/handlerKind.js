@@ -1,5 +1,6 @@
 const isES6Class = require('../../utils/isES6Class.js');
 const ContextHandler = require('../handler/contextHandler.js');
+const ErrorHandler = require('../handler/errorHandler.js');
 const isPipeline = require('./isPipeline.js');
 
 module.exports = class HandlerKind {
@@ -24,6 +25,10 @@ module.exports = class HandlerKind {
         return 4;
     }
 
+    static get ERROR_HANDLER() {
+
+        return 5;
+    }
     
 
     static classify(_unknown) {
@@ -38,7 +43,11 @@ module.exports = class HandlerKind {
             throw new TypeError('handler passed to phases must be type of function');
         }
         
-        if (_unknown.prototype instanceof ContextHandler) {
+        if (_unknown.prototype instanceof ErrorHandler) {
+
+            return this.ERROR_HANDLER;
+        }
+        else if (_unknown.prototype instanceof ContextHandler) {
 
             return this.REGULAR;
         }

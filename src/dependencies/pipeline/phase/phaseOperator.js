@@ -1,7 +1,8 @@
 const HandlerKind = require('../handlerKind.js');
 const HanlderInitializeError = require('../../errors/pipeline/handlerInitializeError.js');
 const ContextHandler = require('../../handler/contextHandler.js');
-const PhaseErrorCollector = require('../errorCollector/phaseErrorCollector.js');
+const Breakpoint = require('../payload/breakpoint.js');
+const ConventionError = require('../../errors/conventionError.js');
 
 /**
  * @typedef {import('../../handler/contextHandler.js')} ContextHandler
@@ -65,7 +66,6 @@ module.exports = class PhaseOperator {
 
         this.#payload = _payload
         this.#handlerAbstract = _handlerAbstract;
-        //this.#kind = _kindOfHandler;
 
         this.#init();
     }
@@ -76,16 +76,12 @@ module.exports = class PhaseOperator {
 
             this.#kind = HandlerKind.classify(this.#handlerAbstract);
         }
-
-        
     }
 
     prepare() {
 
         const _payload = this.#payload;
-
         const handler = this.#initiateHandler();
-
         const context = _payload.context;
         
         if (handler === undefined) {
@@ -128,14 +124,10 @@ module.exports = class PhaseOperator {
     #classifyThenReturnFunction(handler, _methodName, _additionalArgs = []) {
 
         const _payload = this.#payload;
-
         const context = _payload.context;
-
         const DI = _payload.context.global.DI;
-       
-        if (this.#kind === HandlerKind.REGULAR) {
-            
-            //const wrapper = new Proxy(handler, traps);
+
+        if ([HandlerKind.REGULAR, HandlerKind.ERROR_HANDLER].includes(this.#kind)) {
             
             this.#handlerInstance = handler;
             
@@ -147,19 +139,14 @@ module.exports = class PhaseOperator {
         if (this.#kind === HandlerKind.FUNCTION) {
             
             args = DI.resolveArguments(handler, context) ?? [];
-            
             args = (args.length > 0) ? [...args, ..._additionalArgs] : [_payload.lastHandledValue, context, _payload, ..._additionalArgs];             
-            
             obj = null;
-
             fn = handler;
         }
         else if (this.#kind === HandlerKind.ES6_CLASS) {
             
             args = DI.resolveArguments(handler[_methodName], context) ?? [];
-
             obj = handler;
-
             fn = handler[_methodName];
         }
 
@@ -192,7 +179,6 @@ module.exports = class PhaseOperator {
     #injectComponents(_handlerInstance) {
 
         const _context = this.#payload.context;
-
         const globalContext = _context.global;
 
         if (typeof globalContext === 'function') {
@@ -219,20 +205,16 @@ module.exports = class PhaseOperator {
     #initiateHandler() {
 
         const _payload = this.#payload;
-
         const kind = this.#kind;
-
         const handlerAbstract = this.#handlerAbstract;
-        
-        const devise = _payload.lastHandledValue;
-
-        const context = _payload.context;
         
         switch (kind) {
             case HandlerKind.ES6_CLASS:
                 return new handlerAbstract();
             case HandlerKind.REGULAR:
                 return this.#resolveContextHandlerInstance(handlerAbstract, _payload);
+            case HandlerKind.ERROR_HANDLER:
+                return this.#resolveErrorHandlerInstance(handlerAbstract, _payload);
             case HandlerKind.FUNCTION:
                 return handlerAbstract;
             default:
@@ -242,7 +224,7 @@ module.exports = class PhaseOperator {
 
     /**
      * 
-     * @param {ContextHandler} _HandlerClass 
+     * @param {typeof ContextHandler} _HandlerClass 
      * @param {Payload} _payload 
      * 
      * @returns {ContextHandler}
@@ -251,8 +233,23 @@ module.exports = class PhaseOperator {
 
         const context = _payload.context;
 
-        const handlerObj = new _HandlerClass(context, _payload.lastHandledValue);
+        return new _HandlerClass(context, _payload.lastHandledValue);
+    }
 
-        return handlerObj;
+    /**
+     * 
+     * @param {typeof ErrorHandler} _handlerClass 
+     * @param {BreakPoint} _breakPoint 
+     * 
+     * @returns {ErrorHandler}
+     */
+    #resolveErrorHandlerInstance(_handlerClass, _breakPoint) {
+
+        if (!(_breakPoint instanceof Breakpoint)) {
+
+            throw new ConventionError('invalid binding of ErrorHandler');
+        }
+        console.log(1)
+        return new _handlerClass(_breakPoint, _breakPoint.lastTracedError);
     }
 }
