@@ -3,6 +3,8 @@
 /**
  * @typedef {import('./payload/pipelinePayload.js')} PipelinePayload
  * @typedef {import('./payload/breakpoint.js')} BreakPoint
+ * @typedef {import('./phase/phaseOperator.js')} PhaseOperator
+ * @typedef {import('../handler/contextHandler.js')} ContextHandler
  */
 
 const PipablePhaseAbortionError = require('../errors/pipeline/pipablePhaseAbortionError.js');
@@ -12,7 +14,10 @@ const PipablePhase = require('./phase/PipablePhase.js');
 
 /**
  * @description
- * 
+ * ErrorTracer helps Pipeline in identifying the error and the publisher of the error
+ * based on the initial error handling policy. When an error is thrown by a PipablePhase,
+ * error identification is much more complex and hard to make decision between showing detail
+ * of the whole progress and just sumarize at the point the error happened.
  */
 module.exports = class ErrorTracer {
 
@@ -32,6 +37,9 @@ module.exports = class ErrorTracer {
 
     /**@type {boolean} */
     #isCausedByPipeablePhase;
+
+    /**@type {PhaseOperator} */
+    #phaseOperator;
 
     #policy;
 
@@ -61,8 +69,8 @@ module.exports = class ErrorTracer {
      */
     get errorToHandle() {
 
-        if (!this.#isCausedByPipeablePhase || 
-        this.#policy === ErrorHandlingPolicy.SUMMARIZE) {
+        if (!this.#isCausedByPipeablePhase ||
+            this.#policy === ErrorHandlingPolicy.SUMMARIZE) {
 
             return this.#actualError;
         }
@@ -74,16 +82,34 @@ module.exports = class ErrorTracer {
     }
 
     /**
+     * The publisher (ContextHandler object) that cause the error
+     * 
+     * @type {ContextHandler} 
+     */
+    get publisher() {
+
+        if (!this.#isCausedByPipeablePhase ||
+        this.#policy !== ErrorHandlingPolicy.SUMMARIZE) {
+
+            return this.#phaseOperator.handlerInstance;
+        }
+
+        return this.#initialError.publisher;
+    }
+
+    /**
      * 
      * @param {PipelinePayload} _payload 
      * @param {any | BreakPoint} _error 
+     * @param {PhaseOperator} _phaseOperator
      * @param {ErrorHandlingPolicy} _policy
      */
-    constructor(_payload, _error, _policy = ErrorHandlingPolicy.DEATAIL) {
+    constructor(_payload, _error, _phaseOperator, _policy = ErrorHandlingPolicy.DEATAIL) {
 
         this.#payload = _payload;
         this.#initialError = _error;
         this.#policy = _policy;
+        this.#phaseOperator = _phaseOperator;
 
         this.#init();
     }
@@ -99,6 +125,10 @@ module.exports = class ErrorTracer {
         const isPipablePhase = this.#payload.currentPhase instanceof PipablePhase;
         const isBreakPoint = this.#initialError instanceof Breakpoint;
 
+        /**
+         *  because ContextHandler could throw anything (include a BreakPoint object).
+         *  Therefore strictly classification is necessary
+         */
         if (isPipablePhase && isBreakPoint) {
 
             this.#isCausedByPipeablePhase = true;

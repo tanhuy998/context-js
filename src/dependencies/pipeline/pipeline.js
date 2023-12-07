@@ -203,15 +203,16 @@ module.exports = class Pipeline extends ContextLockable{
             return;
         }
 
-        const errorTracer = new ErrorTracer(_payload, _error, this.#errorPolicy);
+        const errorTracer = new ErrorTracer(_payload, _error, _operatorInstance, this.#errorPolicy);
         const errorController = new ErrorController(this);
         const breakpoint = new Breakpoint(_payload.context, errorController, this, _payload);
 
         _error = errorTracer.errorToHandle;
 
-        breakpoint.setPublisher(_operatorInstance.handlerInstance);
+        breakpoint.setPublisher(errorTracer.publisher);
         breakpoint.trace.push(_error);
         breakpoint.setOriginError(_error);
+        
         errorController.setPayload(breakpoint);
 
         this.#overrideContextErrorsComponents(_payload.context, breakpoint, _error);

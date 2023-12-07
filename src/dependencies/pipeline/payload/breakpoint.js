@@ -27,7 +27,7 @@ module.exports = class Breakpoint extends PipelinePayload {
     /**@type {ContextHandler | Function} */
     get publisher() {
 
-        return this.#publisher;
+        return this.#publisher ?? this.#rollbackPoint;
     }
 
     /**
