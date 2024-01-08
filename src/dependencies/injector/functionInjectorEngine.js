@@ -1,4 +1,4 @@
-const ReflectionFunction = require('reflectype/src/metadata/reflectionFunction.js');
+const ReflectionFunction = require('reflectype/src/metadata/function/reflectionFunction.js');
 const Void = require('reflectype/src/type/void.js');
 const {metaOf, property_metadata_t} = require('reflectype/src/reflection/metadata.js');
 
@@ -6,7 +6,7 @@ const Injector = require('./injector.js');
 
 /**
  * @typedef {import('../context/context.js')} Context
- * @typedef {import('reflectype/src/metadata/ReflectionParameter.js')} ReflectionParameter
+ * @typedef {import('reflectype/src/metadata/abstract/reflectionParameterAbstract.js')} ReflectionParameter
  */
 
 module.exports = class FunctionInjectorEngine extends Injector {
@@ -16,35 +16,33 @@ module.exports = class FunctionInjectorEngine extends Injector {
         super(...arguments);
     }
 
+    _resolveReflection(_func) {
+
+        return new ReflectionFunction(_func);
+    }
+
     /**
      * 
-     * @param {Function} _func 
      */
-    #preprocessFunction(_func) {
+    #preprocessFunction(reflection) {
 
         /**@type {property_metadata_t}*/
-        const funcMeta = metaOf(_func);
-
-        const reflection = new ReflectionFunction(_func);
-
+        const funcMeta = reflection.metadata;
         const funcDefaultParams = funcMeta.value;
 
         funcMeta.value ??= new Array(reflection.parameters.length);
-
         funcMeta.value = Array.isArray(funcDefaultParams) ? funcMeta.value : [funcDefaultParams];
     }
     
     /**
      * 
-     * @param {Function} _func 
      * @returns {Array}
      */
-    #prepareDummyArguments(_func) {
-
-        //const reflection = new ReflectionFunction(_func);
+    #prepareDummyArguments(reflection) {
 
         /**@type {property_metadata_t} */
-        const funcMeta = metaOf(_func);
+        const funcMeta = reflection.metadata;
+        //const funcMeta = metaOf(_func);
 
         if (!funcMeta) {
 
@@ -52,11 +50,8 @@ module.exports = class FunctionInjectorEngine extends Injector {
         }
 
         const defaultArgs = funcMeta.value;
-
         const parameters = funcMeta.defaultParamsType;
-
         const difference = parameters.length - defaultArgs.length;
-
         const missingCount = (difference >= 0) ? difference : 0;
         // this line would cause error
         return [...funcMeta.value, ...Array(missingCount)];
@@ -90,41 +85,36 @@ module.exports = class FunctionInjectorEngine extends Injector {
 
     resolveComponentsFor(_func, _scope) { 
 
-        const reflection = new ReflectionFunction(_func);
+        const reflection = new this._resolveReflection(_func);
         
         if (!reflection.isValid) {
 
             return undefined;
         }
 
-        this.#preprocessFunction(_func);
+        this.#preprocessFunction(reflection);
 
         const parameters = reflection.parameters;
-
-        const ret = this.#prepareDummyArguments(_func);
-
+        const ret = this.#prepareDummyArguments(reflection);
         let i = 0;
-
         const iterator = parameters.values();
-        let param = iterator.next();
+        let iteration = iterator.next();
 
-        while (!param.done) {
+        while (!iteration.done) {
 
             /**@type {ReflectionParameter} */
-            const paramReflection = param.value;
-
+            const paramReflection = iteration.value;
             const paramType = paramReflection.type;
 
             if (paramType !== undefined && paramType !== null && paramType !== Void) {
 
-                //const component = this.iocContainer.get(paramType, _scope);
                 const component = this.resolveComponent(paramType, _scope);
 
                 ret[i] = component ?? ret[i];
             }
 
             ++i;
-            param = iterator.next();
+            iteration = iterator.next();
         }
 
         return ret;
@@ -134,8 +124,8 @@ module.exports = class FunctionInjectorEngine extends Injector {
 
         this.#ensureFunction(_function);
 
-        /**@type {property_metadata_t}*/
-        const funcMeta = metaOf(_function);
+        // /**@type {property_metadata_t}*/
+        // const funcMeta = metaOf(_function);
         
         const args = this.resolveComponentsFor(_function, _scope);
 
