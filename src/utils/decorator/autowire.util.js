@@ -1,20 +1,28 @@
-const initFootPrint = require('reflectype/src/libs/initFootPrint.js');
+//const initFootPrint = require('reflectype/src/libs/initFootPrint.js');
+const {initFootPrint, setMetadataFootPrint, getMetadataFootPrintByKey} = require('reflectype/src/libs/footPrint.js');
 const metadata = require('../metadata.js');
 const { property_metadata_t, metadata_t } = require('reflectype/src/reflection/metadata.js');
+const { AUTOWIRED } = require('./constant.js');
 
 /**
  * @typedef {import('reflectype/src/reflection/metadata.js')} property_metadata_t
  */
+
+module.exports = {
+    placeAutoWiredMetadata, 
+    isAutowired, 
+    isPropMetaAutowired
+};
 
 /**
  * 
  * @param {property_metadata_t} _propMeta 
  */
 function placeAutoWiredMetadata(_propMeta) {
+    // initFootPrint(_propMeta);
+    // _propMeta.footPrint.needInject = true;
 
-    initFootPrint(_propMeta);
-    
-    _propMeta.footPrint.needInject = true;
+    setMetadataFootPrint(_propMeta, AUTOWIRED);
 }
 
 /**
@@ -24,7 +32,7 @@ function placeAutoWiredMetadata(_propMeta) {
  */
 function isPropMetaAutowired(_propMeta) {
 
-    return _propMeta?.footPrint?.needInject === true;
+    return getMetadataFootPrintByKey(_propMeta, AUTOWIRED) === true;
 }
 
 /**
@@ -64,8 +72,3 @@ function objectProperty_isAutowired(_obj, _propName) {
             && typeof properties === 'object' 
             && isPropMetaAutowired(properties[_propName]);
 }
-
-
-
-
-module.exports = {placeAutoWiredMetadata, isAutowired, isPropMetaAutowired};
