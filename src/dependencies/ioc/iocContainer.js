@@ -37,6 +37,8 @@ module.exports = class IocContainer {
     /**@type {ObjectInjectorEngine} */
     #objectInjector;
 
+    #virtualConretes = new WeakMap();
+
     constructor() {
         
         this.#init();
@@ -73,6 +75,12 @@ module.exports = class IocContainer {
         }
 
         this.#container.set(abstract, concrete);
+        this.#_buildVirtualConcreteTree(concrete);
+    }
+
+    #_buildVirtualConcreteTree(_class) {
+
+
     }
 
     /**
@@ -141,9 +149,14 @@ module.exports = class IocContainer {
      */
     getConcreteOf(abstract) {
 
-        if (!this.#container.has(abstract)) return undefined;
-
         return this.#container.get(abstract);
+    }
+
+    #_getConcreteOf(abstract) {
+
+        const actualConcrete = this.getConcreteOf(abstract);
+
+        return this.#virtualConretes.get(actualConcrete) ?? actualConcrete;
     }
 
     /**
@@ -187,7 +200,8 @@ module.exports = class IocContainer {
         }
         else {
 
-            const concrete = this.#container.get(abstract);
+            //const concrete = this.#container.get(abstract);
+            const concrete = this.#_getConcreteOf(abstract);
 
             return this.build(concrete);
         }

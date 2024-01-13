@@ -48,6 +48,6 @@
   },
   "dependencies": {
     "dotenv": "^16.3.1",
-    "reflectype": "^0.0.10-beta.8"
+    "reflectype": "^0.0.10-beta.9"
   }
 }
