@@ -23,7 +23,33 @@ function isVirtualClass(_class) {
  */
 function hasPseudoConstructor(_class) {
 
-    return typeof _class === 'function' && typeof _class[CONSTRUCTOR] === 'function';
+    const pseudoConstruct = _class.prototype[CONSTRUCTOR];
+
+    if (typeof _class !== 'function') {
+
+        return false;
+    }
+
+    if (typeof pseudoConstruct !== 'function') {
+
+        return false;
+    }
+
+    let proto = _class.__proto__;
+
+    while (proto) {
+
+        if (
+            proto[CONSTRUCTOR] === pseudoConstruct
+        ) {
+            return false;
+        }
+
+        proto = proto.__proto__;
+        pseudoConstruct = proto.prototype[CONSTRUCTOR];
+    }
+
+    return true;
 }
 
 function generateVirtualClass(_originClass) {
@@ -31,6 +57,11 @@ function generateVirtualClass(_originClass) {
     if (!isInstantiable(_originClass)) {
 
         throw new TypeError('_originClass is not instantiable');
+    }
+
+    if (!hasPseudoConstructor(_originClass)) {
+
+        throw new TypeError('could not generate virtual class from _originClass');
     }
 
     return class extends _originClass {
@@ -50,7 +81,6 @@ function generateVirtualClass(_originClass) {
 
             super(...args);
             this.#init(seed);
-           
         }
 
         #init(seed) {

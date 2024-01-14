@@ -4,6 +4,7 @@ const isAbstract = require('reflectype/src/utils/isAbstract.js');
 const Interface = require('reflectype/src/interface/interface.js');
 const ObjectInjectorEngine = require('../injector/objectInjectorEngine.js');
 const IocContainerSetDefaultInstanceError = require('../errors/iocContainerSetDefaultInstanceError.js');
+const { hasPseudoConstructor, generateVirtualClass } = require('./virtualDependent.js');
 
 class Empty {
 
@@ -26,7 +27,6 @@ module.exports = class IocContainer {
      * mapping table between abstracts and concretes
      */
     #container = new WeakMap();
-
     #stringKeys = new Map();
 
     /**
@@ -36,7 +36,6 @@ module.exports = class IocContainer {
 
     /**@type {ObjectInjectorEngine} */
     #objectInjector;
-
     #virtualConretes = new WeakMap();
 
     constructor() {
@@ -75,12 +74,19 @@ module.exports = class IocContainer {
         }
 
         this.#container.set(abstract, concrete);
-        this.#_buildVirtualConcreteTree(concrete);
+        this.#_buildVirtualConcrete(abstract, concrete);
     }
 
-    #_buildVirtualConcreteTree(_class) {
+    #_buildVirtualConcrete(concrete) {
 
+        if (!hasPseudoConstructor(concrete)) {
 
+            return;
+        }
+
+        const virtualConcrete = generateVirtualClass(_class);
+
+        this.#virtualConretes.set(concrete, virtualConcrete);
     }
 
     /**
@@ -213,8 +219,8 @@ module.exports = class IocContainer {
 
         if (obj.constructor === Empty) {
 
-            const concrete = this.#container.get(abstract);
-
+            //const concrete = this.#container.get(abstract);
+            const concrete = this.#_getConcreteOf(abstract);
             const instance = this.build(concrete);
 
             this.#singleton.delete(abstract);
@@ -243,7 +249,6 @@ module.exports = class IocContainer {
         if (this.#singleton.has(_abstract)) {
 
             this.#singleton.delete(_abstract);
-
             this.#singleton.set(_abstract, _instance);
         }
         else {
@@ -263,7 +268,6 @@ module.exports = class IocContainer {
         if (!this.#stringKeys.has(key)) return undefined;
 
         const abstract = this.#stringKeys.get(key);
-        
         const concrete =  this.get(abstract, _constructorArgs);
 
         if (concrete) {
@@ -289,7 +293,6 @@ module.exports = class IocContainer {
         }
 
         const instance = new concrete();
-
         this.#objectInjector.inject(instance);
 
         return instance;
